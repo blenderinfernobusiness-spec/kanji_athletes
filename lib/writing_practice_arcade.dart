@@ -2,11 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:async';
-import 'dart:io';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
+// Uint8List is available from foundation.dart; no direct typed_data import required here.
+import 'screenshot_saver.dart' as saver;
 import 'dart:ui' as ui;
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
+// path_provider and path used only in native screenshot saver implementation
+// and are imported in `lib/src/screenshot_saver_io.dart`.
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'sets_data.dart';
@@ -53,7 +54,7 @@ class _AnimatedStarsState extends State<_AnimatedStars> {
         transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
         child: i < _shownStars
             ? Icon(Icons.star, key: ValueKey('star-$i'), color: const Color(0xFFFFC107), size: 36)
-            : Icon(Icons.star_border, key: ValueKey('star-border-$i'), color: Colors.grey.withOpacity(0.5), size: 36),
+            : Icon(Icons.star_border, key: ValueKey('star-border-$i'), color: Colors.grey.withAlpha(128), size: 36),
       )),
     );
   }
@@ -217,15 +218,16 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
                 child: Builder(builder: (context) {
                   // Compute Android-specific UI scale so elements fit smaller screens
                   final width = MediaQuery.of(context).size.width;
+                  final bool isAndroid = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
                   double uiScale = 1.0;
-                  try {
-                    if (Platform.isAndroid) {
-                      if (width < 360) uiScale = 0.78;
-                      else if (width < 420) uiScale = 0.86;
-                      else uiScale = 0.92;
+                  if (isAndroid) {
+                    if (width < 360) {
+                      uiScale = 0.78;
+                    } else if (width < 420) {
+                      uiScale = 0.86;
+                    } else {
+                      uiScale = 0.92;
                     }
-                  } catch (_) {
-                    uiScale = 1.0;
                   }
 
                   return Transform.scale(
@@ -300,7 +302,7 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
                         isDarkMode: widget.isDarkMode,
                         kanji: item.japanese,
                         translation: item.translation,
-                        scale: (Platform.isAndroid ? (MediaQuery.of(context).size.width < 420 ? 0.86 : 0.92) : 1.0),
+                        scale: (isAndroid ? (MediaQuery.of(context).size.width < 420 ? 0.86 : 0.92) : 1.0),
                         hideButtons: true,
                         hideCanvas: false,
                         showHintByDefault: false,
@@ -585,11 +587,14 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
                 final ByteData? byteData = await composed.toByteData(format: ui.ImageByteFormat.png);
                 if (byteData == null) return;
                 final bytes = byteData.buffer.asUint8List();
-                final dir = await getApplicationDocumentsDirectory();
-                final filePath = path.join(dir.path, 'kanji_skool_${DateTime.now().millisecondsSinceEpoch}.png');
-                final file = File(filePath);
-                await file.writeAsBytes(bytes);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Saved screenshot to ${file.path}')));
+                final filename = 'kanji_skool_${DateTime.now().millisecondsSinceEpoch}.png';
+                final savedPath = await saver.savePng(bytes, filename);
+                if (!mounted) return;
+                if (savedPath != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Saved screenshot to $savedPath')));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Downloaded screenshot')));
+                }
                 // Award daily share XP once per day
                 final prefs = await SharedPreferences.getInstance();
                 final now = DateTime.now();
@@ -603,7 +608,8 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
                     _userProfile!.addXp(50);
                     await _userProfile!.save();
                     await prefs.setString('skool_share_last_date', today);
-                    if (mounted) setState(() {});
+                    if (!mounted) return;
+                    setState(() {});
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You earned 50 XP for sharing today!')));
                   }
                 }
@@ -612,7 +618,9 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
                   await launchUrl(url, mode: LaunchMode.externalApplication);
                 }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Share failed: $e')));
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Share failed: $e')));
+                }
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00A86B), foregroundColor: Colors.white),
@@ -651,7 +659,7 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
               child: Text(
                 'How stars work',
                 style: TextStyle(
-                  color: Colors.grey.withOpacity(0.7),
+                  color: Colors.grey.withAlpha(179),
                   fontSize: 14,
                   fontStyle: FontStyle.normal,
                   decoration: TextDecoration.none,
