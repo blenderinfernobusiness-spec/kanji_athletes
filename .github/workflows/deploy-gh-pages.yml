@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
@@ -34,4 +37,3 @@ jobs:
           user_email: github-actions@users.noreply.github.com
           allow_empty_commit: true
           keep_files: false
-          verbose: true
