@@ -14,6 +14,17 @@ Future<String?> savePng(Uint8List bytes, String filename) async {
         final appDir = Directory(path.join(picturesDir.path, 'KanjiAthletes'));
         await appDir.create(recursive: true);
         final filePath = path.join(appDir.path, filename);
+        // Try to insert into MediaStore first (works on Android Q+ and older where supported)
+        try {
+          const platform = MethodChannel('kanji_athletes/saver');
+          final res = await platform.invokeMethod('insertImage', {'bytes': bytes, 'filename': filename});
+          if (res is String && res.isNotEmpty) {
+            return res; // content:// URI returned
+          }
+        } catch (_) {
+          // ignore and fall back to writing a file + scanning
+        }
+
         final file = File(filePath);
         await file.writeAsBytes(bytes);
         // Try to notify the Android media scanner so the image appears in the Gallery
