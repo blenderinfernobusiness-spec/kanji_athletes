@@ -1,0 +1,176 @@
+name: kanji_athletes
+description: Dictionary, arcade, and unlockables for Kanji Athletes.
+
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+# The following defines the version and build number for your application.
+# A version number is three numbers separated by dots, like 1.2.43
+# followed by an optional build number separated by a +.
+# Both the version and the builder number may be overridden in flutter
+# build by specifying --build-name and --build-number, respectively.
+# In Android, build-name is used as versionName while build-number used as versionCode.
+# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
+# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
+# Read more about iOS versioning at
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+# In Windows, build-name is used as the major, minor, and patch parts
+# of the product and file versions while build-number is used as the build suffix.
+version: 1.0.0+1
+
+environment:
+  sdk: '>=2.18.2 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Using a very stable version for web
+  file_picker: ^8.0.0 # Or latest
+  cupertino_icons: ^1.0.2
+  shared_preferences: ^2.2.2
+  url_launcher: ^6.1.0
+  flutter_svg: ^2.0.9
+  xml: ^6.5.0
+  http: ^1.1.0
+  flutter_cache_manager: ^3.3.1
+  path_provider: ^2.0.14
+  path: ^1.9.0
+
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # The "flutter_lints" package below contains a set of recommended lints to
+  # encourage good coding practices. The lint set provided by the package is
+  # activated in the `analysis_options.yaml` file located at the root of your
+  # package. See that file for information about deactivating specific lint
+  # rules and activating additional ones.
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.10.0
+  # flutter_launcher_name removed due to null-safety incompatibility; app name will be set manually
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter packages.
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/gemslot1.png
+    - assets/gemslot2.png
+    - assets/gemslot3.png
+    - assets/gemslot4.png
+    - assets/gemslot5.png
+    - assets/gemslot6.png
+    - assets/amethyst1.png
+    - assets/amethyst2.png
+    - assets/amethyst3.png
+    - assets/amethyst4.png
+    - assets/amethyst5.png
+    - assets/amethyst6.png
+    - assets/emerald1.png
+    - assets/emerald2.png
+    - assets/emerald3.png
+    - assets/emerald4.png
+    - assets/emerald5.png
+    - assets/emerald6.png
+    - assets/sapphire1.png
+    - assets/sapphire2.png
+    - assets/sapphire3.png
+    - assets/sapphire4.png
+    - assets/sapphire5.png
+    - assets/sapphire6.png
+    - assets/felt.png
+    - assets/itembox.png
+    - assets/itemboxkey.png
+    - assets/itemboxopen.png
+    - assets/bookshelf.png
+    - assets/game.png
+    - assets/90dayvids.png
+    - assets/90daycards.png
+    - assets/todo.png
+    - assets/librarybg.png
+    - assets/librarymystery.png
+    - assets/libraryexit.png
+    - assets/libraryinput.png
+    - assets/librarylessons.png
+    - assets/libraryother.png
+    - assets/libraryrevision.png
+    - assets/bookshelfexit.png
+    - assets/otherbutton1.png
+    - assets/otherpage.png
+    - assets/lessonskanjiscreen.png
+    - assets/lessonsvocabscreen.png
+    - assets/lessonsbutton1.png
+    - assets/lessonsbutton2.png
+    - assets/lessonspage.png
+    - assets/revisionbutton1.png
+    - assets/revisionpage.png
+    - assets/revisionbutton2.png
+    - assets/revisionbutton3.png
+    - assets/inputpage.png
+    - assets/inputbutton2.png
+    - assets/inputbutton1.png
+    - assets/bookopen.png
+    - assets/bookclosed.png
+    - assets/bookopencard1.png
+    - assets/bookopencard2.png
+    - assets/bookopencard3.png
+    - assets/bookopencard4.png
+    - assets/sapphire1S22.png
+    - assets/sapphire2S75.png
+    - assets/sapphire3S63.png
+    - assets/sapphire4S09.png
+    - assets/sapphire5S39.png
+    - assets/sapphire6S36.png
+    - assets/kanji_athletes.png
+
+# Configuration for app icon and app name generation
+flutter_icons:
+  android: true
+  ios: true
+  image_path: assets/kanji_athletes.png
+  remove_alpha_ios: true
+
+# Note: App display name must be set manually for platforms due to flutter_launcher_name
+# Set Android label and iOS CFBundleDisplayName/CFBundleName manually.
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+
+  # To add assets to your application, add an assets section, like this:
+  # assets:
+  #   - images/a_dot_burr.jpeg
+  #   - images/a_dot_ham.jpeg
+
+  # An image asset can refer to one or more resolution-specific "variants", see
+  # https://flutter.dev/assets-and-images/#resolution-aware
+
+  # For details regarding adding assets from package dependencies, see
+  # https://flutter.dev/assets-and-images/#from-packages
+
+  # To add custom fonts to your application, add a fonts section here,
+  # in this "flutter" section. Each entry in this list should have a
+  # "family" key with the font family name, and a "fonts" key with a
+  # list giving the asset and other descriptors for the font. For
+  # example:
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # For details regarding fonts from package dependencies,
+  # see https://flutter.dev/custom-fonts/#from-packages
