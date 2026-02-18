@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:flutter/services.dart';
 
 Future<String?> savePng(Uint8List bytes, String filename) async {
   try {
@@ -15,6 +16,13 @@ Future<String?> savePng(Uint8List bytes, String filename) async {
         final filePath = path.join(appDir.path, filename);
         final file = File(filePath);
         await file.writeAsBytes(bytes);
+        // Try to notify the Android media scanner so the image appears in the Gallery
+        try {
+          const platform = MethodChannel('kanji_athletes/saver');
+          await platform.invokeMethod('scanFile', {'path': file.path});
+        } catch (_) {
+          // ignore errors from platform channel - scanner is best-effort
+        }
         return file.path;
       }
     } catch (_) {
