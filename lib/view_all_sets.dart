@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import 'dart:convert';
 import 'sets_data.dart';
 import 'view_set.dart';
 import 'set_preferences.dart';
@@ -293,9 +295,18 @@ class _ViewAllSetsScreenState extends State<ViewAllSetsScreen> {
                       allowedExtensions: ['txt'],
                     );
 
-                    if (result != null && result.files.single.path != null) {
-                      final file = File(result.files.single.path!);
-                      final content = await file.readAsString();
+                    if (result != null) {
+                      String content;
+                      final picked = result.files.single;
+                      if (!kIsWeb && picked.path != null) {
+                        final file = File(picked.path!);
+                        content = await file.readAsString();
+                      } else if (picked.bytes != null) {
+                        content = utf8.decode(picked.bytes!);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not read selected file')));
+                        return;
+                      }
                       
                       // Split content by lines and remove empty lines
                       final lines = content.split('\n')

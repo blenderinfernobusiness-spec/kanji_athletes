@@ -1,6 +1,8 @@
 import 'dart:io'; // Required for File()
 import 'package:file_picker/file_picker.dart'; // Required for FilePicker
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:url_launcher/url_launcher.dart';
@@ -561,12 +563,17 @@ class _TodoSettingsMenuState extends State<TodoSettingsMenu> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          File(_imagePath!),
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.broken_image, size: 20),
-                        ),
+                        child: _imagePath!.startsWith('data:')
+                            ? Image.memory(
+                                base64Decode(_imagePath!.split(',').last),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 20),
+                              )
+                            : Image.file(
+                                File(_imagePath!),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 20),
+                              ),
                       ),
                     ),
                     // Small 'x' to clear the image
@@ -1122,9 +1129,11 @@ class _TodoListViewState extends State<TodoListView> {
                                   ),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
-                                    child: editImagePath!.contains('/') || editImagePath!.contains('\\')
+                                    child: editImagePath!.startsWith('data:')
+                                      ? Image.memory(base64Decode(editImagePath!.split(',').last), fit: BoxFit.cover)
+                                      : (editImagePath!.contains('/') || editImagePath!.contains('\\')
                                         ? Image.file(File(editImagePath!), fit: BoxFit.cover)
-                                        : Image.asset('assets/$editImagePath', fit: BoxFit.cover),
+                                        : Image.asset('assets/$editImagePath', fit: BoxFit.cover)),
                                   ),
                                 ),
                                 const SizedBox(width: 15),
@@ -1374,8 +1383,17 @@ Future<String?> _pickImageFromComputer() async {
     allowedExtensions: ['jpg', 'png', 'jpeg'],
   );
 
-  if (result != null && result.files.single.path != null) {
-    return result.files.single.path;
+    if (result != null) {
+    final picked = result.files.single;
+    if (!kIsWeb && picked.path != null) {
+      return picked.path;
+    }
+    if (picked.bytes != null) {
+      // Return a data URI so callers can treat this like a path string.
+      final mime = (picked.extension ?? '').toLowerCase() == 'png' ? 'image/png' : 'image/jpeg';
+      final b64 = base64Encode(picked.bytes!);
+      return 'data:$mime;base64,$b64';
+    }
   }
   return null;
 }
@@ -1384,6 +1402,11 @@ Future<String?> _pickImageFromComputer() async {
 // persistent path. If copying fails, returns the original path.
 Future<String> _persistPickedImage(String pickedPath) async {
   try {
+    // If this is a web data URI, just return it (no filesystem available).
+    if (pickedPath.startsWith('data:')) {
+      return pickedPath;
+    }
+
     final appDir = await getApplicationDocumentsDirectory();
     final fileName = p.basename(pickedPath);
     String destPath = p.join(appDir.path, fileName);

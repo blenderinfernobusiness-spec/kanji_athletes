@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'sets_data.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -240,9 +241,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
 
     if (result != null && result.files.single.name == "ItemBoxKeyK22.png") {
-      setState(() {
-        _showBoxUnlocked = true;
-      });
+        setState(() {
+          _showBoxUnlocked = true;
+          _keyController.clear(); // Clear the key controller when the image is imported
+        });
     } else if (result != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Invalid Key Image"), backgroundColor: Colors.red),
@@ -1323,14 +1325,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (result == null) return; // user cancelled
 
       final picked = result.files.single;
-      final String? filePath = picked.path;
+      final String? filePath = !kIsWeb ? picked.path : null;
+      String content;
       if (filePath == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not read selected file')));
-        return;
+        // On web, FilePicker provides file bytes instead of a filesystem path.
+        if (picked.bytes != null) {
+          content = utf8.decode(picked.bytes!);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not read selected file')));
+          return;
+        }
+      } else {
+        final file = File(filePath);
+        content = await file.readAsString();
       }
-
-      final file = File(filePath);
-      final content = await file.readAsString();
       final data = jsonDecode(content) as Map<String, dynamic>;
 
       final prefs = await SharedPreferences.getInstance();
@@ -1737,9 +1745,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   ),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
-                                    child: editImagePath!.contains('/') || editImagePath!.contains('\\')
-                                        ? Image.file(File(editImagePath!), fit: BoxFit.cover)
-                                        : Image.asset('assets/$editImagePath', fit: BoxFit.cover),
+                                    child: editImagePath!.startsWith('data:')
+                                        ? Image.memory(base64Decode(editImagePath!.split(',').last), fit: BoxFit.cover)
+                                        : (editImagePath!.contains('/') || editImagePath!.contains('\\')
+                                            ? Image.file(File(editImagePath!), fit: BoxFit.cover)
+                                            : Image.asset('assets/$editImagePath', fit: BoxFit.cover)),
                                   ),
                                 ),
                                 const SizedBox(width: 15),
@@ -1924,10 +1934,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       allowedExtensions: ['jpg', 'png', 'jpeg'],
     );
 
-    if (result != null && result.files.single.path != null) {
-      return result.files.single.path;
-    }
-    return null;
+      if (result != null) {
+        final picked = result.files.single;
+        if (!kIsWeb && picked.path != null) return picked.path;
+        if (picked.bytes != null) {
+          final mime = (picked.extension ?? '').toLowerCase() == 'png' ? 'image/png' : 'image/jpeg';
+          final b64 = base64Encode(picked.bytes!);
+          return 'data:$mime;base64,$b64';
+        }
+      }
+      return null;
   }
 
   // Collapsed view - shows task name, notes preview, and action buttons
@@ -2155,19 +2171,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: widget.isDarkMode ? Colors.white12 : Colors.grey[300]!),
             ),
-            child: ClipRRect(
+              child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: task.imagePath!.contains('/') || task.imagePath!.contains('\\')
-                  ? Image.file(
-                      File(task.imagePath!),
+              child: task.imagePath!.startsWith('data:')
+                  ? Image.memory(
+                      base64Decode(task.imagePath!.split(',').last),
                       fit: BoxFit.contain,
                       width: double.infinity,
                     )
-                  : Image.asset(
-                      'assets/${task.imagePath}',
-                      fit: BoxFit.contain,
-                      width: double.infinity,
-                    ),
+                  : (task.imagePath!.contains('/') || task.imagePath!.contains('\\')
+                      ? Image.file(
+                          File(task.imagePath!),
+                          fit: BoxFit.contain,
+                          width: double.infinity,
+                        )
+                      : Image.asset(
+                          'assets/${task.imagePath}',
+                          fit: BoxFit.contain,
+                          width: double.infinity,
+                        )),
             ),
           ),
           const SizedBox(height: 16),

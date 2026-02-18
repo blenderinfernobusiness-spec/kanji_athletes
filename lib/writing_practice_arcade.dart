@@ -109,6 +109,7 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
 
   Future<void> _loadUserProfile() async {
     final profile = await UserProfile.load();
+    if (!mounted) return;
     setState(() {
       _userProfile = profile;
     });
