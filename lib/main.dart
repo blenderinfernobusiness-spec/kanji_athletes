@@ -1299,10 +1299,41 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         await downloadString(fileName, jsonString);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Downloaded export as $fileName')));
       } else {
+        // Primary: write to app documents (private)
         final dir = await getApplicationDocumentsDirectory();
         final file = File(path.join(dir.path, fileName));
         await file.writeAsString(jsonString);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Exported data to ${file.path}')));
+
+        // Secondary: try to write a copy to a public Downloads folder so users can find it
+        String? publicPath;
+        try {
+          // Common public download locations. Prefer Android external storage path.
+          final candidates = [
+            '/sdcard/Download',
+            '/sdcard/Downloads',
+            '${dir.path}/../..', // fallback attempt
+          ];
+          for (final p in candidates) {
+            try {
+              final testDir = Directory(p);
+              if (!await testDir.exists()) continue;
+              final outFile = File(path.join(p, fileName));
+              await outFile.writeAsString(jsonString);
+              publicPath = outFile.path;
+              break;
+            } catch (_) {
+              // ignore candidate
+            }
+          }
+        } catch (_) {
+          // ignore
+        }
+
+        if (publicPath != null) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Exported data to $publicPath')));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Exported data to ${file.path}')));
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Export failed: $e')));
