@@ -16,6 +16,7 @@ import 'user_profile.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'src/export_helper.dart';
 // Application entrypoint
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -1292,13 +1293,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       const encoder = JsonEncoder.withIndent('  ');
       final jsonString = encoder.convert(export);
 
-      final dir = await getApplicationDocumentsDirectory();
       final safeTs = DateTime.now().toIso8601String().replaceAll(':', '').replaceAll('.', '');
       final fileName = 'kanji_athletes_export_$safeTs.json';
-      final file = File(path.join(dir.path, fileName));
-      await file.writeAsString(jsonString);
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Exported data to ${file.path}')));
+      if (kIsWeb) {
+        await downloadString(fileName, jsonString);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Downloaded export as $fileName')));
+      } else {
+        final dir = await getApplicationDocumentsDirectory();
+        final file = File(path.join(dir.path, fileName));
+        await file.writeAsString(jsonString);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Exported data to ${file.path}')));
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Export failed: $e')));
     }
