@@ -22,8 +22,6 @@ class PracticeSet {
   List<String> tags;
   bool displayInDictionary;
   String setType;
-  bool displayInWritingArcade;
-  bool displayInReadingArcade;
 
   PracticeSet({
     required this.name,
@@ -31,8 +29,6 @@ class PracticeSet {
     this.tags = const [],
     this.displayInDictionary = true,
     this.setType = 'Uncategorised',
-    this.displayInWritingArcade = true,
-    this.displayInReadingArcade = true,
   });
 }
 
@@ -41,7 +37,6 @@ final Map<String, PracticeSet> practiceSetsData = {
     name: 'Essential Radicals',
     tags: ['Essential Radicals'],
     setType: 'Kanji',
-    displayInReadingArcade: false,
     items: [
       KanjiItem(japanese: '日', translation: 'Day/Sun', strokeOrder: '4', kanjiVGCode: '065e5'),
       KanjiItem(japanese: '王', translation: 'King', strokeOrder: '4', kanjiVGCode: '0738b'),
@@ -136,7 +131,6 @@ final Map<String, PracticeSet> practiceSetsData = {
     name: 'JLPT N5 Kanji',
     tags: ['JLPT N5'],
     setType: 'Kanji',
-    displayInReadingArcade: false,
     items: [
       KanjiItem(japanese: '人', translation: 'Person', strokeOrder: '2', kanjiVGCode: '04eba'),
       KanjiItem(japanese: '一', translation: 'One', strokeOrder: '1', kanjiVGCode: '04e00'),
@@ -224,7 +218,6 @@ final Map<String, PracticeSet> practiceSetsData = {
     name: 'JLPT N4 Kanji',
     tags: ['JLPT N4'],
     setType: 'Kanji',
-    displayInReadingArcade: false,
     items: [
       KanjiItem(japanese: '言', translation: 'Say/Speak', strokeOrder: '7', kanjiVGCode: '08a00'),
       KanjiItem(japanese: '手', translation: 'Hand', strokeOrder: '4', kanjiVGCode: '0624b'),
@@ -402,7 +395,6 @@ final Map<String, PracticeSet> practiceSetsData = {
     name: 'JLPT N3 Kanji',
     tags: ['JLPT N3'],
     setType: 'Kanji',
-    displayInReadingArcade: false,
     items: [
       KanjiItem(japanese: '合', translation: 'Fit/Join', strokeOrder: '6', kanjiVGCode: '05408'),
       KanjiItem(japanese: '部', translation: 'Part/Section/Department', strokeOrder: '11', kanjiVGCode: '090e8'),
@@ -780,7 +772,6 @@ final Map<String, PracticeSet> practiceSetsData = {
     name: 'JLPT N2 Kanji',
     tags: ['JLPT N2'],
     setType: 'Kanji',
-    displayInReadingArcade: false,
     items: [
       KanjiItem(japanese: '軍', translation: 'Army/Military', strokeOrder: '9', kanjiVGCode: '08ecd'),
       KanjiItem(japanese: '兵', translation: 'Soldier/Troops', strokeOrder: '7', kanjiVGCode: '05175'),
@@ -1168,7 +1159,6 @@ final Map<String, PracticeSet> practiceSetsData = {
     name: 'JLPT N1 Kanji',
     tags: ['JLPT N1'],
     setType: 'Kanji',
-    displayInReadingArcade: false,
     items: [
       // From vocabulary words
       KanjiItem(japanese: '把', translation: 'Grasp/Hold', strokeOrder: '7', kanjiVGCode: '0628a'),

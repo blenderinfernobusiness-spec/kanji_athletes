@@ -22,8 +22,6 @@ class VocabularySet {
   List<String> tags;
   bool displayInDictionary;
   String setType;
-  bool displayInWritingArcade;
-  bool displayInReadingArcade;
 
   VocabularySet({
     required this.name,
@@ -31,8 +29,6 @@ class VocabularySet {
     this.tags = const [],
     this.displayInDictionary = true,
     this.setType = 'Uncategorised',
-    this.displayInWritingArcade = true,
-    this.displayInReadingArcade = true,
   });
 }
 
@@ -40,7 +36,6 @@ final Map<String, VocabularySet> vocabularySetsData = {
   'Essential Vocabulary': VocabularySet(
     name: 'Essential Vocabulary',
     setType: 'Vocab',
-    displayInWritingArcade: false,
     items: [
       VocabularyItem(japanese: 'こんにちは', reading: 'konnichiwa', translation: 'Hello/Good afternoon'),
       VocabularyItem(japanese: 'ありがとう', reading: 'arigatou', translation: 'Thank you'),
@@ -53,7 +48,6 @@ final Map<String, VocabularySet> vocabularySetsData = {
     name: 'JLPT N5 Vocabulary',
     tags: ['JLPT N5'],
     setType: 'Vocab',
-    displayInWritingArcade: false,
     items: [
       VocabularyItem(japanese: '学生', reading: 'がくせい (gakusei)', translation: 'Student'),
       VocabularyItem(japanese: '先生', reading: 'せんせい (sensei)', translation: 'Teacher'),
@@ -66,7 +60,6 @@ final Map<String, VocabularySet> vocabularySetsData = {
     name: 'JLPT N4 Vocabulary',
     tags: ['JLPT N4'],
     setType: 'Vocab',
-    displayInWritingArcade: false,
     items: [
       VocabularyItem(japanese: '準備', reading: 'じゅんび (junbi)', translation: 'Preparation'),
       VocabularyItem(japanese: '経験', reading: 'けいけん (keiken)', translation: 'Experience'),
@@ -77,7 +70,6 @@ final Map<String, VocabularySet> vocabularySetsData = {
     name: 'JLPT N3 Vocabulary',
     tags: ['JLPT N3'],
     setType: 'Vocab',
-    displayInWritingArcade: false,
     items: [
       VocabularyItem(japanese: '確認', reading: 'かくにん (kakunin)', translation: 'Confirmation'),
       VocabularyItem(japanese: '印象', reading: 'いんしょう (inshou)', translation: 'Impression'),
@@ -88,7 +80,6 @@ final Map<String, VocabularySet> vocabularySetsData = {
     name: 'JLPT N2 Vocabulary',
     tags: ['JLPT N2'],
     setType: 'Vocab',
-    displayInWritingArcade: false,
     items: [
       VocabularyItem(japanese: '把握', reading: 'はあく (haaku)', translation: 'Grasp/Understanding'),
       VocabularyItem(japanese: '傾向', reading: 'けいこう (keikou)', translation: 'Tendency'),
@@ -98,7 +89,6 @@ final Map<String, VocabularySet> vocabularySetsData = {
   'Keigo Verbs': VocabularySet(
     name: 'Keigo Verbs',
     setType: 'Vocab',
-    displayInWritingArcade: false,
     items: [
       VocabularyItem(japanese: 'いらっしゃる', reading: 'irassharu', translation: 'To be/go/come (honorific)'),
       VocabularyItem(japanese: 'おっしゃる', reading: 'ossharu', translation: 'To say (honorific)'),

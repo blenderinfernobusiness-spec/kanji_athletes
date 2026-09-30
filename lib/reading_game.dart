@@ -6,31 +6,29 @@ import 'dart:ui' as ui;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
-import 'sets_data.dart';
+import 'study_data.dart';
 import 'user_profile.dart';
-import 'set_preferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ReadingPracticeArcadeScreen extends StatefulWidget {
-  final ItemSet itemSet;
-  final int numberOfRounds;
-  final bool roundForEveryItem;
-  final bool roundForEveryStarred;
+// Reading game: shows the Japanese, the user types the reading, auto-marked
+// on an exact match against the card's hiragana or romaji (falling back to
+// manual self-marking on a mismatch, same convention as Spaced Repetition's
+// type mode). Ported from the old standalone Arcade's reading mode to run
+// against a Study deck's own cards instead of a Library ItemSet.
+class ReadingGameScreen extends StatefulWidget {
+  final String title;
+  final List<StudyCard> questions;
   final bool isDarkMode;
-  final Function(bool) onThemeChanged;
 
-  const ReadingPracticeArcadeScreen({
+  const ReadingGameScreen({
     super.key,
-    required this.itemSet,
-    required this.numberOfRounds,
-    required this.roundForEveryItem,
-    required this.roundForEveryStarred,
+    required this.title,
+    required this.questions,
     required this.isDarkMode,
-    required this.onThemeChanged,
   });
 
   @override
-  State<ReadingPracticeArcadeScreen> createState() => _ReadingPracticeArcadeScreenState();
+  State<ReadingGameScreen> createState() => _ReadingGameScreenState();
 }
 
 class _AnimatedStars extends StatefulWidget {
@@ -72,24 +70,23 @@ class _AnimatedStarsState extends State<_AnimatedStars> {
           : Icon(
             Icons.star_border,
             key: ValueKey('star-border-$i'),
-            color: Color.fromRGBO(128, 128, 128, 0.5),
+            color: const Color.fromRGBO(128, 128, 128, 0.5),
             size: 36,
             ),
       )),
     );
   }
-  
 }
 
-class _ReadingPracticeArcadeScreenState extends State<ReadingPracticeArcadeScreen> {
+class _ReadingGameScreenState extends State<ReadingGameScreen> {
   UserProfile? _userProfile;
   final GlobalKey _wellDoneKey = GlobalKey();
   bool _finished = false;
-  final List<Item> _correctAnswers = [];
-  final List<Item> _wrongAnswers = [];
+  final List<StudyCard> _correctAnswers = [];
+  final List<StudyCard> _wrongAnswers = [];
   late ScrollController _correctScrollController;
   late ScrollController _wrongScrollController;
-  late List<Item> _questions;
+  late List<StudyCard> _questions;
   int _currentIndex = 0;
   bool _showResult = false;
   bool? _isCorrect = false;
@@ -106,89 +103,47 @@ class _ReadingPracticeArcadeScreenState extends State<ReadingPracticeArcadeScree
 
   Future<void> _loadUserProfile() async {
     final profile = await UserProfile.load();
+    if (!mounted) return;
     setState(() {
       _userProfile = profile;
     });
   }
 
   void _generateQuestions() {
-    List<Item> items = widget.itemSet.items;
-    if (widget.roundForEveryStarred) {
-      items = items.where((item) => item.isStarred).toList();
-    }
-    if (widget.roundForEveryItem) {
-      _questions = List<Item>.from(items)..shuffle();
-    } else {
-      _questions = List<Item>.from(items)..shuffle();
-      if (_questions.length > widget.numberOfRounds) {
-        _questions = _questions.sublist(0, widget.numberOfRounds);
-      }
-    }
+    _questions = List<StudyCard>.from(widget.questions)..shuffle();
     _currentIndex = 0;
     _showResult = false;
     _isCorrect = false;
     _answerController.clear();
   }
 
+  bool _isAnswerCorrect(StudyCard card, String typed) {
+    final t = typed.trim().toLowerCase();
+    if (t.isEmpty) return false;
+    if (t == card.hiragana.trim().toLowerCase()) return true;
+    final romaji = card.romaji.trim().toLowerCase();
+    return romaji.isNotEmpty && t == romaji;
+  }
+
   void _checkAnswer() {
     setState(() {
       _showResult = true;
-      final item = _questions[_currentIndex];
-      final userInput = _answerController.text.trim().toLowerCase();
-      String correctAnswer = '';
-      if (item.itemType.toLowerCase() == 'kanji') {
-        // For Kanji, user always marks correct/incorrect manually
-        _isCorrect = null;
-        // Optionally, you could check if userInput matches any reading and suggest, but do not auto-mark
-      } else if (item.itemType.toLowerCase() == 'hiragana' || item.itemType.toLowerCase() == 'katakana') {
-        correctAnswer = item.translation.trim().toLowerCase();
-        if (userInput.isNotEmpty && userInput == correctAnswer) {
-          _isCorrect = true;
-          _correctAnswers.add(item);
-          if (_userProfile != null) {
-            _userProfile!.addXp(10);
-            _userProfile!.save();
-          }
-          // auto-advance after correct
-          _advanceAfterDelay();
-        } else {
-          _isCorrect = null;
+      final card = _questions[_currentIndex];
+      if (_isAnswerCorrect(card, _answerController.text)) {
+        _isCorrect = true;
+        _correctAnswers.add(card);
+        if (_userProfile != null) {
+          _userProfile!.addXp(10);
+          _userProfile!.save();
         }
-      } else if (item.itemType.toLowerCase() == 'vocab') {
-        correctAnswer = item.reading.trim().toLowerCase();
-        if (userInput.isNotEmpty && userInput == correctAnswer) {
-          _isCorrect = true;
-          _correctAnswers.add(item);
-          if (_userProfile != null) {
-            _userProfile!.addXp(10);
-            _userProfile!.save();
-          }
-        } else {
-          _isCorrect = null;
-        }
+        _advanceAfterDelay();
       } else {
-        correctAnswer = item.reading.trim().toLowerCase();
-        if (correctAnswer.isEmpty) {
-          correctAnswer = item.translation.trim().toLowerCase();
-        }
-        if (userInput.isNotEmpty && userInput == correctAnswer) {
-          _isCorrect = true;
-          _correctAnswers.add(item);
-          if (_userProfile != null) {
-            _userProfile!.addXp(10);
-            _userProfile!.save();
-          }
-          // auto-advance after correct
-          _advanceAfterDelay();
-        } else {
-          _isCorrect = null;
-        }
+        _isCorrect = null;
       }
     });
   }
 
   void _advanceAfterDelay() {
-    // Short delay so the user sees the feedback, then auto-advance or finish
     Future.delayed(const Duration(milliseconds: 700), () {
       if (!mounted) return;
       final isLast = _currentIndex >= _questions.length - 1;
@@ -205,30 +160,21 @@ class _ReadingPracticeArcadeScreenState extends State<ReadingPracticeArcadeScree
     });
   }
 
-  void _nextQuestion() {
-    setState(() {
-      _currentIndex++;
-      _showResult = false;
-      _isCorrect = false;
-      _answerController.clear();
-    });
+  void _toggleStar(StudyCard card) {
+    setState(() => card.isStarred = !card.isStarred);
+    updateCardInAllDecks(card.japanese, (c) => c.isStarred = card.isStarred);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLast = _currentIndex >= _questions.length - 1;
     final finished = _finished;
-    final item = !finished ? _questions[_currentIndex] : null;
-    String promptText = '';
-    if (item != null) {
-      // Always prompt with Japanese field
-      promptText = item.japanese;
-    }
+    final card = !finished ? _questions[_currentIndex] : null;
+    final promptText = card?.japanese ?? '';
     return Scaffold(
       backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
       appBar: AppBar(
         backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-        title: Text('Reading Practice Arcade', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black)),
+        title: Text('Reading: ${widget.title}', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: widget.isDarkMode ? Colors.white : Colors.black),
           onPressed: () => Navigator.pop(context),
@@ -252,7 +198,6 @@ class _ReadingPracticeArcadeScreenState extends State<ReadingPracticeArcadeScree
             : SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Builder(builder: (context) {
-                  // Compute Android-specific UI scale so elements fit smaller screens
                   final width = MediaQuery.of(context).size.width;
                   double uiScale = 1.0;
                   try {
@@ -280,11 +225,11 @@ class _ReadingPracticeArcadeScreenState extends State<ReadingPracticeArcadeScree
                     LinearProgressIndicator(
                       value: (_currentIndex + 1) / _questions.length,
                       backgroundColor: widget.isDarkMode ? Colors.white12 : Colors.black12,
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF9A00FE)),
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF9A00FE)),
                       minHeight: 8,
                     ),
                     const SizedBox(height: 14),
-                    if (item != null) ...[
+                    if (card != null) ...[
                       Text(
                         promptText,
                         style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black),
@@ -296,49 +241,25 @@ class _ReadingPracticeArcadeScreenState extends State<ReadingPracticeArcadeScree
                         children: [
                           IconButton(
                             icon: Icon(
-                              item.isStarred ? Icons.star : Icons.star_border,
-                              color: item.isStarred ? const Color(0xFFFFC107) : (widget.isDarkMode ? Colors.white : Colors.black),
+                              card.isStarred ? Icons.star : Icons.star_border,
+                              color: card.isStarred ? const Color(0xFFFFC107) : (widget.isDarkMode ? Colors.white : Colors.black),
                             ),
-                            tooltip: item.isStarred ? 'Unstar item' : 'Star item',
-                            onPressed: () async {
-                              setState(() {
-                                item.isStarred = !item.isStarred;
-                              });
-                              String? setKey;
-                              for (var entry in setsData.entries) {
-                                if (entry.value.items.contains(item)) {
-                                  setKey = entry.key;
-                                  break;
-                                }
-                              }
-                              if (setKey != null) {
-                                await SetPreferences.saveSet(setKey, setsData[setKey]!);
-                              }
-                            },
+                            tooltip: card.isStarred ? 'Unstar card' : 'Star card',
+                            onPressed: () => _toggleStar(card),
                           ),
                         ],
                       ),
                       if (_showResult) ...[
                         const SizedBox(height: 8),
                         Text(
-                          // Show correct answer(s) based on item type
-                          () {
-                            if (item.itemType.toLowerCase() == 'kanji') {
-                              return 'Onyomi: ${item.onYomi}\nKunyomi: ${item.kunYomi}\nNanori: ${item.naNori}';
-                            } else if (item.itemType.toLowerCase() == 'hiragana' || item.itemType.toLowerCase() == 'katakana') {
-                              return 'Correct answer: ${item.translation}';
-                            } else if (item.itemType.toLowerCase() == 'vocab') {
-                              return 'Correct answer: ${item.reading}';
-                            } else {
-                              return 'Correct answer: ${item.reading.isNotEmpty ? item.reading : item.translation}';
-                            }
-                          }(),
+                          'Correct answer: ${card.hiragana}${card.romaji.isNotEmpty ? ' (${card.romaji})' : ''}',
                           style: TextStyle(fontSize: 18, color: _isCorrect == true ? Colors.green : Colors.red),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ],
                     const SizedBox(height: 32),
-                    if (item != null)
+                    if (card != null)
                       TextField(
                         controller: _answerController,
                         style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87, fontSize: 22),
@@ -408,9 +329,8 @@ class _ReadingPracticeArcadeScreenState extends State<ReadingPracticeArcadeScree
   }
 
   Widget _buildWellDoneScreen(BuildContext context) {
-    final total = _questions.length;
     final correct = _correctAnswers.length;
-    int completedRounds = _finished ? (_correctAnswers.length + _wrongAnswers.length) : total;
+    int completedRounds = _finished ? (_correctAnswers.length + _wrongAnswers.length) : _questions.length;
     final percent = completedRounds > 0 ? (correct / completedRounds) * 100 : 0.0;
     int stars = 0;
     if (percent >= 100) {
@@ -453,7 +373,7 @@ class _ReadingPracticeArcadeScreenState extends State<ReadingPracticeArcadeScree
                 value: progress,
                 minHeight: 12,
                 backgroundColor: widget.isDarkMode ? Colors.white12 : Colors.black12,
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF9A00FE)),
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF9A00FE)),
               ),
             ),
             const SizedBox(height: 16),
@@ -493,32 +413,30 @@ class _ReadingPracticeArcadeScreenState extends State<ReadingPracticeArcadeScree
                                 height: listHeight,
                                 child: TabBarView(
                                   children: [
-                                    // Correct list
                                     Scrollbar(
                                       controller: _correctScrollController,
                                       child: ListView.builder(
                                         controller: _correctScrollController,
                                         itemCount: _correctAnswers.length,
                                         itemBuilder: (context, i) {
-                                          final item = _correctAnswers[i];
+                                          final card = _correctAnswers[i];
                                           return ListTile(
-                                            title: Text(item.japanese, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                            subtitle: Text(item.translation),
+                                            title: Text(card.japanese, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                            subtitle: Text(card.english),
                                           );
                                         },
                                       ),
                                     ),
-                                    // Wrong list
                                     Scrollbar(
                                       controller: _wrongScrollController,
                                       child: ListView.builder(
                                         controller: _wrongScrollController,
                                         itemCount: _wrongAnswers.length,
                                         itemBuilder: (context, i) {
-                                          final item = _wrongAnswers[i];
+                                          final card = _wrongAnswers[i];
                                           return ListTile(
-                                            title: Text(item.japanese, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                            subtitle: Text(item.translation),
+                                            title: Text(card.japanese, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                            subtitle: Text(card.english),
                                           );
                                         },
                                       ),
@@ -556,7 +474,6 @@ class _ReadingPracticeArcadeScreenState extends State<ReadingPracticeArcadeScree
                   return;
                 }
                 final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
-                // Composite onto a white background to avoid transparent PNGs
                 final int w = image.width;
                 final int h = image.height;
                 final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -574,22 +491,22 @@ class _ReadingPracticeArcadeScreenState extends State<ReadingPracticeArcadeScree
                 final filePath = path.join(dir.path, 'kanji_skool_${DateTime.now().millisecondsSinceEpoch}.png');
                 final file = File(filePath);
                 await file.writeAsBytes(bytes);
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Saved screenshot to ${file.path}')));
-                // Award daily share XP once per day
                 final prefs = await SharedPreferences.getInstance();
                 final now = DateTime.now();
                 final today = '${now.year.toString().padLeft(4,'0')}-${now.month.toString().padLeft(2,'0')}-${now.day.toString().padLeft(2,'0')}';
                 final last = prefs.getString('skool_share_last_date') ?? '';
                 if (last != today) {
-                  if (_userProfile == null) {
-                    _userProfile = await UserProfile.load();
-                  }
+                  _userProfile ??= await UserProfile.load();
                   if (_userProfile != null) {
                     _userProfile!.addXp(50);
                     await _userProfile!.save();
                     await prefs.setString('skool_share_last_date', today);
                     if (mounted) setState(() {});
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You earned 50 XP for sharing today!')));
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You earned 50 XP for sharing today!')));
+                    }
                   }
                 }
                 final Uri url = Uri.parse('https://www.skool.com/kanji-athletes-5541');
@@ -597,7 +514,9 @@ class _ReadingPracticeArcadeScreenState extends State<ReadingPracticeArcadeScree
                   await launchUrl(url, mode: LaunchMode.externalApplication);
                 }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Share failed: $e')));
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Share failed: $e')));
+                }
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00A86B), foregroundColor: Colors.white),
@@ -609,10 +528,10 @@ class _ReadingPracticeArcadeScreenState extends State<ReadingPracticeArcadeScree
                 context: context,
                 builder: (context) => AlertDialog(
                   title: const Text('How Stars Work'),
-                  content: Column(
+                  content: const Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text('★ 0 stars: < 20% correct'),
                       Text('★ 1 star: 20–39% correct'),
                       Text('★ 2 stars: 40–59% correct'),
@@ -635,7 +554,7 @@ class _ReadingPracticeArcadeScreenState extends State<ReadingPracticeArcadeScree
               child: Text(
                 'How stars work',
                 style: TextStyle(
-                  color: Color.fromRGBO(128, 128, 128, 0.7),
+                  color: const Color.fromRGBO(128, 128, 128, 0.7),
                   fontSize: 14,
                   fontStyle: FontStyle.normal,
                   decoration: TextDecoration.none,

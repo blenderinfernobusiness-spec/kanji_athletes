@@ -55,8 +55,6 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
     _tagsController.text = widget.itemSet.tags.join(', ');
     bool displayInDictionary = widget.itemSet.displayInDictionary;
     String selectedSetType = widget.itemSet.setType;
-    bool displayInWritingArcade = widget.itemSet.displayInWritingArcade;
-    bool displayInReadingArcade = widget.itemSet.displayInReadingArcade;
 
     showDialog(
       context: context,
@@ -245,57 +243,9 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  'Display in Arcade',
-                  style: TextStyle(
-                    color: widget.isDarkMode ? Colors.white : Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Enable in Writing',
-                      style: TextStyle(
-                        color: widget.isDarkMode ? Colors.white : Colors.black,
-                      ),
-                    ),
-                    Switch(
-                      value: displayInWritingArcade,
-                      onChanged: (value) {
-                        setDialogState(() {
-                          displayInWritingArcade = value;
-                        });
-                      },
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Enable in Reading',
-                      style: TextStyle(
-                        color: widget.isDarkMode ? Colors.white : Colors.black,
-                      ),
-                    ),
-                    Switch(
-                      value: displayInReadingArcade,
-                      onChanged: (value) {
-                        setDialogState(() {
-                          displayInReadingArcade = value;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
                 Text(
-                  'Note: If you hide it from everywhere you can find it by enabling "Show hidden" in the dictionary view sets page.',
+                  'Note: If you hide it, you can find it again by enabling "Show hidden" in the dictionary view sets page.',
                   style: TextStyle(
                     color: widget.isDarkMode ? Colors.white54 : Colors.black45,
                     fontSize: 14,
@@ -417,8 +367,6 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                   widget.itemSet.tags = allTags;
                   widget.itemSet.displayInDictionary = displayInDictionary;
                   widget.itemSet.setType = selectedSetType;
-                  widget.itemSet.displayInWritingArcade = displayInWritingArcade;
-                  widget.itemSet.displayInReadingArcade = displayInReadingArcade;
                 });
                 
                 // Find the key for this set and save to preferences

@@ -1,25 +1,20 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-// Uint8List is available from foundation.dart; no direct typed_data import required here.
 import 'screenshot_saver.dart' as saver;
 import 'dart:ui' as ui;
-// path_provider and path used only in native screenshot saver implementation
-// and are imported in `lib/src/screenshot_saver_io.dart`.
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'sets_data.dart';
-import 'set_preferences.dart';
+import 'study_data.dart';
 import 'writing_practice_canvas.dart';
-import 'item_detail.dart';
+import 'card_edit_dialog.dart';
 import 'user_profile.dart';
 
 // Animated stars widget for well done screen
 class _AnimatedStars extends StatefulWidget {
   final int stars;
-  const _AnimatedStars({super.key, required this.stars});
+  const _AnimatedStars({required this.stars});
 
   @override
   State<_AnimatedStars> createState() => _AnimatedStarsState();
@@ -33,7 +28,6 @@ class _AnimatedStarsState extends State<_AnimatedStars> {
     super.initState();
     _animateStars();
   }
-
 
   void _animateStars() async {
     for (int i = 1; i <= widget.stars; i++) {
@@ -60,38 +54,35 @@ class _AnimatedStarsState extends State<_AnimatedStars> {
   }
 }
 
-
-class WritingPracticeArcadeScreen extends StatefulWidget {
-  final ItemSet itemSet;
-  final int numberOfRounds;
-  final bool roundForEveryItem;
-  final bool roundForEveryStarred;
+// Writing game: shows the English meaning, the user draws the Japanese in
+// the box, then self-marks against the revealed answer. Ported from the old
+// standalone Arcade's writing mode to run against a Study deck's own cards
+// instead of a Library ItemSet.
+class WritingGameScreen extends StatefulWidget {
+  final String title;
+  final List<StudyCard> questions;
   final bool isDarkMode;
-  final Function(bool) onThemeChanged;
 
-  const WritingPracticeArcadeScreen({
+  const WritingGameScreen({
     super.key,
-    required this.itemSet,
-    required this.numberOfRounds,
-    required this.roundForEveryItem,
-    required this.roundForEveryStarred,
+    required this.title,
+    required this.questions,
     required this.isDarkMode,
-    required this.onThemeChanged,
   });
 
   @override
-  State<WritingPracticeArcadeScreen> createState() => _WritingPracticeArcadeScreenState();
+  State<WritingGameScreen> createState() => _WritingGameScreenState();
 }
 
-class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScreen> {
-        UserProfile? _userProfile;
+class _WritingGameScreenState extends State<WritingGameScreen> {
+  UserProfile? _userProfile;
   final GlobalKey _wellDoneKey = GlobalKey();
-      bool _finished = false;
-    final List<Item> _correctAnswers = [];
-    final List<Item> _wrongAnswers = [];
-      late ScrollController _correctScrollController;
-      late ScrollController _wrongScrollController;
-  late List<Item> _questions;
+  bool _finished = false;
+  final List<StudyCard> _correctAnswers = [];
+  final List<StudyCard> _wrongAnswers = [];
+  late ScrollController _correctScrollController;
+  late ScrollController _wrongScrollController;
+  late List<StudyCard> _questions;
   int _currentIndex = 0;
   int _canvasResetCounter = 0;
   bool _showResult = false;
@@ -116,18 +107,7 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
   }
 
   void _generateQuestions() {
-    List<Item> items = widget.itemSet.items;
-    if (widget.roundForEveryStarred) {
-      items = items.where((item) => item.isStarred).toList();
-    }
-    if (widget.roundForEveryItem) {
-      _questions = List<Item>.from(items)..shuffle();
-    } else {
-      _questions = List<Item>.from(items)..shuffle();
-      if (_questions.length > widget.numberOfRounds) {
-        _questions = _questions.sublist(0, widget.numberOfRounds);
-      }
-    }
+    _questions = List<StudyCard>.from(widget.questions)..shuffle();
     _currentIndex = 0;
     _showResult = false;
     _isCorrect = false;
@@ -177,23 +157,27 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
     if (_currentIndex < _questions.length - 1) {
       Future.delayed(Duration(milliseconds: correct ? 500 : 1000), () {
         if (mounted && _marked && _currentIndex < _questions.length - 1) {
-          // Only auto-advance if still marked and still on this question
           _nextQuestion();
         }
       });
     }
   }
 
+  void _toggleStar(StudyCard card) {
+    setState(() => card.isStarred = !card.isStarred);
+    updateCardInAllDecks(card.japanese, (c) => c.isStarred = card.isStarred);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLast = _currentIndex >= _questions.length - 1;
     final finished = _finished;
-    final item = !finished ? _questions[_currentIndex] : null;
+    final card = !finished ? _questions[_currentIndex] : null;
     return Scaffold(
       backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
       appBar: AppBar(
         backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-        title: Text('Writing Practice Arcade', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black)),
+        title: Text('Writing: ${widget.title}', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: widget.isDarkMode ? Colors.white : Colors.black),
           onPressed: () => Navigator.pop(context),
@@ -217,7 +201,6 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
             : SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Builder(builder: (context) {
-                  // Compute Android-specific UI scale so elements fit smaller screens
                   final width = MediaQuery.of(context).size.width;
                   final bool isAndroid = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
                   double uiScale = 1.0;
@@ -246,13 +229,13 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
                     LinearProgressIndicator(
                       value: (_currentIndex + 1) / _questions.length,
                       backgroundColor: widget.isDarkMode ? Colors.white12 : Colors.black12,
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF9A00FE)),
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF9A00FE)),
                       minHeight: 8,
                     ),
                     const SizedBox(height: 14),
-                    if (item != null) ...[
+                    if (card != null) ...[
                       Text(
-                        item.translation,
+                        card.english,
                         style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black),
                         textAlign: TextAlign.center,
                       ),
@@ -262,47 +245,31 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
                         children: [
                           IconButton(
                             icon: Icon(
-                              item.isStarred ? Icons.star : Icons.star_border,
-                              color: item.isStarred ? const Color(0xFFFFC107) : (widget.isDarkMode ? Colors.white : Colors.black),
+                              card.isStarred ? Icons.star : Icons.star_border,
+                              color: card.isStarred ? const Color(0xFFFFC107) : (widget.isDarkMode ? Colors.white : Colors.black),
                             ),
-                            tooltip: item.isStarred ? 'Unstar item' : 'Star item',
-                            onPressed: () async {
-                              setState(() {
-                                item.isStarred = !item.isStarred;
-                              });
-                              // Persist change to the set that contains this item
-                              String? setKey;
-                              for (var entry in setsData.entries) {
-                                if (entry.value.items.contains(item)) {
-                                  setKey = entry.key;
-                                  break;
-                                }
-                              }
-                              if (setKey != null) {
-                                await SetPreferences.saveSet(setKey, setsData[setKey]!);
-                              }
-                            },
+                            tooltip: card.isStarred ? 'Unstar card' : 'Star card',
+                            onPressed: () => _toggleStar(card),
                           ),
                         ],
                       ),
                       if (_showResult) ...[
                         const SizedBox(height: 8),
                         Text(
-                          item.japanese,
+                          card.japanese,
                           style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black),
                           textAlign: TextAlign.center,
                         ),
                       ],
                     ],
                     const SizedBox(height: 32),
-                    // Drawing box for writing answer
-                    if (item != null)
+                    if (card != null)
                       WritingPracticeCanvas(
                         key: ValueKey(_canvasResetCounter),
-                        kanjiVGCodes: item.kanjiVGCode != null ? [item.kanjiVGCode!] : [],
+                        kanjiVGCodes: card.kanjiVGCodes,
                         isDarkMode: widget.isDarkMode,
-                        kanji: item.japanese,
-                        translation: item.translation,
+                        kanji: card.japanese,
+                        translation: card.english,
                         scale: (isAndroid ? (MediaQuery.of(context).size.width < 420 ? 0.86 : 0.92) : 1.0),
                         hideButtons: true,
                         hideCanvas: false,
@@ -310,20 +277,9 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
                         resetCounter: _canvasResetCounter,
                       ),
                     const SizedBox(height: 12),
-                    if (item != null)
+                    if (card != null)
                       ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ItemDetailScreen(
-                                item: item,
-                                isDarkMode: widget.isDarkMode,
-                                onThemeChanged: widget.onThemeChanged,
-                              ),
-                            ),
-                          );
-                        },
+                        onPressed: () => showStrokeOrderDialogFor(context, card, widget.isDarkMode),
                         icon: const Icon(Icons.remove_red_eye, size: 20),
                         label: const Text('View Stroke Order'),
                         style: ElevatedButton.styleFrom(
@@ -365,7 +321,7 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Text(
+                          const Text(
                             'Check if your writing matches the answer above and mark yourself as correct or incorrect.',
                             style: TextStyle(color: Colors.grey, fontSize: 14),
                             textAlign: TextAlign.center,
@@ -408,14 +364,11 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
               ),
       ),
     );
-
   }
 
   Widget _buildWellDoneScreen(BuildContext context) {
-    final total = _questions.length;
     final correct = _correctAnswers.length;
-    // Show score out of rounds completed if finished early
-        int completedRounds = _finished ? (_correctAnswers.length + _wrongAnswers.length) : total;
+    int completedRounds = _finished ? (_correctAnswers.length + _wrongAnswers.length) : _questions.length;
     final percent = completedRounds > 0 ? (correct / completedRounds) * 100 : 0.0;
     int stars = 0;
     if (percent >= 100) {
@@ -444,7 +397,6 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-          // XP/Level display at the very top
           if (_userProfile != null) ...[
             const SizedBox(height: 24),
             Text(
@@ -462,7 +414,7 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
                 value: progress,
                 minHeight: 12,
                 backgroundColor: widget.isDarkMode ? Colors.white12 : Colors.black12,
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF9A00FE)),
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF9A00FE)),
               ),
             ),
             const SizedBox(height: 16),
@@ -471,12 +423,9 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
           const SizedBox(height: 16),
           Text('Well done!', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black)),
           const SizedBox(height: 12),
-          // Animated star rating row
           _AnimatedStars(stars: stars),
           const SizedBox(height: 6),
-          // Removed top score display
                     Text('Score: $correct / $completedRounds', style: TextStyle(fontSize: 22, color: widget.isDarkMode ? Colors.white : Colors.black)),
-                    // Only count completed answers when finished early
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
@@ -505,32 +454,30 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
                                 height: listHeight,
                                 child: TabBarView(
                                   children: [
-                                    // Correct list
                                     Scrollbar(
                                       controller: _correctScrollController,
                                       child: ListView.builder(
                                         controller: _correctScrollController,
                                         itemCount: _correctAnswers.length,
                                         itemBuilder: (context, i) {
-                                          final item = _correctAnswers[i];
+                                          final card = _correctAnswers[i];
                                           return ListTile(
-                                            title: Text(item.japanese, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                            subtitle: Text(item.translation),
+                                            title: Text(card.japanese, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                            subtitle: Text(card.english),
                                           );
                                         },
                                       ),
                                     ),
-                                    // Wrong list
                                     Scrollbar(
                                       controller: _wrongScrollController,
                                       child: ListView.builder(
                                         controller: _wrongScrollController,
                                         itemCount: _wrongAnswers.length,
                                         itemBuilder: (context, i) {
-                                          final item = _wrongAnswers[i];
+                                          final card = _wrongAnswers[i];
                                           return ListTile(
-                                            title: Text(item.japanese, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                            subtitle: Text(item.translation),
+                                            title: Text(card.japanese, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                            subtitle: Text(card.english),
                                           );
                                         },
                                       ),
@@ -574,7 +521,6 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
                   return;
                 }
                 final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
-                // Composite onto a white background to avoid transparent PNGs
                 final int w = image.width;
                 final int h = image.height;
                 final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -596,15 +542,12 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Downloaded screenshot')));
                 }
-                // Award daily share XP once per day
                 final prefs = await SharedPreferences.getInstance();
                 final now = DateTime.now();
                 final today = '${now.year.toString().padLeft(4,'0')}-${now.month.toString().padLeft(2,'0')}-${now.day.toString().padLeft(2,'0')}';
                 final last = prefs.getString('skool_share_last_date') ?? '';
                 if (last != today) {
-                  if (_userProfile == null) {
-                    _userProfile = await UserProfile.load();
-                  }
+                  _userProfile ??= await UserProfile.load();
                   if (_userProfile != null) {
                     _userProfile!.addXp(50);
                     await _userProfile!.save();
@@ -634,10 +577,10 @@ class _WritingPracticeArcadeScreenState extends State<WritingPracticeArcadeScree
                 context: context,
                 builder: (context) => AlertDialog(
                   title: const Text('How Stars Work'),
-                  content: Column(
+                  content: const Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text('★ 0 stars: < 20% correct'),
                       Text('★ 1 star: 20–39% correct'),
                       Text('★ 2 stars: 40–59% correct'),

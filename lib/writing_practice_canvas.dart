@@ -12,6 +12,24 @@ class WritingPracticeCanvas extends StatefulWidget {
   final bool hideButtons;
   final bool hideCanvas;
   final bool showHintByDefault;
+  // When set, this controls whether the correct strokes overlay is drawn,
+  // instead of the widget's own internal Show Answer toggle (used when a
+  // caller hides the built-in buttons but still wants to drive the reveal
+  // from its own UI without losing the user's drawing on rebuild).
+  final bool? showAnswerOverride;
+  // Suppresses the built-in kanji/translation text shown above the canvas
+  // when the answer is revealed, for callers that already display the
+  // kanji elsewhere (e.g. in their own title) and want to save vertical space.
+  final bool hideAnswerText;
+  // Hides just the "Show Hint" toggle button, leaving "Show Answer", "Clear",
+  // and (when showHintByDefault is also true) the stroke navigation arrows.
+  final bool hideHintButton;
+  // Replaces the "Show Hint"/"Show Answer"/"Clear" buttons with a compact
+  // stroke-navigation row (reset/previous/next + a bin icon for clear),
+  // shown as soon as showHintByDefault is true regardless of whether stroke
+  // data has loaded yet. Used by callers that want a small, always-visible
+  // control set instead of the full button layout.
+  final bool compactStrokeControls;
 
   const WritingPracticeCanvas({
     super.key,
@@ -24,6 +42,10 @@ class WritingPracticeCanvas extends StatefulWidget {
     this.hideCanvas = false,
     this.showHintByDefault = false,
     this.resetCounter = 0,
+    this.showAnswerOverride,
+    this.hideAnswerText = false,
+    this.hideHintButton = false,
+    this.compactStrokeControls = false,
   });
 
   @override
@@ -152,13 +174,15 @@ class _WritingPracticeCanvasState extends State<WritingPracticeCanvas> {
     });
   }
 
+  bool get _effectiveShowAnswer => widget.showAnswerOverride ?? _showAnswer;
+
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         // Show kanji and translation when answer is revealed
-        if (_showAnswer) ...[
+        if (_effectiveShowAnswer && !widget.hideAnswerText) ...[
           Text(
             widget.kanji,
             style: TextStyle(
@@ -201,7 +225,7 @@ class _WritingPracticeCanvasState extends State<WritingPracticeCanvas> {
                       strokeGroups: _strokeGroups,
                       hintStroke: _hintStroke,
                       showHint: _showHint,
-                      showAnswer: _showAnswer,
+                      showAnswer: _effectiveShowAnswer,
                       thickness: _thickness,
                       scale: widget.scale,
                       wordText: widget.kanji,
@@ -257,7 +281,7 @@ class _WritingPracticeCanvasState extends State<WritingPracticeCanvas> {
                     strokeGroups: _strokeGroups,
                     hintStroke: _hintStroke,
                     showHint: _showHint,
-                    showAnswer: _showAnswer,
+                    showAnswer: _effectiveShowAnswer,
                     thickness: _thickness,
                     scale: widget.scale,
                     wordText: widget.kanji,
@@ -338,25 +362,27 @@ class _WritingPracticeCanvasState extends State<WritingPracticeCanvas> {
               ],
             ),
           ),
-        const SizedBox(height: 20),
+        SizedBox(height: widget.compactStrokeControls ? 6 : 20),
         // Controls
-        if (!widget.hideButtons)
+        if (!widget.hideButtons && !widget.compactStrokeControls)
           Column(
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: _toggleHint,
-                    icon: Icon(_showHint ? Icons.visibility_off : Icons.visibility, size: 18 * widget.scale),
-                    label: Text(_showHint ? 'Hide Hint' : 'Show Hint', style: TextStyle(fontSize: 16 * widget.scale)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF9A00FE),
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(horizontal: 16 * widget.scale, vertical: 12 * widget.scale),
+                  if (!widget.hideHintButton) ...[
+                    ElevatedButton.icon(
+                      onPressed: _toggleHint,
+                      icon: Icon(_showHint ? Icons.visibility_off : Icons.visibility, size: 18 * widget.scale),
+                      label: Text(_showHint ? 'Hide Hint' : 'Show Hint', style: TextStyle(fontSize: 16 * widget.scale)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF9A00FE),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(horizontal: 16 * widget.scale, vertical: 12 * widget.scale),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
+                    const SizedBox(width: 10),
+                  ],
                   ElevatedButton.icon(
                     onPressed: _toggleAnswer,
                     icon: Icon(_showAnswer ? Icons.check_box : Icons.check_box_outline_blank, size: 18 * widget.scale),
@@ -382,16 +408,17 @@ class _WritingPracticeCanvasState extends State<WritingPracticeCanvas> {
               ),
             ],
           ),
-        if (_strokePaths.isNotEmpty && _showHint) ...[
-          const SizedBox(height: 15),
-          Text(
-            'Hint: Stroke ${_hintStroke + 1} of ${_strokePaths.length}',
-            style: TextStyle(
-              color: widget.isDarkMode ? Colors.white : Colors.black,
-              fontSize: 14 * widget.scale,
+        if (_showHint && (widget.compactStrokeControls || _strokePaths.isNotEmpty)) ...[
+          SizedBox(height: widget.compactStrokeControls ? 4 : 15),
+          if (_strokePaths.isNotEmpty)
+            Text(
+              'Hint: Stroke ${_hintStroke + 1} of ${_strokePaths.length}',
+              style: TextStyle(
+                color: widget.isDarkMode ? Colors.white : Colors.black,
+                fontSize: 14 * widget.scale,
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
+          SizedBox(height: widget.compactStrokeControls ? 4 : 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -413,6 +440,20 @@ class _WritingPracticeCanvasState extends State<WritingPracticeCanvas> {
                 color: _hintStroke < _strokePaths.length - 1 ? const Color(0xFF9A00FE) : Colors.grey,
                 tooltip: 'Next stroke',
               ),
+              if (widget.compactStrokeControls) ...[
+                IconButton(
+                  icon: Icon(_showAnswer ? Icons.visibility_off : Icons.visibility),
+                  onPressed: _toggleAnswer,
+                  color: const Color(0xFF9A00FE),
+                  tooltip: _showAnswer ? 'Hide answer' : 'Reveal answer',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: _clear,
+                  color: Colors.red,
+                  tooltip: 'Clear',
+                ),
+              ],
             ],
           ),
         ],

@@ -328,8 +328,6 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
         tags: List<String>.from(preset.tags),
         displayInDictionary: preset.displayInDictionary,
         setType: preset.setType,
-        displayInWritingArcade: preset.displayInWritingArcade,
-        displayInReadingArcade: preset.displayInReadingArcade,
       );
     });
 

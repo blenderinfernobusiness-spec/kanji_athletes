@@ -65,8 +65,6 @@ class _ViewAllSetsScreenState extends State<ViewAllSetsScreen> {
         tags: List<String>.from(preset.tags),
         displayInDictionary: preset.displayInDictionary,
         setType: preset.setType,
-        displayInWritingArcade: preset.displayInWritingArcade,
-        displayInReadingArcade: preset.displayInReadingArcade,
       );
     });
 
@@ -1600,8 +1598,6 @@ class _ViewAllSetsScreenState extends State<ViewAllSetsScreen> {
     final itemTagsController = TextEditingController();
     String selectedSetType = 'Kanji';
     bool displayInDictionary = true;
-    bool displayInWritingArcade = true;
-    bool displayInReadingArcade = true;
     bool addTagsToItems = false;
     List<Item> tempItems = []; // Items to be added to the new set
 
@@ -1713,34 +1709,6 @@ class _ViewAllSetsScreenState extends State<ViewAllSetsScreen> {
                   onChanged: (value) {
                     setDialogState(() {
                       displayInDictionary = value ?? true;
-                    });
-                  },
-                  activeColor: const Color(0xFF9A00FE),
-                  contentPadding: EdgeInsets.zero,
-                ),
-                CheckboxListTile(
-                  title: Text(
-                    'Display in Writing Arcade',
-                    style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
-                  ),
-                  value: displayInWritingArcade,
-                  onChanged: (value) {
-                    setDialogState(() {
-                      displayInWritingArcade = value ?? true;
-                    });
-                  },
-                  activeColor: const Color(0xFF9A00FE),
-                  contentPadding: EdgeInsets.zero,
-                ),
-                CheckboxListTile(
-                  title: Text(
-                    'Display in Reading Arcade',
-                    style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
-                  ),
-                  value: displayInReadingArcade,
-                  onChanged: (value) {
-                    setDialogState(() {
-                      displayInReadingArcade = value ?? true;
                     });
                   },
                   activeColor: const Color(0xFF9A00FE),
@@ -1941,8 +1909,6 @@ class _ViewAllSetsScreenState extends State<ViewAllSetsScreen> {
                   tags: allTags,
                   displayInDictionary: displayInDictionary,
                   setType: selectedSetType,
-                  displayInWritingArcade: displayInWritingArcade,
-                  displayInReadingArcade: displayInReadingArcade,
                 );
 
                 // Generate unique key for the set
@@ -2422,8 +2388,6 @@ class _ViewAllSetsScreenState extends State<ViewAllSetsScreen> {
         setType: originalSet.setType,
         displayInDictionary: originalSet.displayInDictionary,
         tags: List<String>.from(originalSet.tags),
-        displayInWritingArcade: originalSet.displayInWritingArcade,
-        displayInReadingArcade: originalSet.displayInReadingArcade,
       );
 
       // Add to setsData and save

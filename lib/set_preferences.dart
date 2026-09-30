@@ -39,8 +39,6 @@ class SetPreferences {
       'tags': set.tags,
       'displayInDictionary': set.displayInDictionary,
       'setType': set.setType,
-      'displayInWritingArcade': set.displayInWritingArcade,
-      'displayInReadingArcade': set.displayInReadingArcade,
       'items': set.items.map((item) => {
         'japanese': item.japanese,
         'translation': item.translation,
@@ -105,9 +103,7 @@ class SetPreferences {
           set.tags = (data['tags'] as List<dynamic>?)?.cast<String>() ?? set.tags;
           set.displayInDictionary = data['displayInDictionary'] as bool? ?? set.displayInDictionary;
           set.setType = data['setType'] as String? ?? set.setType;
-          set.displayInWritingArcade = data['displayInWritingArcade'] as bool? ?? set.displayInWritingArcade;
-          set.displayInReadingArcade = data['displayInReadingArcade'] as bool? ?? set.displayInReadingArcade;
-          
+
           // Load items if they exist
           if (data.containsKey('items')) {
             set.items.clear();
@@ -189,8 +185,6 @@ class SetPreferences {
               setType: data['setType'] as String? ?? 'Uncategorised',
               displayInDictionary: data['displayInDictionary'] as bool? ?? true,
               tags: (data['tags'] as List<dynamic>?)?.cast<String>() ?? [],
-              displayInWritingArcade: data['displayInWritingArcade'] as bool? ?? false,
-              displayInReadingArcade: data['displayInReadingArcade'] as bool? ?? false,
             );
             
             setsData[setKey] = newSet;

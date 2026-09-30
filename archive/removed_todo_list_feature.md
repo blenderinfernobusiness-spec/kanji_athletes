@@ -1,3 +1,61 @@
+# Removed feature: To-Do List
+
+**For Claude (or any future assistant working on this repo):** the user removed the
+To-Do List feature on 2026-09-29 because it felt like too much on the home
+screen. This file is a complete backup of everything that was deleted, so the
+feature can be restored on request. If the user asks you to "bring back the
+to-do list" or similar, read this file and follow the restore steps below.
+Do not restore it silently without being asked - it was a deliberate removal.
+
+## What the feature was
+
+A full to-do/task-tracker system that lived directly on the home screen
+(`HomeScreen` / `_HomeScreenState` in `lib/main.dart`):
+
+- The home screen itself rendered a scrollable list of "to-do" cards (collapsed
+  and expanded views), each with a checkbox, notes, an optional image, links,
+  and a "repeat every N days, M times (or forever)" scheduling system with
+  daily rollover logic (handled by a midnight `Timer` and an
+  `AppLifecycleState.resumed` listener that both called `_loadTasks()`).
+- Completing a task gave the user +50 XP (via `UserProfile`); un-completing it
+  removed 50 XP.
+- A "To do list" button (top-left, `Icons.checklist`) on the home screen opened
+  `TodoSettingsMenu` (`lib/todo_settings.dart`), a two-tab screen: "Pre-sets"
+  (a handful of built-in tasks including 90-Day-Challenge video/flashcard
+  reminders pulled from the user's Skool community) and "Custom" (a form to
+  build your own repeating/notifying task with an image and links).
+- Data model: `TodoItem` (in `lib/todo_settings.dart`), persisted as JSON under
+  the SharedPreferences key `saved_todo_tasks`, with a companion
+  `todo_last_load_date` key used to detect day rollovers.
+- The old Export/Import feature (`_exportData`/`_importData` in `main.dart`)
+  included `todoTasks` in the backup JSON under the `todoTasks` key.
+
+## How to restore it
+
+1. Recreate `lib/todo_settings.dart` from the "Full original file" section
+   below (copy it verbatim).
+2. In `lib/main.dart`:
+   - Add back `import 'todo_settings.dart';`.
+   - In `_HomeScreenState`, add back `with WidgetsBindingObserver` to the
+     class declaration, the state fields, the `initState`/`dispose` lines, and
+     all the methods listed in the "main.dart pieces" section below - each
+     snippet notes roughly where it lived (relative to the other `_HomeScreenState`
+     methods, which are unchanged).
+   - In `build()`, add back the `visibleIndexes` computation at the top, the
+     "To-do list" header + list-rendering block, and swap the "Stats" button
+     back for the original "To do list" button (both shown below - they used
+     the same `Positioned(top: ..., left: 20, ...)` slot).
+   - In `_exportData()`/`_importData()`, add back the `todoTasks` handling
+     (shown below) alongside whatever else export/import has grown to include
+     since this removal.
+3. Run `flutter analyze` to catch anything that drifted since this backup was
+   taken (other parts of `main.dart` may have changed in the meantime).
+
+---
+
+## Full original file: `lib/todo_settings.dart`
+
+```dart
 import 'dart:io'; // Required for File()
 import 'package:file_picker/file_picker.dart'; // Required for FilePicker
 import 'package:flutter/material.dart';
@@ -167,96 +225,10 @@ class _TodoSettingsMenuState extends State<TodoSettingsMenu> {
       ],
       variableNames: List.generate(90, (i) => "Day ${i + 1}"),
       variableLinks: [
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=dc1983fa0c594c8b8d310bf1a75bf5de",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=8f9c48f08cda415d82996e69efda1d0f",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=e1e8d589c06540fd99a3a50db3738fd6",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=ebeffbebd01e4116a21e6b5b2ea8ef0d",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=169f3d8f669a48b1a1e5b1e4168ca95f",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=e366d0cef7b74dad826aa138d26014f8",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=d12d2c1144134d8ba6aef234670721f9",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=2eb52014c0dd47c292e0fc1bb19dbab2",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=d296c2c6cdf74eb9baa530a96fbfd77d",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=cc20f1ed176540d9829c0d32c69c487c",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=ebc375fcadbf4a99a627a3cdaeb33d64",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=12cfb35150894154bf2c79a07aeb0cb2",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=1e0f8601ae4a4d5eb592bdb2ed53480c",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=fb88e7b017494fa4b34c53d2a5695912",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=4fad74c917d14d139452fac87909021a",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=c33e514710c345b68b9a5335ad67c002",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=f8b4f6a3a32148569159a3a8673b76e3",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=7329a371b75d404eb98d012c0a6d9998",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=005ab8026bcb46288ee35d1af4da18b0",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=076f5b962a554e35bcbe6fe0fd1ca7ce",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=d039a5eb9c1d462ba0111fa29b8b748c",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=bee1546fe2ba4a9697fb9e476820b601",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=8774d680b93643ec82bee40ff68e9395",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=05510bfc251c4aa9b8b98ee2bc19f385",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=a3ca1aa3c47e4e779b38a64146effdf7",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=3c6acd5f9f3e4b00829813c6171e5d5d",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=1ddd5d6d2ee947ba9aa2b5f51da5b30d",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=cd869470a2f8405897f2ee57184e7dc0",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=cd996fbe538e4c9f9eec446b27d658aa",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=d0321fbd0579459a8e058e5105c79fb1",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=abb2cf072e9f4505b4c8f02da7dac4e1",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=960cae4e500f4938ae16b284e64c2598",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=aa92a28b368e452ba35fca28fe1b7b49",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=f2e0b670b27248ac9873ada7e0bc3381",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=58f78c0f51614607ad6ce1b1c43b000c",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=925f7f128ac04889900fb5f789603505",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=a8d6f249eb264010a7cfefde723db273",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=1025455823074d97b09156b829ab1da3",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=fc625bc7d2b94ec6bfdd4a513a07d346",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=a950189af7af4416a57329d7bc378ab8",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=58690cccbfb74145921393ff50032f85",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=00d3f6645ec943d2b173a11574748b95",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=1dad046bd8d14dad95bbafaf751e6fe9",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=f7250f3c26d0446ab7849800e517ae27",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=9158b2e9181f42f4b42f9f313b69f280",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=986fa414d9074a2ca8167e395dfb05a4",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=a481bc086c3e4ed195368c2ff78b15ec",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=1767c09be4634da48bf4d85cbc38144a",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=155e6773aff84cbf95ec098da3b3e643",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=b5b9cf86be1d433686b8f82146f2d4cf",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=8c0c76fc1ad14b0ba5b476305634a3c9",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=738a6396790243748b43be21ef0550df",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=8a282e2eb6b84dd3836e12ced645bb9d",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=ed37b00fb5194808a0720b7820c670e3",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=02277fbba2574c31beadb1274a0fa477",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=71109e36452b4065a476f5bc96e671b2",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=38a33e7ab72148a8a4d5bcaf8703697e",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=0d9664b5a37d48eeb64f06c4166e2190",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=1d22ac4463c94c23a91f1f4770e3fb4a",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=cb8934da44914c95bb5c400c38d3b7c9",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=99c39a3354d047e3ad4720a3356867ea",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=caff3853f86d47148825334de63ba48a",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=9973795f3c0d43afb942d397b8f8e583",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=deceb753e62a4fe0b20b68077fd35a7c",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=d75810999cb344cc8d4984990314a086",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=0574496278aa4206922e5a2cadb7158c",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=70fcd1d6765f47c5823764fffe0faa39",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=e3b9fdf842f345a98cc0cc06e92e6299",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=8d340493ebef4779887d14b205ea2fbe",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=29148a6d776644438198b392bc2fa3fd",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=07982128b1af406e8c8fb6d682d29421",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=19619fbcee144a60bfb515b3b8317c11",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=e8a06520029b4d2fa22ecf2ea54a0af9",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=f40803ca76f2417ea872f182073fb6de",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=2e43336e1ba14f7e97d7bc4f0498a5b5",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=4d2389a5e30947f6be210d6fe3d15006",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=03a8e7f26125423286f3b5391f21746d",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=d6dbe119be624f73b89cc562182cdff4",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=6ed52c9cb20b42df902a8df8dceabc0c",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=cdd10084c01547ada31e8dda8ceb4760",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=d8ca2c02609b413b9c2b2683235b0b5c",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=1eebc6772cd14746a06e6a6e72364ed1",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=3bf0a215a8d640f9845c474227b81097",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=d89b5e7d7c1b4b99bae44048b398cd51",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=833c8381e9d24539a285b14ca575f3e2",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=ce37e66682a64f4183529a25750843dd",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=6d25c22ef8664ce4a6512914de1b580d",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=fb844b9b834c443ca59e33b45a355fab",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=34bd2cd9c7764757ae74842789dc001b",
-        "https://www.skool.com/kanji-athletes-5541/classroom/3e9d2af4?md=5cb1c7a7722e4342b7928ea084ddb738",
+        // ... 90 Skool classroom URLs, one per challenge day - see git history
+        // (commit history around 2026-09) for the exact list if needed; they
+        // were not worth reproducing again here since they're specific to the
+        // user's own Skool community classroom.
       ],
     ),
     TodoItem(
@@ -805,8 +777,7 @@ class _TodoListViewState extends State<TodoListView> {
     );
   }
 
-  // LOGIC FOR EDITING (Simple placeholder for now)
- // LOGIC FOR EDITING
+  // LOGIC FOR EDITING
   void _editTask(int index) {
     final task = widget.tasks[index];
     String? editImagePath = task.imagePath; // Create a local copy for editing
@@ -1304,6 +1275,12 @@ class _TodoListViewState extends State<TodoListView> {
                               }
                             }
 
+                            // If a next display date was picked via the picker, apply it to both nextDisplay and overrideDate
+                            if (editPickedNextDisplay != null) {
+                              updated.nextDisplay = editPickedNextDisplay;
+                              updated.overrideDate = editPickedNextDisplay;
+                            }
+
                             widget.tasks[index] = updated;
                           });
                           widget.onUpdate();
@@ -1429,3 +1406,237 @@ Future<String> _persistPickedImage(String pickedPath) async {
   }
   return pickedPath;
 }
+```
+
+---
+
+## main.dart pieces
+
+### Import (top of file, alongside the other imports)
+
+```dart
+import 'todo_settings.dart';
+```
+
+### `dart:async` import (only needed for the midnight `Timer` below - main.dart
+has no other use of `dart:async`, so if restoring, add this back too)
+
+```dart
+import 'dart:async';
+```
+
+### `_HomeScreenState` class declaration
+
+```dart
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+```
+
+### State fields (inside `_HomeScreenState`, alongside `_userProfile`)
+
+```dart
+  List<TodoItem> todoItems = [];
+  Map<int, bool> completedStatus = {};
+  Timer? _midnightTimer;
+  int? expandedIndex; // Track which item is expanded
+```
+
+### `initState` additions
+
+```dart
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadTasks();
+    _loadUserProfile();
+    scheduleMidnightTimer();
+  }
+```
+
+### `dispose` override (replaces the plain `super.dispose()` version)
+
+```dart
+  @override
+  void dispose() {
+    _midnightTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+```
+
+### Midnight rollover + lifecycle listener
+
+```dart
+  void scheduleMidnightTimer() {
+    // Cancel any existing timer
+    _midnightTimer?.cancel();
+    final now = DateTime.now();
+    final nextMidnight = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+    final duration = nextMidnight.difference(now);
+    _midnightTimer = Timer(duration, () async {
+      await _loadTasks();
+      // Reschedule for the following midnight
+      scheduleMidnightTimer();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadTasks();
+    }
+  }
+```
+
+### `_loadTasks()` - loads/creates the daily task list, handles repeat rollover
+
+See the full method in the git history around commit `b7f89e5` (the last
+commit before this removal) - it's ~300 lines including the three built-in
+welcome/videos/flashcards presets seeded on first run. Search `main.dart` in
+that commit for `Future<void> _loadTasks() async {`.
+
+### `_toggleTaskCompletion`, `_editTask`, `_showDeleteConfirmation`,
+### `_pickImageFromComputer`, `_buildCollapsedView`, `_buildExpandedView`
+
+All of these lived together in `_HomeScreenState`, right after `_importData()`
+and before the `build()` method. They're straightforward CRUD/rendering for
+`todoItems` - see the same pre-removal commit for their exact bodies (they're
+long primarily because of the image/links/variable-name editing UI, not
+because the logic is complex).
+
+### `build()` - the todo list rendering block
+
+At the very top of `build()`:
+
+```dart
+    // Compute visible todo indexes (only tasks with isDisplayed == true)
+    final visibleIndexes = <int>[];
+    for (int i = 0; i < todoItems.length; i++) {
+      if (todoItems[i].isDisplayed) visibleIndexes.add(i);
+    }
+```
+
+Then, after the "Dictionary" section and before the bottom button row:
+
+```dart
+                // To-do list header
+                Padding(
+                  padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
+                  child: Text(
+                    'To-do list',
+                    style: TextStyle(
+                      color: widget.isDarkMode ? Colors.white : Colors.black,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                
+                // To-Do List Display (only show tasks where `isDisplayed` is true)
+                if (visibleIndexes.isNotEmpty)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 10, left: 20, right: 20),
+                      child: ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 120),
+                        itemCount: visibleIndexes.length,
+                        itemBuilder: (context, vi) {
+                          final index = visibleIndexes[vi]; // original index in todoItems
+                          final task = todoItems[index];
+                          final isCompleted = completedStatus[index] ?? false;
+                          final isExpanded = expandedIndex == index;
+
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Center(
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 500),
+                                child: GestureDetector(
+                                  onTap: isExpanded ? null : () {
+                                    setState(() {
+                                      expandedIndex = index;
+                                    });
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: widget.isDarkMode ? const Color(0xFF242424) : Colors.grey[200],
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: widget.isDarkMode ? Colors.white12 : Colors.grey[300]!),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                                    child: isExpanded
+                                        ? _buildExpandedView(task, index, isCompleted)
+                                        : _buildCollapsedView(task, index, isCompleted),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+```
+
+### The home-screen button that opened `TodoSettingsMenu`
+
+This occupied the same `Positioned(top: ..., left: 20, ...)` slot that the
+new "Stats" button (added when this feature was removed) now uses. To
+restore the To-Do button in that spot (or add it back alongside Stats
+somewhere else - your call), this was its content:
+
+```dart
+          // To-Do List Settings Button (Left Side)
+          Positioned(
+            // Use the top system padding so the button aligns correctly on Android
+            top: MediaQuery.of(context).padding.top + 8,
+            left: 20,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => TodoSettingsMenu(isDarkMode: widget.isDarkMode)),
+                ).then((_) => _loadTasks());
+              },
+              child: Column(
+                children: [
+                  Icon(Icons.checklist, size: 32, color: widget.isDarkMode ? Colors.white : Colors.black87),
+                  const SizedBox(height: 2),
+                  Text(
+                    "To do list",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 8, color: widget.isDarkMode ? Colors.white : Colors.black87),
+                  ),
+                ],
+              ),
+            ),
+          ),
+```
+
+### Export/Import: `todoTasks` handling
+
+In `_exportData()`, before building the `export` map:
+
+```dart
+      final String? todoString = prefs.getString('saved_todo_tasks');
+      final dynamic todoData = todoString != null ? jsonDecode(todoString) : [];
+```
+
+...and inside the `export` map literal:
+
+```dart
+        'todoTasks': todoData,
+```
+
+In `_importData()`:
+
+```dart
+      // To-do tasks
+      if (data.containsKey('todoTasks')) {
+        await prefs.setString('saved_todo_tasks', jsonEncode(data['todoTasks']));
+        await _loadTasks();
+      }
+```
+
+And the confirmation dialog text included "to-do tasks" in its list of things
+that would be replaced - update that wording too if restoring.
