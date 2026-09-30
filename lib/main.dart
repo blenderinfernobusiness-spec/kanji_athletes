@@ -9,7 +9,6 @@ import 'dart:io';
 import 'dart:math';
 import 'library.dart';
 import 'study.dart';
-import 'study_data.dart';
 import 'dictionary.dart';
 import 'set_preferences.dart';
 import 'user_profile.dart';
@@ -19,9 +18,14 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'src/export_helper.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'backup_data.dart';
+import 'cloud_sync_page.dart';
 // Application entrypoint
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Ensure any migrations and saved sets are loaded before the app starts
   await SetPreferences.checkMigration();
   await SetPreferences.loadAllSets();
@@ -883,6 +887,20 @@ class _HomeScreenState extends State<HomeScreen> {
               child: OutlinedButton(
                 onPressed: () {
                   Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => CloudSyncPage(isDarkMode: widget.isDarkMode)),
+                  );
+                },
+                child: const Text("Cloud sync"),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.pop(context);
                   _showCreditsDialog();
                 },
                 child: const Text("Credits & data sources"),
@@ -959,53 +977,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _exportData() async {
     try {
-      await SetPreferences.loadAllSets();
-      final prefs = await SharedPreferences.getInstance();
-
-      final user = await UserProfile.load();
-      final String? gemString = prefs.getString('gem_data');
-      final dynamic gemData = gemString != null ? jsonDecode(gemString) : [];
-
-      final studyDecks = await loadStudyDecks();
-      final readingTexts = await loadReadingTexts();
-
-      final Map<String, dynamic> setsMap = {};
-      for (var entry in setsData.entries) {
-        final key = entry.key;
-        final set = entry.value;
-        setsMap[key] = {
-          'name': set.name,
-          'tags': set.tags,
-          'displayInDictionary': set.displayInDictionary,
-          'setType': set.setType,
-          'items': set.items.map((item) => {
-                'japanese': item.japanese,
-                'translation': item.translation,
-                'reading': item.reading,
-                'strokeOrder': item.strokeOrder,
-                'kanjiVGCode': item.kanjiVGCode,
-                'itemType': item.itemType,
-                'onYomi': item.onYomi,
-                'kunYomi': item.kunYomi,
-                'naNori': item.naNori,
-                'tags': item.tags,
-                'notes': item.notes,
-                'isStarred': item.isStarred,
-              }).toList(),
-        };
-      }
-
-      final export = {
-        'exportedAt': DateTime.now().toIso8601String(),
-        'userProfile': {'xp': user.xp, 'level': user.level},
-        'gems': gemData,
-        'sets': setsMap,
-        'studyDecks': studyDecks.map((d) => d.toMap()).toList(),
-        'readingTexts': readingTexts.map((t) => t.toMap()).toList(),
-      };
-
-      const encoder = JsonEncoder.withIndent('  ');
-      final jsonString = encoder.convert(export);
+      final jsonString = await buildExportJson();
 
       final safeTs = DateTime.now().toIso8601String().replaceAll(':', '').replaceAll('.', '');
       final fileName = 'kanji_athletes_export_$safeTs.json';
@@ -1089,99 +1061,8 @@ class _HomeScreenState extends State<HomeScreen> {
         final file = File(filePath);
         content = await file.readAsString();
       }
-      final data = jsonDecode(content) as Map<String, dynamic>;
-
-      final prefs = await SharedPreferences.getInstance();
-
-      // User profile
-      if (data.containsKey('userProfile')) {
-        try {
-          final up = data['userProfile'] as Map<String, dynamic>;
-          await prefs.setInt('user_xp', (up['xp'] as num?)?.toInt() ?? 0);
-          await prefs.setInt('user_level', (up['level'] as num?)?.toInt() ?? 0);
-          _userProfile = await UserProfile.load();
-        } catch (_) {}
-      }
-
-      // Gems
-      if (data.containsKey('gems')) {
-        await prefs.setString('gem_data', jsonEncode(data['gems']));
-      }
-
-      // Study decks (flashcard decks, spaced-repetition progress, 90 Day
-      // Challenge progress, memory techniques, starred cards, etc.)
-      if (data.containsKey('studyDecks')) {
-        try {
-          final decks = (data['studyDecks'] as List<dynamic>)
-              .map((d) => StudyDeck.fromMap(Map<String, dynamic>.from(d as Map)))
-              .toList();
-          await saveStudyDecks(decks);
-        } catch (_) {}
-      }
-
-      // Reading tab texts
-      if (data.containsKey('readingTexts')) {
-        try {
-          final texts = (data['readingTexts'] as List<dynamic>)
-              .map((t) => ReadingText.fromMap(Map<String, dynamic>.from(t as Map)))
-              .toList();
-          await saveReadingTexts(texts);
-        } catch (_) {}
-      }
-
-      // Replace saved sets: remove existing saved set keys
-      final keys = prefs.getKeys().toList();
-      for (var key in keys) {
-        if (key.startsWith('set_') || key.startsWith('practice_set_') || key.startsWith('vocab_set_')) {
-          await prefs.remove(key);
-        }
-      }
-
-      // Sets (dictionary data)
-      if (data.containsKey('sets')) {
-        final sets = data['sets'] as Map<String, dynamic>;
-        for (var entry in sets.entries) {
-          final setKey = entry.key;
-          try {
-            final s = entry.value as Map<String, dynamic>;
-            final items = <Item>[];
-            if (s.containsKey('items')) {
-              for (var it in (s['items'] as List<dynamic>)) {
-                try {
-                  items.add(Item(
-                    japanese: it['japanese'] as String? ?? '',
-                    translation: it['translation'] as String? ?? '',
-                    strokeOrder: it['strokeOrder'] as String? ?? '',
-                    kanjiVGCode: it['kanjiVGCode'] as String?,
-                    reading: it['reading'] as String? ?? '',
-                    itemType: it['itemType'] as String? ?? 'Kanji',
-                    onYomi: it['onYomi'] as String? ?? '',
-                    kunYomi: it['kunYomi'] as String? ?? '',
-                    naNori: it['naNori'] as String? ?? '',
-                    tags: (it['tags'] as List<dynamic>?)?.cast<String>() ?? [],
-                    notes: it['notes'] as String? ?? '',
-                    isStarred: it['isStarred'] as bool? ?? false,
-                  ));
-                } catch (_) {}
-              }
-            }
-
-            final newSet = ItemSet(
-              name: s['name'] as String? ?? setKey,
-              items: items,
-              setType: s['setType'] as String? ?? 'Uncategorised',
-              displayInDictionary: s['displayInDictionary'] as bool? ?? true,
-              tags: (s['tags'] as List<dynamic>?)?.cast<String>() ?? [],
-            );
-
-            setsData[setKey] = newSet;
-            await SetPreferences.saveSet(setKey, newSet);
-          } catch (_) {}
-        }
-      }
-
-      // Reload saved sets into memory
-      await SetPreferences.loadAllSets();
+      await applyImportedJson(content);
+      _userProfile = await UserProfile.load();
 
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Import successful')));
       setState(() {});
