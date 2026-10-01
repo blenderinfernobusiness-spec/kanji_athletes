@@ -7,10 +7,13 @@ import 'cloud_sync_service.dart';
 const Color _accent = Color(0xFF9A00FE);
 
 // Cloud backup/restore - email/password sign-in (see CloudSyncService's doc
-// comment for why not Google Sign-In), then a single "last save wins"
-// backup file per account, so a phone and a desktop can both push to and
-// pull from the same account. Fully optional - the app works entirely
-// offline without ever visiting this screen.
+// comment for why not Google Sign-In), then a single backup file per
+// account shared by a phone, a desktop, and the Chrome extension alike.
+// "Sync" merges with whatever's already on the cloud (see backup_data.dart's
+// syncToCloud) rather than blindly overwriting it; only the explicit
+// "Download from cloud" below is a true replace, since that's the one action
+// that's supposed to discard what's on this device. Fully optional - the
+// app works entirely offline without ever visiting this screen.
 class CloudSyncPage extends StatefulWidget {
   final bool isDarkMode;
   const CloudSyncPage({super.key, required this.isDarkMode});
@@ -156,13 +159,14 @@ class _CloudSyncPageState extends State<CloudSyncPage> {
   Future<void> _backupNow() async {
     setState(() => _busy = true);
     try {
-      final content = await buildExportJson();
-      await CloudSyncService.uploadBackup(content);
+      await syncToCloud();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Uploaded to cloud')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Synced with cloud — restart the app to see everything')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sync failed: $e')));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

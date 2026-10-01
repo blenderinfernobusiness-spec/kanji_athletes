@@ -26,5 +26,5 @@ Highlight Japanese text in YouTube's subtitles, look it up against your Kanji At
 ## Known limitations (v1)
 
 - Words added here don't get stroke-order data, so they won't show handwriting practice in the app's Writing game until edited there.
-- Sync is manual and whole-file, same as the app's own Cloud Backup: if you add words here and also change decks in the app without syncing in between, whichever you sync last overwrites the other.
+- Syncing merges rather than overwrites: clicking **Sync changes to cloud** pulls the latest cloud data first and adds just the words you added here on top of it, so studying in the app on another device in the meantime won't get wiped out. The one case this can't resolve automatically is editing or deleting the *same* existing card in the app and here at the same time - whichever syncs last wins for that specific card, same tradeoff Anki accepts for its own sync.
 - Selection relies on YouTube's current caption HTML structure - if YouTube changes it, selection may stop working until this extension is updated.

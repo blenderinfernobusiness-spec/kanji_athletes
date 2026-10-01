@@ -115,10 +115,65 @@
     return null;
   }
 
+  // Same algorithm as findBestMatch, but scanning left-to-right across the
+  // whole line instead of just one dragged selection - this is what powers
+  // the automatic purple highlighting, matching tokenizeSentence
+  // (lib/study_data.dart:280-306) exactly: at each position, try the
+  // longest known substring first, falling back one character at a time.
+  // Runs with no match get merged together rather than split per character.
+  function tokenizeText(text, index) {
+    const tokens = [];
+    if (!index || index.size === 0) return [{ text, entry: null }];
+    const maxLen = Math.max(...Array.from(index.keys(), (k) => k.length));
+    let i = 0;
+    while (i < text.length) {
+      let matched = null;
+      const longest = Math.min(maxLen, text.length - i);
+      for (let len = longest; len >= 1; len--) {
+        const candidate = text.substring(i, i + len);
+        if (index.has(candidate)) {
+          matched = candidate;
+          break;
+        }
+      }
+      if (matched) {
+        tokens.push({ text: matched, entry: index.get(matched) });
+        i += matched.length;
+      } else {
+        const last = tokens[tokens.length - 1];
+        if (last && last.entry === null) {
+          last.text += text[i];
+        } else {
+          tokens.push({ text: text[i], entry: null });
+        }
+        i += 1;
+      }
+    }
+    return tokens;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  const DEFAULT_TEXT_SIZE = 24; // matches content.css's original #ka-subtitle-overlay font-size
+  const DEFAULT_TEXT_COLOR = '#ffffff';
+  const DEFAULT_HIGHLIGHT_COLOR = '#9a00fe';
+
   function normalizeSettings(s) {
     return {
       enabled: !s || s.enabled !== false,
       autoPause: !s || s.autoPause !== false,
+      textSize: (s && s.textSize) || DEFAULT_TEXT_SIZE,
+      textColor: (s && s.textColor) || DEFAULT_TEXT_COLOR,
+      // 'color': known words shown in the highlight color as text.
+      // 'outline': known words keep the normal text color but get a box in
+      // the highlight color drawn around them instead - some users find
+      // colored CJK text harder to read against a bright video than an
+      // outline is. One color setting covers both, since it's the same
+      // "this word is known" accent either way, just applied differently.
+      highlightStyle: (s && s.highlightStyle) || 'color',
+      highlightColor: (s && s.highlightColor) || DEFAULT_HIGHLIGHT_COLOR,
     };
   }
 
@@ -167,11 +222,14 @@
     const data = backupCache.data;
     data.studyDecks = data.studyDecks || [];
     let deck;
+    let deckName;
     if (typeof deckIndexOrNewName === 'number') {
       deck = data.studyDecks[deckIndexOrNewName];
+      deckName = deck.name;
     } else {
+      deckName = deckIndexOrNewName;
       deck = {
-        name: deckIndexOrNewName,
+        name: deckName,
         cards: [],
         newCardsPerDay: 10,
         newCardsIntroducedDate: null,
@@ -185,7 +243,7 @@
       data.studyDecks.push(deck);
     }
     deck.cards = deck.cards || [];
-    deck.cards.push({
+    const card = {
       japanese,
       hiragana: reading || '',
       romaji: '',
@@ -202,8 +260,15 @@
       isStarred: false,
       challengeDay: null,
       cardType: 'Vocab',
-    });
+    };
+    deck.cards.push(card);
     backupCache.unsyncedCount = (backupCache.unsyncedCount || 0) + 1;
+    // Tracked separately from the cached snapshot so syncing can re-apply
+    // just these additions onto whatever's freshest on the cloud, instead of
+    // uploading this whole (possibly stale) cached copy wholesale - see
+    // popup.js's uploadBackup.
+    backupCache.pendingAdditions = backupCache.pendingAdditions || [];
+    backupCache.pendingAdditions.push({ deckName, card });
     lookupIndex.set(japanese, { reading: reading || '', meaning: meaning || '' });
     await storageSet({ [KA_STORAGE_KEYS.backup]: backupCache });
   }
@@ -263,11 +328,24 @@
     } else {
       const hint = document.createElement('div');
       hint.className = 'ka-status';
-      hint.textContent = 'Not in your dictionary/decks - add it manually:';
+      hint.textContent = 'Not in your dictionary/decks:';
       popup.appendChild(hint);
+
+      // Same external hand-off as the app's own openGoogleTranslate
+      // (lib/translation_service.dart) - there's no in-app translation API
+      // wired up here either, so this is the equivalent stand-in.
+      const translateBtn = document.createElement('button');
+      translateBtn.className = 'ka-secondary-btn';
+      translateBtn.textContent = 'Open in Google Translate';
+      translateBtn.addEventListener('click', () => {
+        const url = `https://translate.google.com/?sl=ja&tl=en&text=${encodeURIComponent(matchedText)}&op=translate`;
+        window.open(url, '_blank');
+      });
+      popup.appendChild(translateBtn);
+
       const meaningInput = document.createElement('input');
       meaningInput.type = 'text';
-      meaningInput.placeholder = 'English meaning (optional)';
+      meaningInput.placeholder = 'English meaning (optional, for adding to a deck)';
       popup.appendChild(meaningInput);
       popup._meaningInput = meaningInput;
     }
@@ -339,19 +417,53 @@
     return document.querySelector('.ytp-caption-window-container');
   }
 
+  // Renders each line through tokenizeText so recognized dictionary/deck
+  // words get wrapped in a clickable, purple-highlighted span - the same
+  // "known word" treatment Reading and Listening give automatically in the
+  // app itself, rather than requiring a manual drag-select every time.
+  function renderOverlayLine(line) {
+    if (!lookupIndex) return escapeHtml(line);
+    return tokenizeText(line, lookupIndex)
+      .map((t) =>
+        t.entry
+          ? `<span class="ka-highlight ka-highlight-${settings.highlightStyle}" data-word="${escapeHtml(t.text)}">${escapeHtml(t.text)}</span>`
+          : escapeHtml(t.text)
+      )
+      .join('');
+  }
+
   function syncOverlayFromDom() {
     const overlay = ensureOverlay();
     if (!overlay) return;
+    overlay.style.fontSize = `${settings.textSize}px`;
+    overlay.style.color = settings.textColor;
+    overlay.style.setProperty('--ka-highlight-color', settings.highlightColor);
     if (!settings.enabled) {
-      overlay.textContent = '';
+      overlay.innerHTML = '';
       return;
     }
     const container = findCaptionContainer();
-    const segments = container ? container.querySelectorAll('.ytp-caption-segment') : [];
-    overlay.textContent = Array.from(segments)
+    const segments = container ? Array.from(container.querySelectorAll('.ytp-caption-segment')) : [];
+    if (!segments.length) {
+      overlay.innerHTML = '';
+      return;
+    }
+    // Some videos use a "rolling" caption style where YouTube keeps several
+    // previous lines in the DOM at once instead of removing them - capped
+    // to one line by only rendering whichever segments share the same
+    // parent as the most recently added one (segments belonging to the
+    // current line, even if it's internally split into multiple styled
+    // runs), discarding everything earlier.
+    const lastSegment = segments[segments.length - 1];
+    const lastLineParent = lastSegment.parentElement;
+    const currentLineSegments = lastLineParent
+      ? segments.filter((s) => s.parentElement === lastLineParent)
+      : [lastSegment];
+    const line = currentLineSegments
       .map((el) => (el.textContent || '').trim())
       .filter(Boolean)
-      .join('\n');
+      .join('');
+    overlay.innerHTML = line ? renderOverlayLine(line) : '';
   }
 
   let captionObserver = null;
@@ -396,7 +508,19 @@
     if (!withinCaptions(e.target)) return;
     const selection = window.getSelection();
     const text = selection ? selection.toString().trim() : '';
-    if (!text) return;
+
+    if (!text) {
+      // No drag happened - a plain click on an already-highlighted word
+      // still opens its lookup directly, matching "click to auto select"
+      // instead of requiring a precise drag across a word that's already
+      // known to be a match.
+      const wordSpan = e.target.closest ? e.target.closest('.ka-highlight') : null;
+      if (wordSpan) {
+        const word = wordSpan.dataset.word;
+        showLookupPopup(wordSpan.getBoundingClientRect(), word, lookupIndex ? lookupIndex.get(word) : null);
+      }
+      return;
+    }
 
     if (!lookupIndex) {
       showHintToast('Open the extension and download your data before looking words up.');
@@ -454,6 +578,73 @@
     pauseLabel.appendChild(pauseCheckbox);
     pauseLabel.appendChild(document.createTextNode('Auto-pause on selection'));
     panel.appendChild(pauseLabel);
+
+    const sizeLabel = document.createElement('div');
+    sizeLabel.className = 'ka-settings-subheading';
+    const sizeValueSpan = document.createElement('span');
+    sizeValueSpan.textContent = `${settings.textSize}px`;
+    sizeLabel.appendChild(document.createTextNode('Subtitle text size '));
+    sizeLabel.appendChild(sizeValueSpan);
+    panel.appendChild(sizeLabel);
+
+    const sizeSlider = document.createElement('input');
+    sizeSlider.type = 'range';
+    sizeSlider.min = '14';
+    sizeSlider.max = '48';
+    sizeSlider.step = '2';
+    sizeSlider.value = String(settings.textSize);
+    sizeSlider.addEventListener('input', () => {
+      sizeValueSpan.textContent = `${sizeSlider.value}px`;
+      overlayEl.style.fontSize = `${sizeSlider.value}px`; // live preview while dragging
+    });
+    sizeSlider.addEventListener('change', () => updateSettings({ textSize: Number(sizeSlider.value) }));
+    panel.appendChild(sizeSlider);
+
+    const colorLabel = document.createElement('label');
+    colorLabel.className = 'ka-color-row';
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.value = settings.textColor;
+    colorInput.addEventListener('input', () => {
+      overlayEl.style.color = colorInput.value; // live preview
+    });
+    colorInput.addEventListener('change', () => updateSettings({ textColor: colorInput.value }));
+    colorLabel.appendChild(document.createTextNode('Subtitle text color'));
+    colorLabel.appendChild(colorInput);
+    panel.appendChild(colorLabel);
+
+    const styleLabel = document.createElement('div');
+    styleLabel.className = 'ka-settings-subheading';
+    styleLabel.textContent = 'Highlight style for known words';
+    panel.appendChild(styleLabel);
+
+    const styleSelect = document.createElement('select');
+    const styleOptions = [
+      { value: 'color', label: 'Colored text' },
+      { value: 'outline', label: 'Outlined box (keeps normal text color)' },
+    ];
+    for (const opt of styleOptions) {
+      const option = document.createElement('option');
+      option.value = opt.value;
+      option.textContent = opt.label;
+      styleSelect.appendChild(option);
+    }
+    styleSelect.value = settings.highlightStyle;
+    styleSelect.addEventListener('change', () => updateSettings({ highlightStyle: styleSelect.value }));
+    panel.appendChild(styleSelect);
+
+    const highlightColorLabel = document.createElement('label');
+    highlightColorLabel.className = 'ka-color-row';
+    const highlightColorInput = document.createElement('input');
+    highlightColorInput.type = 'color';
+    highlightColorInput.value = settings.highlightColor;
+    highlightColorInput.addEventListener('input', () => {
+      overlayEl.style.setProperty('--ka-highlight-color', highlightColorInput.value); // live preview
+    });
+    highlightColorInput.addEventListener('change', () => updateSettings({ highlightColor: highlightColorInput.value }));
+    highlightColorLabel.appendChild(document.createTextNode('Highlight color'));
+    highlightColorLabel.appendChild(highlightColorInput);
+    panel.appendChild(highlightColorLabel);
 
     const note = document.createElement('div');
     note.className = 'ka-settings-subheading';

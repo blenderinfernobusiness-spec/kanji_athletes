@@ -22,6 +22,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'backup_data.dart';
 import 'cloud_sync_page.dart';
+import 'quick_sync_button.dart';
 // Application entrypoint
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -413,6 +414,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         elevation: 0,
         // 2. Action buttons on the right (wrapped with Center for consistent vertical alignment)
         actions: [
+          Center(child: syncAppBarAction(context, widget.isDarkMode)),
           Center(
             child: IconButton(
               icon: const Icon(Icons.add),
@@ -957,10 +959,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   "Tatoeba",
                   "Example sentences, each individually credited to its contributor where shown, licensed CC BY.",
                 ),
-                source(
-                  "MyMemory",
-                  "Free machine translation used for on-demand sentence/selection translation.",
-                ),
               ],
             ),
           ),
@@ -1088,7 +1086,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: Container(),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: GestureDetector(
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => StatsScreen(isDarkMode: widget.isDarkMode)),
+                              );
+                              _pickRandomPracticeKanji();
+                            },
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.bar_chart, size: 32, color: widget.isDarkMode ? Colors.white : Colors.black87),
+                                const SizedBox(height: 2),
+                                Text(
+                                  "Stats",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 8, color: widget.isDarkMode ? Colors.white : Colors.black87),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                       GestureDetector(
                         onTap: () async {
@@ -1148,7 +1169,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
                         child: Text(
                           "Welcome Home",
-                          style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: MediaQuery.of(context).size.width < 600 ? 22 : 32,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       Expanded(
@@ -1366,8 +1390,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 500),
-                          child: Row(
+                          // IntrinsicHeight + stretch makes all three buttons
+                          // match the tallest one's height - without it, a
+                          // subtle per-glyph font-metric difference between
+                          // the Japanese labels (seen most on mobile/web)
+                          // could make one button render taller than its
+                          // siblings despite identical padding/text structure.
+                          child: IntrinsicHeight(
+                            child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                           // Complete Dictionary button
                           Expanded(
@@ -1521,6 +1553,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                         ),
+                        ),
                       ),
                     ],
                   ),
@@ -1581,32 +1614,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // Stats Button (Left Side)
-          Positioned(
-            // Use the top system padding so the button aligns correctly on Android
-            top: MediaQuery.of(context).padding.top + 8,
-            left: 20,
-            child: GestureDetector(
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => StatsScreen(isDarkMode: widget.isDarkMode)),
-                );
-                _pickRandomPracticeKanji();
-              },
-              child: Column(
-                children: [
-                  Icon(Icons.bar_chart, size: 32, color: widget.isDarkMode ? Colors.white : Colors.black87),
-                  const SizedBox(height: 2),
-                  Text(
-                    "Stats",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 8, color: widget.isDarkMode ? Colors.white : Colors.black87),
-                  ),
-                ],
-              ),
-            ),
-          ),
               ],
             ),
           ),

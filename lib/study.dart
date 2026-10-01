@@ -11,6 +11,7 @@ import 'reading_tab.dart';
 import 'lesson_data.dart';
 import 'lesson_viewer_screen.dart';
 import 'similar_kanji_screen.dart';
+import 'quick_sync_button.dart';
 
 class StudyScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -780,6 +781,7 @@ class _StudyScreenState extends State<StudyScreen> {
           backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
           foregroundColor: widget.isDarkMode ? Colors.white : Colors.black87,
           elevation: 0,
+          actions: [syncAppBarAction(context, widget.isDarkMode)],
           bottom: TabBar(
             indicatorColor: const Color(0xFF9A00FE),
             labelColor: const Color(0xFF9A00FE),

@@ -109,7 +109,7 @@ async function downloadBackup() {
     if (!res.ok) throw new Error(`Download failed (${res.status})`);
     const data = await res.json();
     await storageSet({
-      [KA_STORAGE_KEYS.backup]: { data, downloadedAt: new Date().toISOString(), unsyncedCount: 0 },
+      [KA_STORAGE_KEYS.backup]: { data, downloadedAt: new Date().toISOString(), unsyncedCount: 0, pendingAdditions: [] },
     });
     setOpStatus('Downloaded.');
   } catch (e) {
@@ -119,6 +119,13 @@ async function downloadBackup() {
   }
 }
 
+// Merge sync: rather than uploading this extension's own (possibly stale)
+// cached copy wholesale - which could silently erase study progress made
+// elsewhere since this was last downloaded - this pulls whatever's freshest
+// on the cloud right now and re-applies just the cards added here on top of
+// it. The extension only ever adds new cards, never edits existing ones, so
+// this can't conflict with anything that happened on another device in the
+// meantime; it's always additive.
 async function uploadBackup() {
   setOpStatus('Syncing…');
   try {
@@ -127,16 +134,57 @@ async function uploadBackup() {
     const backup = await storageGet(KA_STORAGE_KEYS.backup);
     if (!backup) throw new Error('Nothing to sync yet');
     const path = encodeURIComponent(kaBackupObjectPath(auth.uid));
+
+    let merged = backup.data;
+    const getRes = await fetch(
+      `https://firebasestorage.googleapis.com/v0/b/${KA_FIREBASE_STORAGE_BUCKET}/o/${path}?alt=media`,
+      { headers: { Authorization: `Bearer ${auth.idToken}` } }
+    );
+    if (getRes.ok) {
+      const fresh = await getRes.json();
+      fresh.studyDecks = fresh.studyDecks || [];
+      for (const { deckName, card } of backup.pendingAdditions || []) {
+        let deck = fresh.studyDecks.find((d) => d.name === deckName);
+        if (!deck) {
+          deck = {
+            name: deckName,
+            cards: [],
+            newCardsPerDay: 10,
+            newCardsIntroducedDate: null,
+            newCardsIntroducedToday: 0,
+            challengeStartDate: null,
+            completedLessonDays: [],
+            lessonSetId: null,
+            deckCreatedDate: new Date().toISOString().split('T')[0],
+            hasShownAnswerIntro: false,
+          };
+          fresh.studyDecks.push(deck);
+        }
+        deck.cards = deck.cards || [];
+        deck.cards.push(card);
+      }
+      merged = fresh;
+    } else if (getRes.status !== 404) {
+      throw new Error(`Fetching latest cloud data failed (${getRes.status})`);
+    } // 404 = no cloud backup yet, nothing to merge with - upload this cache as-is
+
     const res = await fetch(
       `https://firebasestorage.googleapis.com/v0/b/${KA_FIREBASE_STORAGE_BUCKET}/o?uploadType=media&name=${path}`,
       {
         method: 'POST',
         headers: { Authorization: `Bearer ${auth.idToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(backup.data),
+        body: JSON.stringify(merged),
       }
     );
     if (!res.ok) throw new Error(`Upload failed (${res.status})`);
-    await storageSet({ [KA_STORAGE_KEYS.backup]: { ...backup, unsyncedCount: 0 } });
+    await storageSet({
+      [KA_STORAGE_KEYS.backup]: {
+        data: merged,
+        downloadedAt: new Date().toISOString(),
+        unsyncedCount: 0,
+        pendingAdditions: [],
+      },
+    });
     setOpStatus('Synced to cloud.');
   } catch (e) {
     setOpStatus(`Sync failed: ${e.message}`);

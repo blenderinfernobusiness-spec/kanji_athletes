@@ -34,6 +34,29 @@
   display: none;
 }
 
+/* Recognized dictionary/deck words, auto-highlighted the same way Reading
+   and Listening do it in the app itself - text-shadow is inherited from the
+   overlay above, so these keep the same dark-background outline. Two styles
+   (see the settings cog): colored text (original), or an outline box that
+   leaves the word in the normal subtitle color instead. */
+.ka-highlight {
+  cursor: pointer;
+}
+
+.ka-highlight-color {
+  color: var(--ka-highlight-color, #9a00fe);
+}
+
+.ka-highlight-outline {
+  border: 2px solid var(--ka-highlight-color, #9a00fe);
+  border-radius: 4px;
+  padding: 0 3px;
+}
+
+.ka-highlight:hover {
+  text-decoration: underline;
+}
+
 #ka-subtitle-overlay::selection {
   background: #9a00fe;
   color: #fff;
@@ -145,20 +168,43 @@
   cursor: pointer;
 }
 
+.ka-settings-panel label.ka-color-row {
+  justify-content: space-between;
+}
+
+.ka-settings-panel input[type="color"] {
+  width: 32px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: none;
+}
+
 .ka-settings-subheading {
   color: rgba(255, 255, 255, 0.6);
   margin: 10px 0 4px;
 }
 
-.ka-settings-panel select {
+.ka-settings-panel select,
+.ka-settings-panel input[type="range"] {
   width: 100%;
   box-sizing: border-box;
+}
+
+.ka-settings-panel select {
   padding: 6px;
   border-radius: 6px;
   border: none;
   background: #2a2a2a;
   color: #fff;
   font-size: 12px;
+}
+
+.ka-settings-panel input[type="range"] {
+  accent-color: #9a00fe;
+  margin: 2px 0 6px;
 }
 
 .ka-hint-toast {

@@ -10,6 +10,7 @@ import 'package:path/path.dart' as p;
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'set_preferences.dart';
+import 'quick_sync_button.dart';
 
 class DictionaryScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -452,6 +453,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
         ),
         backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
         actions: [
+                  syncAppBarAction(context, widget.isDarkMode),
                   if (_showHidden)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),

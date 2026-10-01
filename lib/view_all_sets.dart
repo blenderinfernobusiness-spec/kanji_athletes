@@ -8,6 +8,7 @@ import 'view_set.dart';
 import 'set_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quick_sync_button.dart';
 
 class ViewAllSetsScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -1967,6 +1968,7 @@ class _ViewAllSetsScreenState extends State<ViewAllSetsScreen> {
         ),
         backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
         actions: [
+          syncAppBarAction(context, widget.isDarkMode),
           IconButton(
             icon: Icon(Icons.add, color: widget.isDarkMode ? Colors.white : Colors.black),
             onPressed: _showAddSetDialog,

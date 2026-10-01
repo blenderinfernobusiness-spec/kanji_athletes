@@ -7,6 +7,7 @@ import 'set_preferences.dart';
 import 'study_data.dart';
 import 'user_profile.dart';
 import 'backup_data_legacy.dart';
+import 'cloud_sync_service.dart';
 
 // Format 2: exports only what's actually personal - custom sets/decks plus
 // small per-item patches against the shipped dictionary - instead of
@@ -341,4 +342,121 @@ Future<void> applyImportedJson(String content) async {
   }
 
   await SetPreferences.loadAllSets();
+}
+
+DateTime _parseDt(String? s) => DateTime.tryParse(s ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+
+// Merges [localJson] (this device's current export) with [cloudJson] (the
+// freshest cloud backup) so a sync can no longer silently drop one side's
+// changes the way a plain overwrite could - e.g. a phone reviewing cards
+// while the Chrome extension adds new ones before either has synced.
+// studyDecks get real per-card merging (matched by japanese+cardType, since
+// cards don't carry a separate stable id and are never renamed in practice):
+// a card or deck that's new on either side is always kept, and when the same
+// card exists on both sides, whichever was modified more recently (per-card
+// lastModified, maintained by saveStudyDecks) wins. Everything else
+// (profile/gems/custom sets/overrides/reading texts) is taken wholesale from
+// whichever side exported more recently, since nothing but decks realistically
+// gets touched on two devices in the same window. Known limitation, the same
+// one Anki accepts for its own sync: there's no tombstone for *deletions*, so
+// a deck or card removed on one side but left untouched on the other will
+// reappear after merging rather than staying deleted.
+Future<String> mergeBackups(String localJson, String? cloudJson) async {
+  if (cloudJson == null) return localJson; // nothing to merge against yet
+
+  final local = jsonDecode(localJson) as Map<String, dynamic>;
+  Map<String, dynamic> cloud;
+  try {
+    cloud = jsonDecode(cloudJson) as Map<String, dynamic>;
+  } catch (_) {
+    return localJson; // unreadable cloud data - don't let it clobber local
+  }
+  if (((cloud['exportFormatVersion'] as num?)?.toInt() ?? 1) < 2) {
+    return localJson; // legacy whole-dictionary cloud backup, nothing structured to diff against
+  }
+
+  final wholesale =
+      _parseDt(local['exportedAt'] as String?).isAfter(_parseDt(cloud['exportedAt'] as String?)) ? local : cloud;
+
+  final merged = {
+    'exportFormatVersion': _exportFormatVersion,
+    'exportedAt': DateTime.now().toIso8601String(),
+    'userProfile': wholesale['userProfile'],
+    'gems': wholesale['gems'],
+    'customSets': wholesale['customSets'],
+    'setOverrides': wholesale['setOverrides'],
+    'studyDecks': _mergeDeckLists(
+      (local['studyDecks'] as List<dynamic>?) ?? [],
+      (cloud['studyDecks'] as List<dynamic>?) ?? [],
+    ),
+    'readingTexts': wholesale['readingTexts'],
+  };
+
+  const encoder = JsonEncoder.withIndent('  ');
+  return encoder.convert(merged);
+}
+
+List<Map<String, dynamic>> _mergeDeckLists(List<dynamic> localRaw, List<dynamic> cloudRaw) {
+  final localByName = {for (final d in localRaw) (d as Map<String, dynamic>)['name'] as String: d};
+  final cloudByName = {for (final d in cloudRaw) (d as Map<String, dynamic>)['name'] as String: d};
+
+  final result = <Map<String, dynamic>>[];
+  for (final name in {...localByName.keys, ...cloudByName.keys}) {
+    final l = localByName[name];
+    final c = cloudByName[name];
+    if (l == null) {
+      result.add(Map<String, dynamic>.from(c!));
+    } else if (c == null) {
+      result.add(Map<String, dynamic>.from(l));
+    } else {
+      result.add(_mergeDeck(l, c));
+    }
+  }
+  return result;
+}
+
+Map<String, dynamic> _mergeDeck(Map<String, dynamic> l, Map<String, dynamic> c) {
+  final settingsSource =
+      _parseDt(l['lastModified'] as String?).isAfter(_parseDt(c['lastModified'] as String?)) ? l : c;
+
+  final lCards = <String, Map<String, dynamic>>{
+    for (final card in ((l['cards'] as List<dynamic>?) ?? []))
+      '${(card as Map<String, dynamic>)['japanese']}|${card['cardType']}': card,
+  };
+  final cCards = <String, Map<String, dynamic>>{
+    for (final card in ((c['cards'] as List<dynamic>?) ?? []))
+      '${(card as Map<String, dynamic>)['japanese']}|${card['cardType']}': card,
+  };
+
+  final mergedCards = <Map<String, dynamic>>[];
+  for (final key in {...lCards.keys, ...cCards.keys}) {
+    final lc = lCards[key];
+    final cc = cCards[key];
+    if (lc == null) {
+      mergedCards.add(cc!);
+    } else if (cc == null) {
+      mergedCards.add(lc);
+    } else {
+      mergedCards.add(
+        _parseDt(lc['lastModified'] as String?).isAfter(_parseDt(cc['lastModified'] as String?)) ? lc : cc,
+      );
+    }
+  }
+
+  return {...settingsSource, 'cards': mergedCards};
+}
+
+// Downloads the latest cloud backup (if any), merges it with this device's
+// current data so nothing from either side is lost, applies the merged
+// result back to this device, and uploads it - all automatically, with
+// nothing for the user to choose. This is what every "sync"/"upload" action
+// should call instead of a plain buildExportJson + uploadBackup, so syncing
+// from two places (another device, or the Chrome extension) between syncs
+// can no longer clobber one or the other.
+Future<void> syncToCloud() async {
+  final localJson = await buildExportJson();
+  final cloudJson = await CloudSyncService.downloadBackup();
+  final mergedJson = await mergeBackups(localJson, cloudJson);
+  await applyImportedJson(mergedJson);
+  await CloudSyncService.uploadBackup(mergedJson);
 }

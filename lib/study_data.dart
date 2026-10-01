@@ -12,8 +12,78 @@ Future<List<StudyDeck>> loadStudyDecks() async {
   return decoded.map((d) => StudyDeck.fromMap(Map<String, dynamic>.from(d))).toList();
 }
 
+// Deep-enough equality for the plain-data maps StudyCard/StudyDeck.toMap()
+// produce (strings/numbers/bools/nulls plus string lists) - good enough to
+// tell "actually edited" apart from "resaved unchanged" without a new
+// collection-equality dependency.
+bool _mapValueEquals(dynamic a, dynamic b) {
+  if (a is List && b is List) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!_mapValueEquals(a[i], b[i])) return false;
+    }
+    return true;
+  }
+  if (a is Map && b is Map) {
+    if (a.length != b.length) return false;
+    for (final key in a.keys) {
+      if (!b.containsKey(key) || !_mapValueEquals(a[key], b[key])) return false;
+    }
+    return true;
+  }
+  return a == b;
+}
+
+// Stamps lastModified on every card/deck that actually changed since the
+// last save, by diffing against what's currently on disk - centralized here
+// (the one choke point literally every mutation already saves through)
+// instead of hand-instrumenting every place a card gets edited, reviewed,
+// starred, added, etc. across the app. This is what lets backup_data.dart's
+// merge-on-sync tell which side of a sync is newer for a given card.
 Future<void> saveStudyDecks(List<StudyDeck> decks) async {
   final prefs = await SharedPreferences.getInstance();
+  final previous = await loadStudyDecks();
+  final previousDecksByName = {for (final d in previous) d.name: d};
+  final nowStamp = DateTime.now().toUtc().toIso8601String();
+
+  for (final deck in decks) {
+    final prevDeck = previousDecksByName[deck.name];
+    final prevCardsByKey = prevDeck == null
+        ? <String, StudyCard>{}
+        : {for (final c in prevDeck.cards) '${c.japanese}|${c.cardType}': c};
+
+    var deckChanged = prevDeck == null || deck.cards.length != prevDeck.cards.length;
+
+    for (final card in deck.cards) {
+      final prevCard = prevCardsByKey['${card.japanese}|${card.cardType}'];
+      if (prevCard == null) {
+        card.lastModified = nowStamp;
+        deckChanged = true;
+        continue;
+      }
+      final currentMap = card.toMap()..remove('lastModified');
+      final prevMap = prevCard.toMap()..remove('lastModified');
+      if (_mapValueEquals(currentMap, prevMap)) {
+        card.lastModified = prevCard.lastModified;
+      } else {
+        card.lastModified = nowStamp;
+        deckChanged = true;
+      }
+    }
+
+    if (!deckChanged && prevDeck != null) {
+      final deckMap = deck.toMap()
+        ..remove('cards')
+        ..remove('lastModified');
+      final prevDeckMap = prevDeck.toMap()
+        ..remove('cards')
+        ..remove('lastModified');
+      if (!_mapValueEquals(deckMap, prevDeckMap)) deckChanged = true;
+    }
+
+    deck.lastModified = deckChanged ? nowStamp : prevDeck?.lastModified;
+  }
+
   await prefs.setString(_studyDecksPrefsKey, jsonEncode(decks.map((d) => d.toMap()).toList()));
 }
 
@@ -368,6 +438,12 @@ class StudyCard {
   // differently by kind rather than just study-mode mechanics.
   String cardType;
 
+  // UTC ISO8601 timestamp of this card's last actual content change,
+  // maintained automatically by saveStudyDecks (not set by hand elsewhere).
+  // Lets a merge-on-sync (see backup_data.dart's mergeBackups) tell which
+  // side's copy of a card is newer when the same card exists on both ends.
+  String? lastModified;
+
   StudyCard({
     required this.japanese,
     required this.hiragana,
@@ -386,6 +462,7 @@ class StudyCard {
     this.challengeDay,
     this.memoryImageAsset,
     this.cardType = 'Vocab',
+    this.lastModified,
   }) : kanjiVGCodes = kanjiVGCodes ?? [];
 
   Map<String, dynamic> toMap() => {
@@ -406,6 +483,7 @@ class StudyCard {
     'challengeDay': challengeDay,
     'memoryImageAsset': memoryImageAsset,
     'cardType': cardType,
+    'lastModified': lastModified,
   };
 
   factory StudyCard.fromMap(Map<String, dynamic> map) => StudyCard(
@@ -426,6 +504,7 @@ class StudyCard {
     challengeDay: map['challengeDay'],
     memoryImageAsset: map['memoryImageAsset'],
     cardType: map['cardType'] ?? 'Vocab',
+    lastModified: map['lastModified'],
   );
 }
 
@@ -595,6 +674,13 @@ class StudyDeck {
   // decks and ordinary custom ones alike.
   bool hasShownAnswerIntro;
 
+  // UTC ISO8601 timestamp of this deck's last change to its own settings or
+  // card list, maintained automatically by saveStudyDecks. Used by a
+  // merge-on-sync to decide whose deck-level settings to keep when the same
+  // deck name exists on both sides - card-level merging doesn't depend on
+  // this, each card carries its own lastModified instead.
+  String? lastModified;
+
   StudyDeck({
     required this.name,
     List<StudyCard>? cards,
@@ -606,6 +692,7 @@ class StudyDeck {
     this.lessonSetId,
     this.deckCreatedDate,
     this.hasShownAnswerIntro = false,
+    this.lastModified,
   }) : cards = cards ?? [],
        completedLessonDays = completedLessonDays ?? [];
 
@@ -620,6 +707,7 @@ class StudyDeck {
     'lessonSetId': lessonSetId,
     'deckCreatedDate': deckCreatedDate,
     'hasShownAnswerIntro': hasShownAnswerIntro,
+    'lastModified': lastModified,
   };
 
   factory StudyDeck.fromMap(Map<String, dynamic> map) {
@@ -640,6 +728,7 @@ class StudyDeck {
       // history is clearly not "first use" - default it to already-shown
       // rather than surprising a returning user with a tutorial slide.
       hasShownAnswerIntro: map['hasShownAnswerIntro'] ?? cards.any((c) => c.nextReviewDate != null),
+      lastModified: map['lastModified'],
     );
   }
 }
