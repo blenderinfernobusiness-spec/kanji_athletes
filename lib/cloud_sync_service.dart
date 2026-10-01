@@ -32,6 +32,13 @@ class CloudSyncService {
 
   static Reference _backupRef(String uid) => FirebaseStorage.instance.ref('backups/$uid/export.json');
 
+  // Firebase Storage calls have no built-in timeout - on a flaky connection
+  // the underlying future can simply never resolve (no exception, nothing to
+  // catch), which left Sync's loading dialog stuck on screen forever with no
+  // way to recover short of force-quitting the app. A hard timeout turns
+  // that into a normal, catchable failure instead.
+  static const _networkTimeout = Duration(seconds: 30);
+
   // Uploads [content] (the same string produced for local export) as this
   // account's single backup file, replacing whatever was there before -
   // "last save wins" across every signed-in device, matching the export
@@ -40,7 +47,9 @@ class CloudSyncService {
     final user = currentUser;
     if (user == null) throw StateError('Not signed in');
     final bytes = Uint8List.fromList(utf8.encode(content));
-    await _backupRef(user.uid).putData(bytes, SettableMetadata(contentType: 'application/json'));
+    await _backupRef(
+      user.uid,
+    ).putData(bytes, SettableMetadata(contentType: 'application/json')).timeout(_networkTimeout);
   }
 
   // Downloads this account's backup file content, or null if none exists yet.
@@ -48,7 +57,9 @@ class CloudSyncService {
     final user = currentUser;
     if (user == null) throw StateError('Not signed in');
     try {
-      final bytes = await _backupRef(user.uid).getData(20 * 1024 * 1024); // 20MB cap, well above any real export
+      final bytes = await _backupRef(
+        user.uid,
+      ).getData(20 * 1024 * 1024).timeout(_networkTimeout); // 20MB cap, well above any real export
       if (bytes == null) return null;
       return utf8.decode(bytes);
     } on FirebaseException catch (e) {

@@ -344,119 +344,420 @@ Future<void> applyImportedJson(String content) async {
   await SetPreferences.loadAllSets();
 }
 
-DateTime _parseDt(String? s) => DateTime.tryParse(s ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+// "Sync" is an override, not a two-sided merge: this device's current data
+// (including anything you just deleted) always becomes the new cloud truth.
+// A plain override alone would still lose anything contributed elsewhere
+// (e.g. a word added via the Chrome extension) since the last time this
+// device synced, so before overriding, syncToCloud pulls forward just the
+// entries on the cloud this device has genuinely never seen before - a new
+// deck, a new card in a deck that still exists here, a new custom dictionary
+// item, a new reading text. The key distinction from a real merge: whether
+// something's "new" is decided by comparing against a persisted snapshot of
+// what this device saw last time, not against what's merely absent right
+// now - so a deck/card/text that WAS seen before and is missing now is
+// recognised as a deliberate deletion and is never resurrected. This
+// replaces an earlier two-sided merge that had no such distinction: deleting
+// a deck locally didn't stop it reappearing from the cloud on the next sync.
+const String _syncSnapshotPrefsKey = 'sync_seen_snapshot';
 
-// Merges [localJson] (this device's current export) with [cloudJson] (the
-// freshest cloud backup) so a sync can no longer silently drop one side's
-// changes the way a plain overwrite could - e.g. a phone reviewing cards
-// while the Chrome extension adds new ones before either has synced.
-// studyDecks get real per-card merging (matched by japanese+cardType, since
-// cards don't carry a separate stable id and are never renamed in practice):
-// a card or deck that's new on either side is always kept, and when the same
-// card exists on both sides, whichever was modified more recently (per-card
-// lastModified, maintained by saveStudyDecks) wins. Everything else
-// (profile/gems/custom sets/overrides/reading texts) is taken wholesale from
-// whichever side exported more recently, since nothing but decks realistically
-// gets touched on two devices in the same window. Known limitation, the same
-// one Anki accepts for its own sync: there's no tombstone for *deletions*, so
-// a deck or card removed on one side but left untouched on the other will
-// reappear after merging rather than staying deleted.
-Future<String> mergeBackups(String localJson, String? cloudJson) async {
-  if (cloudJson == null) return localJson; // nothing to merge against yet
+class _SyncSnapshot {
+  final Set<String> deckNames;
+  final Map<String, Set<String>> cardKeysByDeck;
+  final Set<String> customSetKeys;
+  final Map<String, Set<String>> customSetItemKeys;
+  final Set<String> overrideSetKeys;
+  final Map<String, Set<String>> overrideItemKeys;
+  final Set<String> readingTextIds;
 
-  final local = jsonDecode(localJson) as Map<String, dynamic>;
-  Map<String, dynamic> cloud;
-  try {
-    cloud = jsonDecode(cloudJson) as Map<String, dynamic>;
-  } catch (_) {
-    return localJson; // unreadable cloud data - don't let it clobber local
-  }
-  if (((cloud['exportFormatVersion'] as num?)?.toInt() ?? 1) < 2) {
-    return localJson; // legacy whole-dictionary cloud backup, nothing structured to diff against
-  }
+  _SyncSnapshot({
+    required this.deckNames,
+    required this.cardKeysByDeck,
+    required this.customSetKeys,
+    required this.customSetItemKeys,
+    required this.overrideSetKeys,
+    required this.overrideItemKeys,
+    required this.readingTextIds,
+  });
 
-  final wholesale =
-      _parseDt(local['exportedAt'] as String?).isAfter(_parseDt(cloud['exportedAt'] as String?)) ? local : cloud;
+  // An empty snapshot (first time this device has ever run this sync logic)
+  // treats everything on the cloud as "never seen" - i.e. pull all of it in,
+  // the safe default rather than wrongly treating unfamiliar cloud content
+  // as something this device already deleted.
+  factory _SyncSnapshot.empty() => _SyncSnapshot(
+    deckNames: {},
+    cardKeysByDeck: {},
+    customSetKeys: {},
+    customSetItemKeys: {},
+    overrideSetKeys: {},
+    overrideItemKeys: {},
+    readingTextIds: {},
+  );
 
-  final merged = {
-    'exportFormatVersion': _exportFormatVersion,
-    'exportedAt': DateTime.now().toIso8601String(),
-    'userProfile': wholesale['userProfile'],
-    'gems': wholesale['gems'],
-    'customSets': wholesale['customSets'],
-    'setOverrides': wholesale['setOverrides'],
-    'studyDecks': _mergeDeckLists(
-      (local['studyDecks'] as List<dynamic>?) ?? [],
-      (cloud['studyDecks'] as List<dynamic>?) ?? [],
-    ),
-    'readingTexts': wholesale['readingTexts'],
+  Map<String, dynamic> toJson() => {
+    'deckNames': deckNames.toList(),
+    'cardKeysByDeck': cardKeysByDeck.map((k, v) => MapEntry(k, v.toList())),
+    'customSetKeys': customSetKeys.toList(),
+    'customSetItemKeys': customSetItemKeys.map((k, v) => MapEntry(k, v.toList())),
+    'overrideSetKeys': overrideSetKeys.toList(),
+    'overrideItemKeys': overrideItemKeys.map((k, v) => MapEntry(k, v.toList())),
+    'readingTextIds': readingTextIds.toList(),
   };
 
-  const encoder = JsonEncoder.withIndent('  ');
-  return encoder.convert(merged);
+  factory _SyncSnapshot.fromJson(Map<String, dynamic> j) => _SyncSnapshot(
+    deckNames: Set<String>.from(j['deckNames'] as List<dynamic>? ?? const []),
+    cardKeysByDeck: (j['cardKeysByDeck'] as Map<String, dynamic>? ?? const {}).map(
+      (k, v) => MapEntry(k, Set<String>.from(v as List<dynamic>)),
+    ),
+    customSetKeys: Set<String>.from(j['customSetKeys'] as List<dynamic>? ?? const []),
+    customSetItemKeys: (j['customSetItemKeys'] as Map<String, dynamic>? ?? const {}).map(
+      (k, v) => MapEntry(k, Set<String>.from(v as List<dynamic>)),
+    ),
+    overrideSetKeys: Set<String>.from(j['overrideSetKeys'] as List<dynamic>? ?? const []),
+    overrideItemKeys: (j['overrideItemKeys'] as Map<String, dynamic>? ?? const {}).map(
+      (k, v) => MapEntry(k, Set<String>.from(v as List<dynamic>)),
+    ),
+    readingTextIds: Set<String>.from(j['readingTextIds'] as List<dynamic>? ?? const []),
+  );
 }
 
-List<Map<String, dynamic>> _mergeDeckLists(List<dynamic> localRaw, List<dynamic> cloudRaw) {
-  final localByName = {for (final d in localRaw) (d as Map<String, dynamic>)['name'] as String: d};
-  final cloudByName = {for (final d in cloudRaw) (d as Map<String, dynamic>)['name'] as String: d};
-
-  final result = <Map<String, dynamic>>[];
-  for (final name in {...localByName.keys, ...cloudByName.keys}) {
-    final l = localByName[name];
-    final c = cloudByName[name];
-    if (l == null) {
-      result.add(Map<String, dynamic>.from(c!));
-    } else if (c == null) {
-      result.add(Map<String, dynamic>.from(l));
-    } else {
-      result.add(_mergeDeck(l, c));
-    }
+Future<_SyncSnapshot> _loadSyncSnapshot() async {
+  final prefs = await SharedPreferences.getInstance();
+  final raw = prefs.getString(_syncSnapshotPrefsKey);
+  if (raw == null) return _SyncSnapshot.empty();
+  try {
+    return _SyncSnapshot.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+  } catch (_) {
+    return _SyncSnapshot.empty();
   }
+}
+
+Future<void> _saveSyncSnapshot(_SyncSnapshot snapshot) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(_syncSnapshotPrefsKey, jsonEncode(snapshot.toJson()));
+}
+
+// Captures the full key-set of [export] - this becomes "what this device has
+// seen" for next time, so anything missing on a future sync that WAS in this
+// set is recognised as a deletion rather than pulled back in.
+_SyncSnapshot _snapshotFromExport(Map<String, dynamic> export) {
+  final deckNames = <String>{};
+  final cardKeysByDeck = <String, Set<String>>{};
+  for (final d in ((export['studyDecks'] as List<dynamic>?) ?? [])) {
+    final deck = d as Map<String, dynamic>;
+    final name = deck['name'] as String? ?? '';
+    deckNames.add(name);
+    cardKeysByDeck[name] = {
+      for (final c in ((deck['cards'] as List<dynamic>?) ?? []))
+        '${(c as Map<String, dynamic>)['japanese']}|${c['cardType']}',
+    };
+  }
+
+  final customSetKeys = <String>{};
+  final customSetItemKeys = <String, Set<String>>{};
+  ((export['customSets'] as Map<String, dynamic>?) ?? {}).forEach((key, value) {
+    customSetKeys.add(key);
+    final set = value as Map<String, dynamic>;
+    customSetItemKeys[key] = {
+      for (final it in ((set['items'] as List<dynamic>?) ?? []))
+        '${(it as Map<String, dynamic>)['japanese']}|${it['itemType']}',
+    };
+  });
+
+  final overrideSetKeys = <String>{};
+  final overrideItemKeys = <String, Set<String>>{};
+  ((export['setOverrides'] as Map<String, dynamic>?) ?? {}).forEach((key, value) {
+    overrideSetKeys.add(key);
+    final o = value as Map<String, dynamic>;
+    overrideItemKeys[key] = {
+      for (final p in ((o['itemOverrides'] as List<dynamic>?) ?? []))
+        '${(p as Map<String, dynamic>)['japanese']}|${p['itemType']}',
+    };
+  });
+
+  final readingTextIds = <String>{
+    for (final t in ((export['readingTexts'] as List<dynamic>?) ?? []))
+      (t as Map<String, dynamic>)['id'] as String,
+  };
+
+  return _SyncSnapshot(
+    deckNames: deckNames,
+    cardKeysByDeck: cardKeysByDeck,
+    customSetKeys: customSetKeys,
+    customSetItemKeys: customSetItemKeys,
+    overrideSetKeys: overrideSetKeys,
+    overrideItemKeys: overrideItemKeys,
+    readingTextIds: readingTextIds,
+  );
+}
+
+// xp/level only ever go up during normal play, so the higher value from
+// either side is always the more progressed one - no tombstone needed since
+// a scalar like this was never "deleted" to begin with.
+Map<String, dynamic> _mergeUserProfile(dynamic l, dynamic c) {
+  final lm = (l as Map<String, dynamic>?) ?? {};
+  final cm = (c as Map<String, dynamic>?) ?? {};
+  final lXp = (lm['xp'] as num?)?.toInt() ?? 0;
+  final cXp = (cm['xp'] as num?)?.toInt() ?? 0;
+  final lLevel = (lm['level'] as num?)?.toInt() ?? 0;
+  final cLevel = (cm['level'] as num?)?.toInt() ?? 0;
+  return {'xp': lXp > cXp ? lXp : cXp, 'level': lLevel > cLevel ? lLevel : cLevel};
+}
+
+// Each gem slot is a one-way "unlocked" flag (see main.dart's _gemData) -
+// ORing the two sides together keeps whichever slots either device has
+// unlocked. Not tombstoned either: there's no per-slot "delete", only the
+// all-at-once reset, which is an explicit action this simple merge doesn't
+// need to special-case.
+dynamic _mergeGems(dynamic l, dynamic c) {
+  if (l is! List) return c ?? l;
+  if (c is! List) return l;
+  final length = l.length > c.length ? l.length : c.length;
+  return List.generate(length, (i) {
+    final lv = i < l.length && l[i] == true;
+    final cv = i < c.length && c[i] == true;
+    return lv || cv;
+  });
+}
+
+List<Map<String, dynamic>> _pullForwardDecks(dynamic localRaw, dynamic cloudRaw, _SyncSnapshot snapshot) {
+  final local = (localRaw as List<dynamic>?) ?? [];
+  final cloud = (cloudRaw as List<dynamic>?) ?? [];
+  final localByName = <String, Map<String, dynamic>>{
+    for (final d in local) (d as Map<String, dynamic>)['name'] as String: d,
+  };
+  final cloudByName = <String, Map<String, dynamic>>{
+    for (final d in cloud) (d as Map<String, dynamic>)['name'] as String: d,
+  };
+
+  final result = <String, Map<String, dynamic>>{
+    for (final entry in localByName.entries) entry.key: Map<String, dynamic>.from(entry.value),
+  };
+
+  cloudByName.forEach((name, cloudDeck) {
+    final localDeck = result[name];
+    if (localDeck == null) {
+      // Missing locally - only pull it in if this device has never seen a
+      // deck by this name before (truly new, e.g. created via the
+      // extension). Previously seen means it was deliberately deleted here.
+      if (!snapshot.deckNames.contains(name)) {
+        result[name] = Map<String, dynamic>.from(cloudDeck);
+      }
+      return;
+    }
+    final seenCardKeys = snapshot.cardKeysByDeck[name] ?? const <String>{};
+    final localCards = ((localDeck['cards'] as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
+    final localCardKeys = {for (final c in localCards) '${c['japanese']}|${c['cardType']}'};
+    final cloudCards = ((cloudDeck['cards'] as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
+    final additions = <Map<String, dynamic>>[
+      for (final c in cloudCards)
+        if (!localCardKeys.contains('${c['japanese']}|${c['cardType']}') &&
+            !seenCardKeys.contains('${c['japanese']}|${c['cardType']}'))
+          c,
+    ];
+    if (additions.isNotEmpty) {
+      localDeck['cards'] = [...localCards, ...additions];
+    }
+  });
+
+  return result.values.toList();
+}
+
+Map<String, dynamic> _pullForwardCustomSets(dynamic localRaw, dynamic cloudRaw, _SyncSnapshot snapshot) {
+  final local = (localRaw as Map<String, dynamic>?) ?? {};
+  final cloud = (cloudRaw as Map<String, dynamic>?) ?? {};
+  final result = <String, dynamic>{...local};
+
+  cloud.forEach((key, cloudSetRaw) {
+    final cloudSet = cloudSetRaw as Map<String, dynamic>;
+    final localSet = result[key] as Map<String, dynamic>?;
+    if (localSet == null) {
+      if (!snapshot.customSetKeys.contains(key)) result[key] = cloudSet;
+      return;
+    }
+    final seenItemKeys = snapshot.customSetItemKeys[key] ?? const <String>{};
+    final localItems = ((localSet['items'] as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
+    final localItemKeys = {for (final it in localItems) '${it['japanese']}|${it['itemType']}'};
+    final cloudItems = ((cloudSet['items'] as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
+    final additions = <Map<String, dynamic>>[
+      for (final it in cloudItems)
+        if (!localItemKeys.contains('${it['japanese']}|${it['itemType']}') &&
+            !seenItemKeys.contains('${it['japanese']}|${it['itemType']}'))
+          it,
+    ];
+    if (additions.isNotEmpty) localSet['items'] = [...localItems, ...additions];
+  });
+
   return result;
 }
 
-Map<String, dynamic> _mergeDeck(Map<String, dynamic> l, Map<String, dynamic> c) {
-  final settingsSource =
-      _parseDt(l['lastModified'] as String?).isAfter(_parseDt(c['lastModified'] as String?)) ? l : c;
+Map<String, dynamic> _pullForwardSetOverrides(dynamic localRaw, dynamic cloudRaw, _SyncSnapshot snapshot) {
+  final local = (localRaw as Map<String, dynamic>?) ?? {};
+  final cloud = (cloudRaw as Map<String, dynamic>?) ?? {};
+  final result = <String, dynamic>{...local};
 
-  final lCards = <String, Map<String, dynamic>>{
-    for (final card in ((l['cards'] as List<dynamic>?) ?? []))
-      '${(card as Map<String, dynamic>)['japanese']}|${card['cardType']}': card,
-  };
-  final cCards = <String, Map<String, dynamic>>{
-    for (final card in ((c['cards'] as List<dynamic>?) ?? []))
-      '${(card as Map<String, dynamic>)['japanese']}|${card['cardType']}': card,
-  };
+  cloud.forEach((key, cloudOverrideRaw) {
+    final cloudOverride = cloudOverrideRaw as Map<String, dynamic>;
+    final localOverride = result[key] as Map<String, dynamic>?;
+    if (localOverride == null) {
+      if (!snapshot.overrideSetKeys.contains(key)) result[key] = cloudOverride;
+      return;
+    }
+    final seenPatchKeys = snapshot.overrideItemKeys[key] ?? const <String>{};
+    final localPatches = ((localOverride['itemOverrides'] as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
+    final localPatchKeys = {for (final p in localPatches) '${p['japanese']}|${p['itemType']}'};
+    final cloudPatches = ((cloudOverride['itemOverrides'] as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
+    final additions = <Map<String, dynamic>>[
+      for (final p in cloudPatches)
+        if (!localPatchKeys.contains('${p['japanese']}|${p['itemType']}') &&
+            !seenPatchKeys.contains('${p['japanese']}|${p['itemType']}'))
+          p,
+    ];
+    if (additions.isNotEmpty) localOverride['itemOverrides'] = [...localPatches, ...additions];
+  });
 
-  final mergedCards = <Map<String, dynamic>>[];
-  for (final key in {...lCards.keys, ...cCards.keys}) {
-    final lc = lCards[key];
-    final cc = cCards[key];
-    if (lc == null) {
-      mergedCards.add(cc!);
-    } else if (cc == null) {
-      mergedCards.add(lc);
-    } else {
-      mergedCards.add(
-        _parseDt(lc['lastModified'] as String?).isAfter(_parseDt(cc['lastModified'] as String?)) ? lc : cc,
-      );
+  return result;
+}
+
+List<Map<String, dynamic>> _pullForwardReadingTexts(dynamic localRaw, dynamic cloudRaw, _SyncSnapshot snapshot) {
+  final local = ((localRaw as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
+  final cloud = ((cloudRaw as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
+  final localIds = {for (final t in local) t['id'] as String};
+  return [
+    ...local,
+    for (final t in cloud)
+      if (!localIds.contains(t['id'] as String) && !snapshot.readingTextIds.contains(t['id'] as String)) t,
+  ];
+}
+
+// Downloads the latest cloud backup (if any), pulls forward anything
+// genuinely new from it (see the _SyncSnapshot doc comment above), applies
+// the result back to this device, then uploads it as the new cloud truth -
+// an override, not a merge, so a deletion made on this device stays deleted.
+// Pure decision logic, pulled out of syncToCloud so it can be exercised in
+// tests without a live Firebase connection: given this device's current
+// export and the cloud's current backup (or null if there isn't one, or it
+// isn't readable), decides what the new cloud backup should become and
+// updates the seen-snapshot to match. Also used directly by syncToCloud.
+Future<String> computeSyncUpload(String localJson, String? cloudJson) async {
+  String finalJson = localJson;
+  if (cloudJson != null) {
+    try {
+      final local = jsonDecode(localJson) as Map<String, dynamic>;
+      final cloud = jsonDecode(cloudJson) as Map<String, dynamic>;
+      if (((cloud['exportFormatVersion'] as num?)?.toInt() ?? 1) >= 2) {
+        final snapshot = await _loadSyncSnapshot();
+        final pulled = {
+          'exportFormatVersion': _exportFormatVersion,
+          'exportedAt': DateTime.now().toIso8601String(),
+          'userProfile': _mergeUserProfile(local['userProfile'], cloud['userProfile']),
+          'gems': _mergeGems(local['gems'], cloud['gems']),
+          'customSets': _pullForwardCustomSets(local['customSets'], cloud['customSets'], snapshot),
+          'setOverrides': _pullForwardSetOverrides(local['setOverrides'], cloud['setOverrides'], snapshot),
+          'studyDecks': _pullForwardDecks(local['studyDecks'], cloud['studyDecks'], snapshot),
+          'readingTexts': _pullForwardReadingTexts(local['readingTexts'], cloud['readingTexts'], snapshot),
+        };
+        const encoder = JsonEncoder.withIndent('  ');
+        finalJson = encoder.convert(pulled);
+      }
+    } catch (_) {
+      // Unreadable cloud data - fall back to overriding with local as-is.
     }
   }
 
-  return {...settingsSource, 'cards': mergedCards};
+  await _saveSyncSnapshot(_snapshotFromExport(jsonDecode(finalJson) as Map<String, dynamic>));
+  return finalJson;
 }
 
-// Downloads the latest cloud backup (if any), merges it with this device's
-// current data so nothing from either side is lost, applies the merged
-// result back to this device, and uploads it - all automatically, with
-// nothing for the user to choose. This is what every "sync"/"upload" action
-// should call instead of a plain buildExportJson + uploadBackup, so syncing
-// from two places (another device, or the Chrome extension) between syncs
-// can no longer clobber one or the other.
+// Serializes concurrent syncToCloud calls rather than letting them race -
+// two overlapping syncs (a double-tap on the sync button, or two sync
+// surfaces like the app and the Mini companion both triggering around the
+// same moment, since they share the same local storage) would otherwise both
+// read "previous" state, both compute their own pulled-forward result, and
+// whichever uploads/saves last would silently clobber the other's work.
+Future<void>? _syncInFlight;
+
 Future<void> syncToCloud() async {
+  final existing = _syncInFlight;
+  if (existing != null) return existing;
+
+  final future = _doSyncToCloud();
+  _syncInFlight = future;
+  try {
+    await future;
+  } finally {
+    _syncInFlight = null;
+  }
+}
+
+Future<void> _doSyncToCloud() async {
   final localJson = await buildExportJson();
   final cloudJson = await CloudSyncService.downloadBackup();
-  final mergedJson = await mergeBackups(localJson, cloudJson);
-  await applyImportedJson(mergedJson);
-  await CloudSyncService.uploadBackup(mergedJson);
+  final finalJson = await computeSyncUpload(localJson, cloudJson);
+  await _applySyncedLocally(finalJson, localJson);
+  await CloudSyncService.uploadBackup(finalJson);
+}
+
+// applyImportedJson resets and re-saves the ENTIRE ~27,000-item/~5MB shipped
+// dictionary to disk every time it runs, which is the right thing for an
+// explicit "Download from cloud" restore but pointlessly expensive for an
+// ordinary sync: computeSyncUpload's customSets/setOverrides only ever
+// differ from what's already on this device when something was genuinely
+// pulled forward from elsewhere (rare - nobody but this device usually edits
+// the dictionary), so in the overwhelmingly common case there's nothing to
+// re-apply there at all. This compares the two and only pays for the full
+// dictionary reset when it's actually necessary, instead of on every single
+// sync regardless - that redundant work was what made Sync feel stuck/slow.
+Future<void> _applySyncedLocally(String finalJson, String localJson) async {
+  Map<String, dynamic> finalData;
+  Map<String, dynamic> localData;
+  try {
+    finalData = jsonDecode(finalJson) as Map<String, dynamic>;
+    localData = jsonDecode(localJson) as Map<String, dynamic>;
+  } catch (_) {
+    await applyImportedJson(finalJson);
+    return;
+  }
+
+  final dictionaryChanged =
+      jsonEncode(finalData['customSets']) != jsonEncode(localData['customSets']) ||
+      jsonEncode(finalData['setOverrides']) != jsonEncode(localData['setOverrides']);
+
+  if (dictionaryChanged) {
+    await applyImportedJson(finalJson);
+    return;
+  }
+
+  // Fast path: only profile/gems/decks/reading texts can have changed - the
+  // dictionary already matches, so skip touching it entirely.
+  final prefs = await SharedPreferences.getInstance();
+
+  if (finalData.containsKey('userProfile')) {
+    try {
+      final up = finalData['userProfile'] as Map<String, dynamic>;
+      await prefs.setInt('user_xp', (up['xp'] as num?)?.toInt() ?? 0);
+      await prefs.setInt('user_level', (up['level'] as num?)?.toInt() ?? 0);
+    } catch (_) {}
+  }
+
+  if (finalData.containsKey('gems')) {
+    await prefs.setString('gem_data', jsonEncode(finalData['gems']));
+  }
+
+  if (finalData.containsKey('studyDecks')) {
+    try {
+      final decks = (finalData['studyDecks'] as List<dynamic>)
+          .map((d) => StudyDeck.fromMap(Map<String, dynamic>.from(d as Map)))
+          .toList();
+      await saveStudyDecks(decks);
+    } catch (_) {}
+  }
+
+  if (finalData.containsKey('readingTexts')) {
+    try {
+      final texts = (finalData['readingTexts'] as List<dynamic>)
+          .map((t) => ReadingText.fromMap(Map<String, dynamic>.from(t as Map)))
+          .toList();
+      await saveReadingTexts(texts);
+    } catch (_) {}
+  }
 }

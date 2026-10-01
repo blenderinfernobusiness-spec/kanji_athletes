@@ -3,16 +3,19 @@ import 'package:flutter/material.dart';
 
 import 'backup_data.dart';
 import 'cloud_sync_service.dart';
+import 'sync_web_gate.dart';
 
 const Color _accent = Color(0xFF9A00FE);
 
 // Cloud backup/restore - email/password sign-in (see CloudSyncService's doc
 // comment for why not Google Sign-In), then a single backup file per
 // account shared by a phone, a desktop, and the Chrome extension alike.
-// "Sync" merges with whatever's already on the cloud (see backup_data.dart's
-// syncToCloud) rather than blindly overwriting it; only the explicit
-// "Download from cloud" below is a true replace, since that's the one action
-// that's supposed to discard what's on this device. Fully optional - the
+// "Sync" makes this device's data the new cloud backup - deletions stick -
+// but first pulls in anything genuinely new from elsewhere (see
+// backup_data.dart's syncToCloud) so a word added via the extension isn't
+// lost. "Download from cloud" below is the one true replace in the other
+// direction, and "Hard Override Upload" skips even the pull-forward step for
+// when you want this device's data to win outright. Fully optional - the
 // app works entirely offline without ever visiting this screen.
 class CloudSyncPage extends StatefulWidget {
   final bool isDarkMode;
@@ -81,8 +84,8 @@ class _CloudSyncPageState extends State<CloudSyncPage> {
         const SizedBox(height: 16),
         ElevatedButton.icon(
           onPressed: _busy ? null : _backupNow,
-          icon: const Icon(Icons.cloud_upload_outlined),
-          label: const Text('Upload to cloud'),
+          icon: const Icon(Icons.sync),
+          label: const Text('Sync'),
           style: ElevatedButton.styleFrom(backgroundColor: _accent, foregroundColor: Colors.white),
         ),
         const SizedBox(height: 12),
@@ -98,6 +101,18 @@ class _CloudSyncPageState extends State<CloudSyncPage> {
         ),
         const SizedBox(height: 24),
         const Divider(),
+        const SizedBox(height: 8),
+        Text(
+          'Only use the options below if Sync isn\'t resolving things correctly on its own.',
+          style: TextStyle(color: _fgMuted, fontSize: 12),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: _busy ? null : _forceUpload,
+          icon: const Icon(Icons.warning_amber, color: Colors.orangeAccent),
+          label: const Text('Hard Override Upload', style: TextStyle(color: Colors.orangeAccent)),
+          style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.orangeAccent)),
+        ),
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: _busy ? null : _deleteAccount,
@@ -157,6 +172,7 @@ class _CloudSyncPageState extends State<CloudSyncPage> {
   }
 
   Future<void> _backupNow() async {
+    if (!await confirmSyncAccessOnWeb(context, widget.isDarkMode) || !mounted) return;
     setState(() => _busy = true);
     try {
       await syncToCloud();
@@ -172,7 +188,52 @@ class _CloudSyncPageState extends State<CloudSyncPage> {
     }
   }
 
+  // Bypasses merging entirely and replaces the cloud backup with exactly
+  // what's on this device - the old pre-merge upload behaviour, kept as an
+  // explicit escape hatch for when a merge isn't resolving things correctly
+  // and you just want this device's data to become the source of truth.
+  Future<void> _forceUpload() async {
+    if (!await confirmSyncAccessOnWeb(context, widget.isDarkMode) || !mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _bg,
+        title: Text('Override cloud backup?', style: TextStyle(color: _fg)),
+        content: Text(
+          "This replaces your entire cloud backup with what's on this device, discarding anything from another "
+          "device or the Chrome extension that hasn't already been synced here. Only use this to recover from a "
+          "sync problem - otherwise use Sync above, which merges instead of overwriting.",
+          style: TextStyle(color: _fgMuted),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Override', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    setState(() => _busy = true);
+    try {
+      final content = await buildExportJson();
+      await CloudSyncService.uploadBackup(content);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Cloud backup overridden with this device's data")));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Override failed: $e')));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _restoreFromCloud() async {
+    if (!await confirmSyncAccessOnWeb(context, widget.isDarkMode) || !mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(

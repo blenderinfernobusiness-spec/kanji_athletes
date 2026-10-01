@@ -23,8 +23,19 @@ import 'firebase_options.dart';
 import 'backup_data.dart';
 import 'cloud_sync_page.dart';
 import 'quick_sync_button.dart';
-// Application entrypoint
-Future<void> main() async {
+import 'main_mini.dart';
+// Application entrypoint. A single build serves both the full app and
+// "Kanji Athletes Mini" (a small always-on-top flashcard/listening
+// companion window, see main_mini.dart) - launching with a --mini argument
+// (e.g. a separate desktop shortcut pointed at this same .exe) boots the
+// Mini UI instead, rather than maintaining a second Windows build/runner
+// just to get what amounts to a second launchable icon.
+Future<void> main(List<String> args) async {
+  if (args.contains('--mini')) {
+    await runMiniApp();
+    return;
+  }
+
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Ensure any migrations and saved sets are loaded before the app starts
