@@ -733,7 +733,6 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
     // read aloud to wait for.
     if (!spokeJapanese && !spokeEnglish) {
       setState(() => _playing = false);
-      if (mounted) showMissingVoiceSnackBar(context, widget.isDarkMode, 'Japanese');
       return;
     }
 

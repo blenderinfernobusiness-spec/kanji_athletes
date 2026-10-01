@@ -53,17 +53,22 @@ class AudioService {
 
   List<Map<String, dynamic>>? _voicesCache;
 
+  // Browsers (web's speechSynthesis) load their voice list asynchronously -
+  // querying it right after page load can come back empty before the
+  // browser's own voice-loading finishes. Only caching a non-empty result
+  // means an early empty query just gets retried next time instead of
+  // locking "no voices" in for the rest of the session.
   Future<List<Map<String, dynamic>>> _allVoices() async {
-    if (_voicesCache != null) return _voicesCache!;
+    if (_voicesCache != null && _voicesCache!.isNotEmpty) return _voicesCache!;
     try {
       final raw = await _tts.getVoices;
       final list = (raw as List).map((v) => Map<String, dynamic>.from(v as Map)).toList();
-      _voicesCache = list;
+      if (list.isNotEmpty) _voicesCache = list;
       return list;
     } catch (_) {
       // getVoices isn't implemented on every platform - callers fall back to
       // setLanguage-only behaviour when this comes back empty.
-      return [];
+      return _voicesCache ?? [];
     }
   }
 
