@@ -704,7 +704,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
       if (runId != _playbackRunId || !mounted || !_playing) return;
     }
 
-    await AudioService().speak(
+    final spokeJapanese = await AudioService().speak(
       entry.sentence.text,
       'Japanese',
       rate: _settings.japaneseSpeed,
@@ -714,16 +714,28 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
     if (runId != _playbackRunId || !mounted || !_playing) return;
 
     final translation = entry.sentence.translation;
+    bool spokeEnglish = false;
     if (translation != null && translation.isNotEmpty) {
-      await AudioService().speak(translation, 'English',
+      spokeEnglish = await AudioService().speak(translation, 'English',
           rate: _settings.englishSpeed, voiceName: _settings.englishVoiceName, waitForCompletion: true);
     } else if (entry.card.english.trim().isNotEmpty) {
       // No sentence-level translation from Tatoeba - fall back to the
       // card's own meaning rather than reaching for a translation API.
-      await AudioService().speak(entry.card.english.trim(), 'English',
+      spokeEnglish = await AudioService().speak(entry.card.english.trim(), 'English',
           rate: _settings.englishSpeed, voiceName: _settings.englishVoiceName, waitForCompletion: true);
     }
     if (runId != _playbackRunId || !mounted || !_playing) return;
+
+    // speak() returns instantly (no actual delay) when no voice is
+    // installed for a language, rather than genuinely speaking anything -
+    // without this check, auto-play would race through every remaining
+    // sentence in a fraction of a second since nothing is ever actually
+    // read aloud to wait for.
+    if (!spokeJapanese && !spokeEnglish) {
+      setState(() => _playing = false);
+      if (mounted) showMissingVoiceSnackBar(context, widget.isDarkMode, 'Japanese');
+      return;
+    }
 
     await Future.delayed(const Duration(milliseconds: 500));
     if (runId != _playbackRunId || !mounted || !_playing) return;
