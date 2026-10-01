@@ -14,11 +14,16 @@ class ChallengeKanji {
   final String japanese;
   final String english;
   final List<String> memoryNotes;
+  // Bundled asset path for this kanji's memory-technique illustration (e.g.
+  // 'assets/kanji_memory/706b.webp'), when one's been authored - null for
+  // the vast majority of entries until images are added in later batches.
+  final String? imageAsset;
 
   const ChallengeKanji({
     required this.japanese,
     required this.english,
     this.memoryNotes = const [],
+    this.imageAsset,
   });
 }
 
@@ -78,6 +83,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
         "A minecraft sun rising to start the day (because of the kanji's square/rectangular shape)",
         "A sun in the shape of two drawers",
       ],
+      imageAsset: 'assets/kanji_memory/065e5.webp',
     ),
     ChallengeKanji(
       japanese: '王',
@@ -86,6 +92,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
         "A crown tilted on it's side",
         "3 kings talking on a staircase",
       ],
+      imageAsset: 'assets/kanji_memory/0738b.webp',
     ),
     ChallengeKanji(
       japanese: '玉',
@@ -96,21 +103,25 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '口',
       english: 'Mouth, box, enclosure',
       memoryNotes: ["Someone opening their mouth wide open"],
+      imageAsset: 'assets/kanji_memory/053e3.webp',
     ),
     ChallengeKanji(
       japanese: '人',
       english: 'Person',
       memoryNotes: ["A person with a wide stance"],
+      imageAsset: 'assets/kanji_memory/04eba.webp',
     ),
     ChallengeKanji(
       japanese: '入',
       english: 'Enter, insert',
       memoryNotes: ["A person putting an enter sign in a box back to front"],
+      imageAsset: 'assets/kanji_memory/05165.webp',
     ),
     ChallengeKanji(
       japanese: '火',
       english: 'Fire',
       memoryNotes: ["A person holding fire in each hand"],
+      imageAsset: 'assets/kanji_memory/0706b.webp',
     ),
     ChallengeKanji(
       japanese: '子',
@@ -121,11 +132,13 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '小',
       english: 'Small',
       memoryNotes: ["A massive bow and a super small arrow"],
+      imageAsset: 'assets/kanji_memory/05c0f.webp',
     ),
     ChallengeKanji(
       japanese: '言',
       english: 'Say',
       memoryNotes: ["A person speaking and soundwaves coming from the mouth"],
+      imageAsset: 'assets/kanji_memory/08a00.webp',
     ),
   ],
   // Day 2
@@ -134,11 +147,13 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '大',
       english: 'Big',
       memoryNotes: ["A Big person with their arms wide apart"],
+      imageAsset: 'assets/kanji_memory/05927.webp',
     ),
     ChallengeKanji(
       japanese: '力',
       english: 'Power',
       memoryNotes: ["A strong man shouting kaaaa (kanji looks like the katakana symbol for ka カ)"],
+      imageAsset: 'assets/kanji_memory/0529b.webp',
     ),
     ChallengeKanji(
       japanese: '刀',
@@ -147,11 +162,13 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
         "The strong man in now holding a katana (katakana kanji 刀 looks like the previous kanji for power 力)",
         "The second stroke looks like the blade of the sword",
       ],
+      imageAsset: 'assets/kanji_memory/05200.webp',
     ),
     ChallengeKanji(
       japanese: '木',
       english: 'Tree, wood',
       memoryNotes: ["A tree with long hanging branches"],
+      imageAsset: 'assets/kanji_memory/06728.webp',
     ),
     ChallengeKanji(
       japanese: '水',
@@ -175,16 +192,19 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
         "It's raining underneath an umbrella",
         "The dots look like drops of rain",
       ],
+      imageAsset: 'assets/kanji_memory/096e8.webp',
     ),
     ChallengeKanji(
       japanese: '月',
       english: 'Moon, month',
       memoryNotes: ["Two drawers are the moon and wearing a cape"],
+      imageAsset: 'assets/kanji_memory/06708.webp',
     ),
     ChallengeKanji(
       japanese: '女',
       english: 'Woman, female',
       memoryNotes: ["A woman sitting with her legs crossed"],
+      imageAsset: 'assets/kanji_memory/05973.webp',
     ),
   ],
   // Day 3
@@ -198,6 +218,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '耳',
       english: 'Ear',
       memoryNotes: ["A person with eyes where his ears should be"],
+      imageAsset: 'assets/kanji_memory/08033.webp',
     ),
     ChallengeKanji(
       japanese: '可',
@@ -208,6 +229,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '川',
       english: 'River',
       memoryNotes: ["The number 3 floating in the river on its side (this kanji looks like the kanji for 3 三 on it's side)"],
+      imageAsset: 'assets/kanji_memory/05ddd.webp',
     ),
     ChallengeKanji(
       japanese: '半',
@@ -218,26 +240,31 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '舌',
       english: 'Tongue',
       memoryNotes: ["A person shouting 1000 with their tongue sticking out"],
+      imageAsset: 'assets/kanji_memory/0820c.webp',
     ),
     ChallengeKanji(
       japanese: '手',
       english: 'Hand',
       memoryNotes: ["a person holding their hand sideways like this"],
+      imageAsset: 'assets/kanji_memory/0624b.webp',
     ),
     ChallengeKanji(
       japanese: '心',
       english: 'Heart, mind, spirit',
       memoryNotes: ["3 shockwaves around a heart, the heart is turned and looks like an 'L' like the middle stroke of the kanji"],
+      imageAsset: 'assets/kanji_memory/05fc3.webp',
     ),
     ChallengeKanji(
       japanese: '目',
       english: 'Eye',
       memoryNotes: ["An eye turned sideways"],
+      imageAsset: 'assets/kanji_memory/076ee.webp',
     ),
     ChallengeKanji(
       japanese: '衣',
       english: 'Clothing, garment',
       memoryNotes: ["A person wearing a shirt with a big L on it and trousers with an L on their left leg"],
+      imageAsset: 'assets/kanji_memory/08863.webp',
     ),
     ChallengeKanji(
       japanese: '竹',
@@ -5818,6 +5845,7 @@ StudyCard _cardFromChallengeKanji(ChallengeKanji ck, int dayNumber) {
     english: ck.english,
     kanjiVGCodes: [_kanjiVGCodeFor(ck.japanese)],
     memoryTechnique: ck.memoryNotes.join('\n\n'),
+    memoryImageAsset: ck.imageAsset,
     challengeDay: dayNumber,
     // The whole point of this challenge is learning to write each kanji, so
     // every card answers via drawing rather than the default self-graded

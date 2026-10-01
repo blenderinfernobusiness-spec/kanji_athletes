@@ -517,6 +517,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
   bool _waitingForMore = false;
   bool _playing = true;
   bool _finished = false;
+  bool _translationRevealed = false;
   int _playbackRunId = 0;
   StudySettings _settings = StudySettings();
   List<Map<String, dynamic>> _englishVoices = [];
@@ -782,7 +783,10 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
   }
 
   void _advance() {
-    setState(() => _index++);
+    setState(() {
+      _index++;
+      _translationRevealed = false;
+    });
     _playCurrent();
   }
 
@@ -811,6 +815,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
     _playbackRunId++;
     setState(() {
       _index--;
+      _translationRevealed = false;
       if (!_playing) _playing = true;
     });
     _playCurrent();
@@ -1380,36 +1385,47 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: sentence.translation != null && sentence.translation!.isNotEmpty
-                                ? Text(
-                                    sentence.translation!,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(fontSize: 16, color: isDarkMode ? Colors.white70 : Colors.black54),
-                                  )
-                                : Text(
-                                    '${entry.card.english} (word meaning)',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontStyle: FontStyle.italic,
-                                      color: isDarkMode ? Colors.white54 : Colors.black45,
+                      if (_translationRevealed)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: sentence.translation != null && sentence.translation!.isNotEmpty
+                                  ? Text(
+                                      sentence.translation!,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(fontSize: 16, color: isDarkMode ? Colors.white70 : Colors.black54),
+                                    )
+                                  : Text(
+                                      '${entry.card.english} (word meaning)',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontStyle: FontStyle.italic,
+                                        color: isDarkMode ? Colors.white54 : Colors.black45,
+                                      ),
                                     ),
-                                  ),
-                          ),
-                          IconButton(
-                            onPressed: _replayTranslation,
-                            icon: const Icon(Icons.volume_up, size: 18),
-                            color: isDarkMode ? Colors.white54 : Colors.black45,
-                            tooltip: "Replay translation",
+                            ),
+                            IconButton(
+                              onPressed: _replayTranslation,
+                              icon: const Icon(Icons.volume_up, size: 18),
+                              color: isDarkMode ? Colors.white54 : Colors.black45,
+                              tooltip: "Replay translation",
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ],
+                        )
+                      else
+                        TextButton.icon(
+                          onPressed: () => setState(() => _translationRevealed = true),
+                          icon: const Icon(Icons.visibility_outlined, size: 18),
+                          label: const Text("Show translation"),
+                          style: TextButton.styleFrom(
+                            foregroundColor: isDarkMode ? Colors.white54 : Colors.black45,
                             visualDensity: VisualDensity.compact,
                           ),
-                        ],
-                      ),
+                        ),
                       const SizedBox(height: 16),
                       // Per-sentence attribution - Tatoeba's CC BY license
                       // requires crediting each sentence's own contributor,

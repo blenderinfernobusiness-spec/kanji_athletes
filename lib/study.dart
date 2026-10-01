@@ -368,6 +368,58 @@ class _StudyScreenState extends State<StudyScreen> {
   // Challenge deck - the builder itself can't set lessonSetId (that'd need
   // it to import lesson_data.dart, which already imports it back), so it's
   // set here after the deck's built, same as _createKanjiChallengeDeck.
+  // Lets someone who already did some of this challenge elsewhere (most
+  // likely Anki) skip re-learning days they've covered, instead of always
+  // starting fresh at Day 1 - returns the day they got to, or null to start
+  // from Day 1 as normal.
+  Future<int?> _promptRestoreProgress() async {
+    final controller = TextEditingController();
+    return showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+        title: Text(
+          "Already done some of this challenge?",
+          style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "If you already got partway through this on Anki (or anywhere else), enter the last day you completed. Those days will be marked as already studied instead of starting over, and the next day unlocks today.",
+              style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Day you got to',
+                hintText: 'Leave blank to start from Day 1',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: Text("Start from Day 1", style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE)),
+            onPressed: () {
+              final parsed = int.tryParse(controller.text.trim());
+              Navigator.pop(context, (parsed != null && parsed > 0) ? parsed : null);
+            },
+            child: const Text("Continue", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _createHiraganaChallengeDeck() async {
     final deck = buildHiraganaChallengeDeck();
     String name = deck.name;
@@ -617,6 +669,8 @@ class _StudyScreenState extends State<StudyScreen> {
   }
 
   Future<void> _createKanjiChallengeDeck() async {
+    final completedDay = await _promptRestoreProgress();
+    if (!mounted) return;
     final deck = buildKanjiChallengeDeck();
     String name = deck.name;
     int copy = 1;
@@ -626,13 +680,18 @@ class _StudyScreenState extends State<StudyScreen> {
     }
     deck.name = name;
     deck.lessonSetId = kKanjiChallengeTrackId;
+    if (completedDay != null) applyImportedChallengeProgress(deck, completedDay);
     setState(() {
       _decks.add(deck);
     });
     await _saveDecks();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Started "$name" - day 1 kanji are ready to study')),
+      SnackBar(
+        content: Text(completedDay != null
+            ? 'Started "$name" - Day ${completedDay + 1} kanji are ready to study'
+            : 'Started "$name" - day 1 kanji are ready to study'),
+      ),
     );
   }
 

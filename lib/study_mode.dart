@@ -7,7 +7,7 @@ import 'lesson_data.dart';
 import 'lesson_viewer_screen.dart';
 
 // Shows a pop-up menu of study modes for a deck. "Spaced Repetition" and
-// "Listening" work; "Games and more" just dismisses the menu.
+// "Reading & Listening" work; "Games and more" just dismisses the menu.
 void showStudyModeMenu(BuildContext context, StudyDeck deck, bool isDarkMode, VoidCallback onChanged) {
   showModalBottomSheet(
     context: context,
@@ -118,7 +118,7 @@ class _StudyModeMenu extends StatelessWidget {
               Navigator.pop(context);
               await _startSpacedRepetition(hostContext, deck, isDarkMode, onChanged);
             }),
-            _buildModeButton(context, "Listening", () {
+            _buildModeButton(context, "Reading & Listening", () {
               Navigator.pop(context);
               Navigator.push(
                 context,

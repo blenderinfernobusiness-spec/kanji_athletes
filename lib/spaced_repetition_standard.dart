@@ -389,7 +389,12 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
           : card.cardType == 'Vocab'
               ? VocabIntroScreen(card: card, isDarkMode: widget.isDarkMode, batchPosition: i + 1, batchTotal: batch.length)
               : KanaIntroScreen(card: card, isDarkMode: widget.isDarkMode, batchPosition: i + 1, batchTotal: batch.length);
-      await Navigator.push(
+      // A null result means "continue" (back arrow, swipe-back, or system
+      // back all count as moving to the next card's intro, matching how
+      // this batch has always worked); the close ("X") button instead pops
+      // with `true`, which breaks out of the whole batch early rather than
+      // just advancing to the next card.
+      final closed = await Navigator.push<bool>(
         context,
         // No transition animation: the first push happens right after the
         // SRS screen's own setState repaints for the just-advanced-to card,
@@ -404,6 +409,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
         ),
       );
       if (!mounted) return;
+      if (closed == true) return;
       // A handful of kanji are commonly confused with another similar-
       // looking one - when that's authored, show a quick side-by-side
       // comparison right on top of this card's own intro, same zero-
@@ -570,6 +576,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
         ),
       );
     }
+    final imageAsset = card.memoryImageAsset ?? '';
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Container(
@@ -579,19 +586,31 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
           color: isDarkMode ? const Color(0xFF1A1A1A) : Colors.grey[200],
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Text(
-                card.memoryTechnique.isEmpty ? "No memory technique added yet." : card.memoryTechnique,
-                style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black87),
+            if (imageAsset.isNotEmpty) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(imageAsset, fit: BoxFit.contain),
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.edit, size: 18, color: Color(0xFF9A00FE)),
-              tooltip: 'Edit memory technique',
-              onPressed: () => _editMemoryTechnique(card),
+              const SizedBox(height: 8),
+            ],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    card.memoryTechnique.isEmpty ? "No memory technique added yet." : card.memoryTechnique,
+                    style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black87),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit, size: 18, color: Color(0xFF9A00FE)),
+                  tooltip: 'Edit memory technique',
+                  onPressed: () => _editMemoryTechnique(card),
+                ),
+              ],
             ),
           ],
         ),
@@ -1325,6 +1344,23 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
     );
   }
 
+  // Scales the drawing canvas to fit the screen without needing to scroll
+  // down to reach the grading buttons - the old width-only heuristic looked
+  // fine on a normal phone but left no room for the buttons on shorter
+  // screens, since it never accounted for available height at all.
+  double _drawCanvasScale(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final widthScale = (size.width / 600).clamp(0.6, 1.2) * 0.8;
+    // Rough estimate of everything else in the card (counter, prompt,
+    // audio button, padding, Show Answer/grading buttons) plus the
+    // canvas's own non-drawing-area chrome (hint/answer text) at scale 1.0 -
+    // not exact, but close enough to keep the whole card on one screen.
+    const reservedHeight = 260.0;
+    const canvasNaturalHeight = 400.0 + 90.0;
+    final heightScale = ((size.height - reservedHeight) / canvasNaturalHeight).clamp(0.45, 1.2);
+    return widthScale < heightScale ? widthScale : heightScale;
+  }
+
   Widget _buildCard(bool isDarkMode) {
     final card = _queue[_index];
     final frontIsEnglish = card.englishFirst;
@@ -1369,9 +1405,10 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
               kanji: card.japanese,
               translation: card.english,
               hideButtons: true,
+              compactStrokeControls: true,
               showAnswerOverride: _drawAnswerRevealed,
               resetCounter: _drawResetCounter,
-              scale: (MediaQuery.of(context).size.width / 600).clamp(0.6, 1.2) * 0.8,
+              scale: _drawCanvasScale(context),
             ),
             const SizedBox(height: 16),
             if (!_drawAnswerRevealed)

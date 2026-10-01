@@ -19,6 +19,12 @@ class MistakeEntry {
   final List<String> kanjiVGCodes;
   final bool englishFirst;
   final String memoryTechnique;
+  final String? memoryImageAsset;
+  // Which kind of card this was ('Kanji', 'Kana', or 'Vocab') - without this,
+  // a mistake reconstructed via toStudyCard() silently defaulted to 'Vocab',
+  // which is why "About this kanji" was opening the word info page instead
+  // of the kanji one for kanji cards reviewed through Mistakes mode.
+  final String cardType;
   final DateTime timestamp;
 
   MistakeEntry({
@@ -30,6 +36,8 @@ class MistakeEntry {
     List<String>? kanjiVGCodes,
     this.englishFirst = true,
     this.memoryTechnique = '',
+    this.memoryImageAsset,
+    this.cardType = 'Vocab',
     required this.timestamp,
   }) : kanjiVGCodes = kanjiVGCodes ?? [];
 
@@ -42,6 +50,8 @@ class MistakeEntry {
     kanjiVGCodes: List<String>.from(card.kanjiVGCodes),
     englishFirst: card.englishFirst,
     memoryTechnique: card.memoryTechnique,
+    memoryImageAsset: card.memoryImageAsset,
+    cardType: card.cardType,
     timestamp: DateTime.now(),
   );
 
@@ -55,6 +65,8 @@ class MistakeEntry {
     kanjiVGCodes: List<String>.from(kanjiVGCodes),
     englishFirst: englishFirst,
     memoryTechnique: memoryTechnique,
+    memoryImageAsset: memoryImageAsset,
+    cardType: cardType,
   );
 
   Map<String, dynamic> toMap() => {
@@ -66,6 +78,8 @@ class MistakeEntry {
     'kanjiVGCodes': kanjiVGCodes,
     'englishFirst': englishFirst,
     'memoryTechnique': memoryTechnique,
+    'memoryImageAsset': memoryImageAsset,
+    'cardType': cardType,
     'timestamp': timestamp.toIso8601String(),
   };
 
@@ -78,6 +92,8 @@ class MistakeEntry {
     kanjiVGCodes: List<String>.from(map['kanjiVGCodes'] ?? const []),
     englishFirst: map['englishFirst'] ?? true,
     memoryTechnique: map['memoryTechnique'] ?? '',
+    memoryImageAsset: map['memoryImageAsset'],
+    cardType: map['cardType'] ?? 'Vocab',
     timestamp: DateTime.tryParse(map['timestamp'] ?? '') ?? DateTime.now(),
   );
 }

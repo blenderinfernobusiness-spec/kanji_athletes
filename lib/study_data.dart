@@ -357,6 +357,12 @@ class StudyCard {
   // never gated by a challenge day.
   int? challengeDay;
 
+  // Bundled asset path for a memory-technique illustration (e.g.
+  // 'assets/kanji_memory/706b.webp'), shown alongside memoryTechnique's text
+  // wherever that's displayed. Null for the vast majority of cards until
+  // images are authored for them.
+  String? memoryImageAsset;
+
   // How this card is classified: 'Kanji', 'Kana', or 'Vocab' - independent
   // of answerMode, for features that need to treat a deck's cards
   // differently by kind rather than just study-mode mechanics.
@@ -378,6 +384,7 @@ class StudyCard {
     this.memoryTechnique = '',
     this.isStarred = false,
     this.challengeDay,
+    this.memoryImageAsset,
     this.cardType = 'Vocab',
   }) : kanjiVGCodes = kanjiVGCodes ?? [];
 
@@ -397,6 +404,7 @@ class StudyCard {
     'memoryTechnique': memoryTechnique,
     'isStarred': isStarred,
     'challengeDay': challengeDay,
+    'memoryImageAsset': memoryImageAsset,
     'cardType': cardType,
   };
 
@@ -416,6 +424,7 @@ class StudyCard {
     answerMode: map['answerMode'] ?? 'basic',
     isStarred: map['isStarred'] ?? false,
     challengeDay: map['challengeDay'],
+    memoryImageAsset: map['memoryImageAsset'],
     cardType: map['cardType'] ?? 'Vocab',
   );
 }
@@ -458,6 +467,9 @@ DateTime _parseStamp(String stamp) {
   return DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
 }
 
+String _stampFor(DateTime d) =>
+    '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
 // A card is due if it's new (never reviewed) or its scheduled date has arrived.
 bool isCardDue(StudyCard card) {
   if (card.nextReviewDate == null) return true;
@@ -488,9 +500,47 @@ void recordReview(StudyCard card, bool correct) {
     card.progress = (card.progress - 20).clamp(0, 100);
   }
 
-  final next = DateTime.now().add(Duration(days: card.intervalDays));
-  card.nextReviewDate =
-      '${next.year.toString().padLeft(4, '0')}-${next.month.toString().padLeft(2, '0')}-${next.day.toString().padLeft(2, '0')}';
+  card.nextReviewDate = _stampFor(DateTime.now().add(Duration(days: card.intervalDays)));
+}
+
+// Lets someone who already did some of a day-scheduled challenge (e.g. the
+// 90 Day Kanji Challenge) elsewhere - most likely Anki - pick up where they
+// left off instead of re-learning days they've covered. Backdates the
+// deck's start date so today becomes the day right after [completedDay],
+// and gives every card from an already-completed day a review history
+// instead of leaving it "new": as if it had been answered correctly every
+// time it came due since the day it was first introduced, using the same
+// formula as recordReview. A card from an earlier day naturally ends up
+// more mature (more repetitions, longer interval) than one from a recently
+// "completed" day, the same gradient ordinary continued study would
+// produce - there's no way to import real per-card accuracy from Anki, so
+// assuming every review went well is the simplest reasonable stand-in.
+void applyImportedChallengeProgress(StudyDeck deck, int completedDay) {
+  if (completedDay <= 0) return;
+  final today = _parseStamp(todayStamp());
+  final backdatedStart = today.subtract(Duration(days: completedDay));
+  deck.challengeStartDate = _stampFor(backdatedStart);
+
+  for (final card in deck.cards) {
+    final day = card.challengeDay;
+    if (day == null || day > completedDay) continue;
+    var cursor = backdatedStart.add(Duration(days: day - 1));
+    while (true) {
+      card.repetitions += 1;
+      if (card.repetitions == 1) {
+        card.intervalDays = 1;
+      } else if (card.repetitions == 2) {
+        card.intervalDays = 6;
+      } else {
+        card.intervalDays = (card.intervalDays * card.easeFactor).round();
+      }
+      card.easeFactor = (card.easeFactor + 0.1).clamp(1.3, 3.0);
+      card.progress = (card.progress + 15).clamp(0, 100);
+      cursor = cursor.add(Duration(days: card.intervalDays));
+      if (!cursor.isBefore(today)) break;
+    }
+    card.nextReviewDate = _stampFor(cursor);
+  }
 }
 
 // Human-readable due date for the card list view.

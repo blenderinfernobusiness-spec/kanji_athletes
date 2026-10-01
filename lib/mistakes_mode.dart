@@ -5,7 +5,7 @@ import 'listening_player.dart';
 import 'games_mode.dart';
 
 // Pop-up menu of study modes for a Mistakes selection. "Isolated Flashcard
-// Study" and "Listening" work; "Games and more" just dismisses the menu,
+// Study" and "Reading & Listening" work; "Games and more" just dismisses the menu,
 // matching the regular per-deck study menu.
 void showMistakesModeMenu(BuildContext context, String title, List<StudyCard> cards, bool isDarkMode) {
   showModalBottomSheet(
@@ -80,7 +80,7 @@ class _MistakesModeMenu extends StatelessWidget {
                 ),
               );
             }),
-            _buildModeButton(context, "Listening", () {
+            _buildModeButton(context, "Reading & Listening", () {
               Navigator.pop(context);
               Navigator.push(
                 context,

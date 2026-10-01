@@ -67,6 +67,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/dictionary.json
     - assets/gemslot1.png
     - assets/gemslot2.png
     - assets/gemslot3.png
@@ -135,6 +136,7 @@ flutter:
     - assets/sapphire5S39.png
     - assets/sapphire6S36.png
     - assets/kanji_athletes.png
+    - assets/kanji_memory/
 
 # Configuration for app icon and app name generation
 flutter_icons:

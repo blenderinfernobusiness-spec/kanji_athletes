@@ -403,7 +403,13 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
         backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
         foregroundColor: isDarkMode ? Colors.white : Colors.black87,
         elevation: 0,
-        automaticallyImplyLeading: widget.batchTotal == null,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: 'Close',
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
       ),
       body: SafeArea(
         child: _loading

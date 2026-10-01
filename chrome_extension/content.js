@@ -18,30 +18,86 @@
   }
 
   // --- Lookup index, mirroring buildHighlightIndex (lib/study_data.dart) ---
-  // Deck cards take priority over plain dictionary Items, same override
-  // order the app itself uses.
-  function buildLookupIndex(data) {
+  // The downloaded backup no longer carries the full dictionary (see
+  // lib/backup_data.dart's format 2 - only personal customSets/setOverrides
+  // are exported now), so the baseline comes from dictionary.json instead,
+  // bundled straight into the extension and generated from the same
+  // setsData the app ships with (tool/generate_dictionary_json.dart).
+  // Deck cards take priority over custom-set items, which take priority
+  // over baseline dictionary entries - same override order the app itself
+  // uses for its own highlight index.
+  let dictionaryBaseline = null;
+
+  async function loadDictionaryBaseline() {
+    if (dictionaryBaseline) return dictionaryBaseline;
     const index = new Map();
-    const sets = data.sets || {};
-    for (const key of Object.keys(sets)) {
-      const items = sets[key].items || [];
-      for (const item of items) {
-        if (!item.japanese || item.itemType === 'Hiragana' || item.itemType === 'Katakana') continue;
-        index.set(item.japanese, {
-          reading: item.reading || item.onYomi || item.kunYomi || '',
-          meaning: item.translation || '',
-        });
+    try {
+      const res = await fetch(chrome.runtime.getURL('dictionary.json'));
+      const data = await res.json();
+      for (const key of Object.keys(data)) {
+        for (const item of data[key].items || []) {
+          if (!item.japanese || item.itemType === 'Hiragana' || item.itemType === 'Katakana') continue;
+          index.set(item.japanese, {
+            reading: item.reading || item.onYomi || item.kunYomi || '',
+            meaning: item.translation || '',
+          });
+        }
+      }
+    } catch (e) {
+      console.error('[KA] failed to load bundled dictionary.json', e);
+    }
+    dictionaryBaseline = index;
+    return index;
+  }
+
+  async function buildLookupIndex(personalData) {
+    const index = new Map(await loadDictionaryBaseline());
+
+    if (personalData) {
+      // setOverrides: a patch against a baseline entry (translation/reading
+      // edited) or a brand-new item added into an otherwise-default set.
+      const overrides = personalData.setOverrides || {};
+      for (const key of Object.keys(overrides)) {
+        for (const patch of overrides[key].itemOverrides || []) {
+          if (patch.new) {
+            if (patch.itemType === 'Hiragana' || patch.itemType === 'Katakana') continue;
+            index.set(patch.japanese, {
+              reading: patch.reading || patch.onYomi || patch.kunYomi || '',
+              meaning: patch.translation || '',
+            });
+            continue;
+          }
+          const existing = index.get(patch.japanese);
+          if (!existing) continue;
+          index.set(patch.japanese, {
+            reading: patch.reading !== undefined ? patch.reading : existing.reading,
+            meaning: patch.translation !== undefined ? patch.translation : existing.meaning,
+          });
+        }
+      }
+
+      // customSets: fully custom sets, not backed by any default - add in full.
+      const customSets = personalData.customSets || {};
+      for (const key of Object.keys(customSets)) {
+        for (const item of customSets[key].items || []) {
+          if (!item.japanese || item.itemType === 'Hiragana' || item.itemType === 'Katakana') continue;
+          index.set(item.japanese, {
+            reading: item.reading || item.onYomi || item.kunYomi || '',
+            meaning: item.translation || '',
+          });
+        }
+      }
+
+      for (const deck of personalData.studyDecks || []) {
+        for (const card of deck.cards || []) {
+          // Same exclusion as above - a bare kana deck would otherwise flag
+          // nearly every character in any sentence.
+          if (!card.japanese || card.cardType === 'Kana') continue;
+          index.set(card.japanese, { reading: card.hiragana || '', meaning: card.english || '' });
+        }
       }
     }
-    const decks = data.studyDecks || [];
-    for (const deck of decks) {
-      for (const card of deck.cards || []) {
-        // Same exclusion as the dictionary items above - a bare kana deck
-        // would otherwise flag nearly every character in any sentence.
-        if (!card.japanese || card.cardType === 'Kana') continue;
-        index.set(card.japanese, { reading: card.hiragana || '', meaning: card.english || '' });
-      }
-    }
+
     return index;
   }
 
@@ -68,7 +124,7 @@
 
   async function loadState() {
     backupCache = await storageGet(KA_STORAGE_KEYS.backup);
-    lookupIndex = backupCache ? buildLookupIndex(backupCache.data) : null;
+    lookupIndex = await buildLookupIndex(backupCache ? backupCache.data : null);
     settings = normalizeSettings(await storageGet(KA_STORAGE_KEYS.settings));
   }
 
@@ -78,11 +134,11 @@
     syncOverlayFromDom();
   }
 
-  chrome.storage.onChanged.addListener((changes, area) => {
+  chrome.storage.onChanged.addListener(async (changes, area) => {
     if (area !== 'local') return;
     if (changes[KA_STORAGE_KEYS.backup]) {
       backupCache = changes[KA_STORAGE_KEYS.backup].newValue;
-      lookupIndex = backupCache ? buildLookupIndex(backupCache.data) : null;
+      lookupIndex = await buildLookupIndex(backupCache ? backupCache.data : null);
     }
     if (changes[KA_STORAGE_KEYS.settings]) {
       settings = normalizeSettings(changes[KA_STORAGE_KEYS.settings].newValue);

@@ -73,7 +73,13 @@ class _KanaIntroScreenState extends State<KanaIntroScreen> {
         backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
         foregroundColor: isDarkMode ? Colors.white : Colors.black87,
         elevation: 0,
-        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: 'Close',
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Center(

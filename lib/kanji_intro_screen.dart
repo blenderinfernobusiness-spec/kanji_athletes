@@ -317,6 +317,13 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
               ),
             ],
           ),
+          if ((widget.card.memoryImageAsset ?? '').isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(widget.card.memoryImageAsset!, fit: BoxFit.contain),
+            ),
+          ],
           if (technique.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(technique, style: TextStyle(fontSize: 14, color: isDarkMode ? Colors.white70 : Colors.black54)),
@@ -453,7 +460,13 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
         backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
         foregroundColor: isDarkMode ? Colors.white : Colors.black87,
         elevation: 0,
-        automaticallyImplyLeading: widget.batchTotal == null,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: 'Close',
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
       ),
       body: SafeArea(
         child: _loading

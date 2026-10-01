@@ -19,6 +19,10 @@ Highlight Japanese text in YouTube's subtitles, look it up against your Kanji At
 5. A popup shows the reading/meaning if it's in your dictionary or decks, or lets you type one in if it isn't. Click **Add to deck**, pick an existing deck or create a new one.
 6. When you're done, open the extension popup and click **Sync changes to cloud** to push everything you added back up. Your next "Download my data" in the app (or here) will include it.
 
+## The bundled dictionary
+
+`dictionary.json` ships with the extension itself, generated from the same dictionary the app uses (`tool/generate_dictionary_json.dart`) - so lookups work right after install, even before anyone signs in. "Download my data" layers your own decks and any dictionary words you've personalized (starred, re-translated, etc.) on top of it. If the dictionary itself changes (new words added, a translation fixed), re-run that script and re-zip/redistribute the extension - signing in doesn't update this bundled copy, only your own personal data.
+
 ## Known limitations (v1)
 
 - Words added here don't get stroke-order data, so they won't show handwriting practice in the app's Writing game until edited there.
