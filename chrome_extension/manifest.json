@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Kanji Athletes - YouTube Subtitles",
+  "version": "1.0.0",
+  "description": "Highlight Japanese YouTube subtitles, look words up against your Kanji Athletes dictionary, and add them straight to a deck.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://identitytoolkit.googleapis.com/*",
+    "https://securetoken.googleapis.com/*",
+    "https://firebasestorage.googleapis.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Kanji Athletes"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/watch*"],
+      "js": ["config.js", "content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

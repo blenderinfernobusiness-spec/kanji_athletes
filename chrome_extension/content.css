@@ -1,0 +1,176 @@
+.hidden {
+  display: none !important;
+}
+
+/* YouTube renders its own captions through a custom pipeline that has
+   selection deliberately disabled - dragging over it never produces a
+   selection no matter how the DOM is structured. So instead we hide it and
+   render our own plain-text overlay (built from the video element's
+   textTracks cues in content.js), which is normal selectable text. */
+.ytp-caption-window-container {
+  display: none !important;
+}
+
+#ka-subtitle-overlay {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  bottom: 8%;
+  text-align: center;
+  z-index: 60;
+  pointer-events: auto;
+  font-size: 24px;
+  line-height: 1.4;
+  color: #fff;
+  text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;
+  font-family: "YouTube Noto", Roboto, "Arial Unicode MS", Arial, sans-serif;
+  white-space: pre-line;
+  cursor: text;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+#ka-subtitle-overlay:empty {
+  display: none;
+}
+
+#ka-subtitle-overlay::selection {
+  background: #9a00fe;
+  color: #fff;
+}
+
+.ka-lookup-popup {
+  position: fixed;
+  z-index: 2147483647;
+  max-width: 280px;
+  background: #1e1e1e;
+  color: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+}
+
+.ka-lookup-popup .ka-word {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.ka-lookup-popup .ka-reading {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.ka-lookup-popup .ka-meaning {
+  margin-bottom: 10px;
+}
+
+.ka-lookup-popup input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border: none;
+  background: #2a2a2a;
+  color: #fff;
+  font-size: 13px;
+}
+
+.ka-lookup-popup button {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  background: #9a00fe;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+
+.ka-lookup-popup .ka-deck-list {
+  max-height: 140px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+}
+
+.ka-lookup-popup .ka-deck-item {
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.ka-lookup-popup .ka-deck-item:hover {
+  background: rgba(154, 0, 254, 0.25);
+}
+
+.ka-lookup-popup .ka-status {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+}
+
+.ka-settings-btn {
+  font-size: 18px;
+  line-height: 1;
+  width: 48px;
+  height: 100%;
+}
+
+.ka-settings-panel {
+  position: absolute;
+  right: 12px;
+  bottom: 56px;
+  z-index: 2147483647;
+  background: #1e1e1e;
+  color: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  width: 220px;
+}
+
+.ka-settings-panel label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.ka-settings-subheading {
+  color: rgba(255, 255, 255, 0.6);
+  margin: 10px 0 4px;
+}
+
+.ka-settings-panel select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px;
+  border-radius: 6px;
+  border: none;
+  background: #2a2a2a;
+  color: #fff;
+  font-size: 12px;
+}
+
+.ka-hint-toast {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e1e1e;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  z-index: 2147483647;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}

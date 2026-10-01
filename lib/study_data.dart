@@ -239,6 +239,11 @@ Map<String, HighlightEntry> buildHighlightIndex(List<StudyCard> deckCards) {
     }
   }
   for (final card in deckCards) {
+    // A bare hiragana/katakana character deck (e.g. the Hiragana Beginner
+    // deck) would otherwise mark nearly every character in any sentence as
+    // a "known word" - excessive and not useful, so these are excluded the
+    // same way the dictionary's own kana tables already are above.
+    if (card.cardType == 'Kana') continue;
     final key = card.japanese.trim();
     if (key.isEmpty) continue;
     final existing = index[key];

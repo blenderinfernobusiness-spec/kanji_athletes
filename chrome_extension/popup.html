@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div id="signedOutView" class="hidden">
+    <h1 id="formTitle">Sign in</h1>
+    <p class="muted">The same account on every device keeps them synced to one backup.</p>
+    <p class="muted small">We only collect your email address to save your learning progress and let you log back in. Your data is securely handled by Google Firebase infrastructure and will never be shared or sold.</p>
+    <input id="emailInput" type="email" placeholder="Email" autocomplete="email" />
+    <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
+    <div id="authError" class="error hidden"></div>
+    <button id="submitAuthBtn" class="primary">Sign in</button>
+    <button id="toggleModeBtn" class="link">Don't have an account? Create one</button>
+  </div>
+
+  <div id="signedInView" class="hidden">
+    <div class="account-row">
+      <span id="accountEmail"></span>
+      <button id="signOutBtn" class="link">Sign out</button>
+    </div>
+
+    <p id="backupStatus" class="muted"></p>
+
+    <button id="downloadBtn" class="primary">Download my data</button>
+    <button id="syncBtn" class="primary" disabled>Sync changes to cloud</button>
+    <p id="syncHint" class="muted small hidden">Download your data before using this on YouTube.</p>
+
+    <div class="settings">
+      <label>
+        <input type="checkbox" id="autoPauseToggle" />
+        Auto-pause video when selecting subtitle text
+      </label>
+    </div>
+
+    <div id="opStatus" class="muted small"></div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
