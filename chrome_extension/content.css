@@ -34,6 +34,17 @@
   display: none;
 }
 
+/* Optional dark backdrop (the settings cog's "Dark background behind
+   subtitles" toggle) for videos where the subtitle text is hard to read
+   against a bright or busy frame - a classic closed-caption-style bar
+   behind the whole line, rather than a box fitted tightly to the text,
+   since the overlay already spans a fixed width (left/right 5%). */
+#ka-subtitle-overlay.ka-subtitle-bg {
+  background: rgba(0, 0, 0, 0.7);
+  padding: 4px 0;
+  border-radius: 4px;
+}
+
 /* Recognized dictionary/deck words, auto-highlighted the same way Reading
    and Listening do it in the app itself - text-shadow is inherited from the
    overlay above, so these keep the same dark-background outline. Two styles
@@ -60,6 +71,17 @@
 #ka-subtitle-overlay::selection {
   background: #9a00fe;
   color: #fff;
+}
+
+/* Screen reading mode's auto-highlight (screen_reader.js) - drawn via the
+   CSS Custom Highlight API rather than wrapped <span>s, so it never touches
+   the host page's own DOM. The custom property is set on <html> by
+   screen_reader.js since ::highlight() can't read one scoped to a specific
+   element the way normal descendant styling can. Highlight pseudo-elements
+   only support a small set of properties (no border/padding), so there's no
+   "outline" variant here the way the subtitle overlay has. */
+::highlight(ka-screen-highlight) {
+  color: var(--ka-highlight-color, #9a00fe);
 }
 
 .ka-lookup-popup {

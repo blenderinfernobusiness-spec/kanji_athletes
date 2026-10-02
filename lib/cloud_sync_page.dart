@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import 'backup_data.dart';
 import 'cloud_sync_service.dart';
-import 'sync_web_gate.dart';
 
 const Color _accent = Color(0xFF9A00FE);
 
@@ -172,7 +171,6 @@ class _CloudSyncPageState extends State<CloudSyncPage> {
   }
 
   Future<void> _backupNow() async {
-    if (!await confirmSyncAccessOnWeb(context, widget.isDarkMode) || !mounted) return;
     setState(() => _busy = true);
     try {
       await syncToCloud();
@@ -193,7 +191,6 @@ class _CloudSyncPageState extends State<CloudSyncPage> {
   // explicit escape hatch for when a merge isn't resolving things correctly
   // and you just want this device's data to become the source of truth.
   Future<void> _forceUpload() async {
-    if (!await confirmSyncAccessOnWeb(context, widget.isDarkMode) || !mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -233,7 +230,6 @@ class _CloudSyncPageState extends State<CloudSyncPage> {
   }
 
   Future<void> _restoreFromCloud() async {
-    if (!await confirmSyncAccessOnWeb(context, widget.isDarkMode) || !mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(

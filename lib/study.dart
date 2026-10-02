@@ -788,7 +788,7 @@ class _StudyScreenState extends State<StudyScreen> {
             unselectedLabelColor: widget.isDarkMode ? Colors.white54 : Colors.black45,
             tabs: const [
               Tab(text: "Flashcards"),
-              Tab(text: "Reading"),
+              Tab(text: "Reading & Immersion"),
               Tab(text: "Lessons"),
             ],
           ),
@@ -796,7 +796,7 @@ class _StudyScreenState extends State<StudyScreen> {
         body: TabBarView(
           children: [
             _buildFlashcardsTab(),
-            ReadingTabView(isDarkMode: widget.isDarkMode),
+            ReadingAndImmersionTabView(isDarkMode: widget.isDarkMode),
             _buildLessonsTab(),
           ],
         ),

@@ -18,8 +18,16 @@ const els = {
   syncBtn: document.getElementById('syncBtn'),
   syncHint: document.getElementById('syncHint'),
   autoPauseToggle: document.getElementById('autoPauseToggle'),
+  screenReadingToggle: document.getElementById('screenReadingToggle'),
+  textColorInput: document.getElementById('textColorInput'),
+  highlightColorInput: document.getElementById('highlightColorInput'),
   opStatus: document.getElementById('opStatus'),
 };
+
+// Same defaults as shared.js's normalizeSettings (not shared directly - the
+// popup isn't a content script, so it doesn't load that file).
+const DEFAULT_TEXT_COLOR = '#ffffff';
+const DEFAULT_HIGHLIGHT_COLOR = '#9a00fe';
 
 let isCreatingAccount = false;
 
@@ -222,8 +230,11 @@ async function render() {
     els.syncBtn.disabled = true;
   }
 
-  const settings = (await storageGet(KA_STORAGE_KEYS.settings)) || { autoPause: true };
+  const settings = (await storageGet(KA_STORAGE_KEYS.settings)) || {};
   els.autoPauseToggle.checked = settings.autoPause !== false;
+  els.screenReadingToggle.checked = !!settings.screenReadingEnabled;
+  els.textColorInput.value = settings.textColor || DEFAULT_TEXT_COLOR;
+  els.highlightColorInput.value = settings.highlightColor || DEFAULT_HIGHLIGHT_COLOR;
 }
 
 function updateFormMode() {
@@ -266,8 +277,30 @@ els.signOutBtn.addEventListener('click', signOut);
 els.downloadBtn.addEventListener('click', downloadBackup);
 els.syncBtn.addEventListener('click', uploadBackup);
 
-els.autoPauseToggle.addEventListener('change', async () => {
-  await storageSet({ [KA_STORAGE_KEYS.settings]: { autoPause: els.autoPauseToggle.checked } });
+// Reads the current settings and merges in just the one changed field,
+// rather than replacing the whole object - a blind replace here would wipe
+// out subtitle customizations (text size/color/position, highlight color,
+// etc.) made via the on-page settings cog, since those live in this exact
+// same storage key.
+async function patchSettings(patch) {
+  const current = (await storageGet(KA_STORAGE_KEYS.settings)) || {};
+  await storageSet({ [KA_STORAGE_KEYS.settings]: { ...current, ...patch } });
+}
+
+els.autoPauseToggle.addEventListener('change', () => {
+  patchSettings({ autoPause: els.autoPauseToggle.checked });
+});
+
+els.screenReadingToggle.addEventListener('change', () => {
+  patchSettings({ screenReadingEnabled: els.screenReadingToggle.checked });
+});
+
+els.textColorInput.addEventListener('change', () => {
+  patchSettings({ textColor: els.textColorInput.value });
+});
+
+els.highlightColorInput.addEventListener('change', () => {
+  patchSettings({ highlightColor: els.highlightColorInput.value });
 });
 
 updateFormMode();

@@ -1,10 +1,52 @@
 import 'package:flutter/material.dart';
 import 'study_data.dart';
 import 'reading_text_screen.dart';
+import 'immersion_tab.dart';
 
-// The Study screen's "Reading" tab: a list of imported text passages, each
-// opened in ReadingTextScreen for word-highlighted reading, plus a button to
-// import a new one by pasting text straight in.
+// The Study screen's "Reading & Immersion" tab: a sub-tab for the existing
+// Reading list (unchanged, see ReadingTabView below) and a sub-tab for
+// Immersion (recommended channels + the "watch a video" box, see
+// immersion_tab.dart). Nested inside its own DefaultTabController since the
+// outer Study screen's TabController already has 3 tabs of its own.
+class ReadingAndImmersionTabView extends StatelessWidget {
+  final bool isDarkMode;
+  const ReadingAndImmersionTabView({super.key, required this.isDarkMode});
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: [
+          Container(
+            color: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+            child: TabBar(
+              indicatorColor: const Color(0xFF9A00FE),
+              labelColor: const Color(0xFF9A00FE),
+              unselectedLabelColor: isDarkMode ? Colors.white54 : Colors.black45,
+              tabs: const [
+                Tab(text: "Reading"),
+                Tab(text: "Immersion"),
+              ],
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                ReadingTabView(isDarkMode: isDarkMode),
+                ImmersionTabView(isDarkMode: isDarkMode),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// The "Reading" sub-tab: a list of imported text passages, each opened in
+// ReadingTextScreen for word-highlighted reading, plus a button to import a
+// new one by pasting text straight in.
 class ReadingTabView extends StatefulWidget {
   final bool isDarkMode;
 

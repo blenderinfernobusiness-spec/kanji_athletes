@@ -27,12 +27,30 @@
     <button id="downloadBtn" class="primary">Download my data</button>
     <button id="syncBtn" class="primary" disabled>Sync changes to cloud</button>
     <p id="syncHint" class="muted small hidden">Download your data before using this on YouTube.</p>
+    <p class="muted small">Deleted a deck recently in the app or elsewhere? Download again before using this - a stale local copy here can still show it.</p>
 
     <div class="settings">
       <label>
         <input type="checkbox" id="autoPauseToggle" />
         Auto-pause video when selecting subtitle text
       </label>
+      <label>
+        <input type="checkbox" id="screenReadingToggle" />
+        Highlight Japanese text on web pages
+      </label>
+      <p class="muted small">Scans the current page for recognized words and lets you select/click text to look it up, like the YouTube subtitles.</p>
+
+      <label class="color-row">
+        Subtitle text color
+        <input type="color" id="textColorInput" />
+      </label>
+      <p class="muted small">YouTube subtitles only.</p>
+
+      <label class="color-row">
+        Highlighted word color
+        <input type="color" id="highlightColorInput" />
+      </label>
+      <p class="muted small">Used by both the YouTube subtitles and the web page highlighter above.</p>
     </div>
 
     <div id="opStatus" class="muted small"></div>

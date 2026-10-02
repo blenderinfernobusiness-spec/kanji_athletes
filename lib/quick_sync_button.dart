@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'backup_data.dart';
 import 'cloud_sync_service.dart';
-import 'sync_web_gate.dart';
 
 const Color _accent = Color(0xFF9A00FE);
 
@@ -67,7 +66,6 @@ class _SyncAppBarActionState extends State<SyncAppBarAction> {
       );
       return;
     }
-    if (!await confirmSyncAccessOnWeb(context, widget.isDarkMode) || !context.mounted) return;
 
     final confirmed = await showDialog<bool>(
       context: context,

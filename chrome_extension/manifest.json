@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Kanji Athletes - YouTube Subtitles",
-  "version": "1.0.0",
-  "description": "Highlight Japanese YouTube subtitles, look words up against your Kanji Athletes dictionary, and add them straight to a deck.",
+  "version": "1.2.0",
+  "description": "Highlight Japanese text in YouTube subtitles or on any web page, look words up against your Kanji Athletes dictionary, and add them straight to a deck.",
   "permissions": ["storage"],
   "host_permissions": [
     "https://www.youtube.com/*",
@@ -10,14 +10,33 @@
     "https://securetoken.googleapis.com/*",
     "https://firebasestorage.googleapis.com/*"
   ],
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Kanji Athletes"
+    "default_title": "Kanji Athletes",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
   },
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/watch*"],
-      "js": ["config.js", "content.js"],
+      "js": ["config.js", "shared.js", "content.js", "screen_reader.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "exclude_matches": ["https://www.youtube.com/*"],
+      "js": ["config.js", "shared.js", "screen_reader.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     }
@@ -25,7 +44,7 @@
   "web_accessible_resources": [
     {
       "resources": ["dictionary.json"],
-      "matches": ["https://www.youtube.com/*"]
+      "matches": ["http://*/*", "https://*/*"]
     }
   ]
 }
