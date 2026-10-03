@@ -358,11 +358,26 @@ Future<void> applyImportedJson(String content) async {
 // recognised as a deliberate deletion and is never resurrected. This
 // replaces an earlier two-sided merge that had no such distinction: deleting
 // a deck locally didn't stop it reappearing from the cloud on the next sync.
+//
+// This snapshot alone only protects the device that did the deleting,
+// though: it's purely local, never uploaded, so it can't tell a DIFFERENT
+// device (one that still has the old copy locally and never deleted it
+// itself) that something was deleted elsewhere - that device will happily
+// pull-forward "nothing new" and then push its still-intact copy straight
+// back up, resurrecting it. _SyncTombstones (below) is what actually closes
+// that gap, by recording deletions in the cloud backup itself rather than
+// only in the deleting device's own local memory. Keyed by stable id
+// (StudyDeck.id/StudyCard.id) rather than name/content, so a rename isn't
+// mistaken for a delete+create.
 const String _syncSnapshotPrefsKey = 'sync_seen_snapshot';
 
+String _deckId(Map<String, dynamic> deck) => (deck['id'] as String?) ?? (deck['name'] as String? ?? '');
+String _cardId(Map<String, dynamic> card) =>
+    (card['id'] as String?) ?? '${card['japanese']}|${card['cardType']}';
+
 class _SyncSnapshot {
-  final Set<String> deckNames;
-  final Map<String, Set<String>> cardKeysByDeck;
+  final Set<String> deckIds;
+  final Map<String, Set<String>> cardIdsByDeck;
   final Set<String> customSetKeys;
   final Map<String, Set<String>> customSetItemKeys;
   final Set<String> overrideSetKeys;
@@ -370,8 +385,8 @@ class _SyncSnapshot {
   final Set<String> readingTextIds;
 
   _SyncSnapshot({
-    required this.deckNames,
-    required this.cardKeysByDeck,
+    required this.deckIds,
+    required this.cardIdsByDeck,
     required this.customSetKeys,
     required this.customSetItemKeys,
     required this.overrideSetKeys,
@@ -384,8 +399,8 @@ class _SyncSnapshot {
   // the safe default rather than wrongly treating unfamiliar cloud content
   // as something this device already deleted.
   factory _SyncSnapshot.empty() => _SyncSnapshot(
-    deckNames: {},
-    cardKeysByDeck: {},
+    deckIds: {},
+    cardIdsByDeck: {},
     customSetKeys: {},
     customSetItemKeys: {},
     overrideSetKeys: {},
@@ -394,8 +409,8 @@ class _SyncSnapshot {
   );
 
   Map<String, dynamic> toJson() => {
-    'deckNames': deckNames.toList(),
-    'cardKeysByDeck': cardKeysByDeck.map((k, v) => MapEntry(k, v.toList())),
+    'deckIds': deckIds.toList(),
+    'cardIdsByDeck': cardIdsByDeck.map((k, v) => MapEntry(k, v.toList())),
     'customSetKeys': customSetKeys.toList(),
     'customSetItemKeys': customSetItemKeys.map((k, v) => MapEntry(k, v.toList())),
     'overrideSetKeys': overrideSetKeys.toList(),
@@ -404,8 +419,13 @@ class _SyncSnapshot {
   };
 
   factory _SyncSnapshot.fromJson(Map<String, dynamic> j) => _SyncSnapshot(
-    deckNames: Set<String>.from(j['deckNames'] as List<dynamic>? ?? const []),
-    cardKeysByDeck: (j['cardKeysByDeck'] as Map<String, dynamic>? ?? const {}).map(
+    // Older snapshots (saved before ids existed) used 'deckNames'/
+    // 'cardKeysByDeck' - those keys happen to already BE what _deckId/
+    // _cardId fall back to for pre-migration data, so reading them under
+    // their old names here still lines up correctly with the new id-based
+    // comparisons everywhere else.
+    deckIds: Set<String>.from(j['deckIds'] as List<dynamic>? ?? j['deckNames'] as List<dynamic>? ?? const []),
+    cardIdsByDeck: ((j['cardIdsByDeck'] ?? j['cardKeysByDeck']) as Map<String, dynamic>? ?? const {}).map(
       (k, v) => MapEntry(k, Set<String>.from(v as List<dynamic>)),
     ),
     customSetKeys: Set<String>.from(j['customSetKeys'] as List<dynamic>? ?? const []),
@@ -417,6 +437,170 @@ class _SyncSnapshot {
       (k, v) => MapEntry(k, Set<String>.from(v as List<dynamic>)),
     ),
     readingTextIds: Set<String>.from(j['readingTextIds'] as List<dynamic>? ?? const []),
+  );
+}
+
+// Deletions recorded in the cloud backup itself (not just locally - see
+// _SyncSnapshot's doc comment) so every device, not only the one that did
+// the deleting, learns about them. Keyed the same way as _SyncSnapshot.
+// Value is the ISO deletion timestamp, used only to age entries out (see
+// prunedOlderThan) - presence is otherwise all that matters.
+//
+// cardIdsByDeck/customSetItemKeys are scoped per-container rather than one
+// flat set so that e.g. duplicating a deck (which intentionally copies its
+// cards' ids - see duplicateDeck) can't make a card deleted from the
+// original wrongly vanish from the duplicate too.
+class _SyncTombstones {
+  final Map<String, String> deckIds;
+  final Map<String, Map<String, String>> cardIdsByDeck;
+  final Map<String, String> customSetKeys;
+  final Map<String, Map<String, String>> customSetItemKeys;
+  final Map<String, String> readingTextIds;
+
+  _SyncTombstones({
+    required this.deckIds,
+    required this.cardIdsByDeck,
+    required this.customSetKeys,
+    required this.customSetItemKeys,
+    required this.readingTextIds,
+  });
+
+  factory _SyncTombstones.fromJson(Map<String, dynamic> j) => _SyncTombstones(
+    deckIds: Map<String, String>.from(j['deckIds'] as Map? ?? const {}),
+    cardIdsByDeck: (j['cardIdsByDeck'] as Map<String, dynamic>? ?? const {}).map(
+      (k, v) => MapEntry(k, Map<String, String>.from(v as Map)),
+    ),
+    customSetKeys: Map<String, String>.from(j['customSetKeys'] as Map? ?? const {}),
+    customSetItemKeys: (j['customSetItemKeys'] as Map<String, dynamic>? ?? const {}).map(
+      (k, v) => MapEntry(k, Map<String, String>.from(v as Map)),
+    ),
+    readingTextIds: Map<String, String>.from(j['readingTextIds'] as Map? ?? const {}),
+  );
+
+  Map<String, dynamic> toJson() => {
+    'deckIds': deckIds,
+    'cardIdsByDeck': cardIdsByDeck,
+    'customSetKeys': customSetKeys,
+    'customSetItemKeys': customSetItemKeys,
+    'readingTextIds': readingTextIds,
+  };
+
+  // Keeps every tombstone from both sides - a deletion must never silently
+  // un-happen just because one side's copy of the tombstone list happened
+  // to be older.
+  static _SyncTombstones union(_SyncTombstones a, _SyncTombstones b) {
+    Map<String, String> mergeFlat(Map<String, String> x, Map<String, String> y) => {...x, ...y};
+    Map<String, Map<String, String>> mergeNested(
+      Map<String, Map<String, String>> x,
+      Map<String, Map<String, String>> y,
+    ) {
+      final result = <String, Map<String, String>>{for (final e in x.entries) e.key: {...e.value}};
+      for (final e in y.entries) {
+        result[e.key] = {...(result[e.key] ?? {}), ...e.value};
+      }
+      return result;
+    }
+
+    return _SyncTombstones(
+      deckIds: mergeFlat(a.deckIds, b.deckIds),
+      cardIdsByDeck: mergeNested(a.cardIdsByDeck, b.cardIdsByDeck),
+      customSetKeys: mergeFlat(a.customSetKeys, b.customSetKeys),
+      customSetItemKeys: mergeNested(a.customSetItemKeys, b.customSetItemKeys),
+      readingTextIds: mergeFlat(a.readingTextIds, b.readingTextIds),
+    );
+  }
+
+  // Drops tombstones older than [maxAge] - by then every device has surely
+  // synced at least once since the deletion, so keeping the record forever
+  // would just make the backup grow without bound.
+  _SyncTombstones prunedOlderThan(Duration maxAge) {
+    final cutoff = DateTime.now().subtract(maxAge);
+    bool fresh(String iso) {
+      final t = DateTime.tryParse(iso);
+      return t == null || t.isAfter(cutoff);
+    }
+
+    Map<String, String> pruneFlat(Map<String, String> m) => {for (final e in m.entries) if (fresh(e.value)) e.key: e.value};
+    Map<String, Map<String, String>> pruneNested(Map<String, Map<String, String>> m) {
+      final result = <String, Map<String, String>>{};
+      for (final e in m.entries) {
+        final inner = pruneFlat(e.value);
+        if (inner.isNotEmpty) result[e.key] = inner;
+      }
+      return result;
+    }
+
+    return _SyncTombstones(
+      deckIds: pruneFlat(deckIds),
+      cardIdsByDeck: pruneNested(cardIdsByDeck),
+      customSetKeys: pruneFlat(customSetKeys),
+      customSetItemKeys: pruneNested(customSetItemKeys),
+      readingTextIds: pruneFlat(readingTextIds),
+    );
+  }
+}
+
+const Duration _tombstoneRetention = Duration(days: 180);
+
+// Compares this device's current export against what it saw last sync
+// (snapshot) to find things THIS device deleted since then - these become
+// new tombstones, unioned with whatever's already in the cloud before the
+// pull-forward functions below run.
+_SyncTombstones _detectNewTombstones(Map<String, dynamic> local, _SyncSnapshot snapshot) {
+  final now = DateTime.now().toIso8601String();
+
+  final currentDeckIds = <String>{};
+  final cardIdsByDeck = <String, Set<String>>{};
+  for (final d in ((local['studyDecks'] as List<dynamic>?) ?? [])) {
+    final deck = d as Map<String, dynamic>;
+    final id = _deckId(deck);
+    currentDeckIds.add(id);
+    cardIdsByDeck[id] = {
+      for (final c in ((deck['cards'] as List<dynamic>?) ?? [])) _cardId(c as Map<String, dynamic>),
+    };
+  }
+  final deletedDeckIds = snapshot.deckIds.difference(currentDeckIds);
+
+  final deletedCardIdsByDeck = <String, Set<String>>{};
+  for (final entry in snapshot.cardIdsByDeck.entries) {
+    // Only meaningful for a deck that still exists locally - if the whole
+    // deck is gone, deletedDeckIds above already covers it.
+    final currentCards = cardIdsByDeck[entry.key];
+    if (currentCards == null) continue;
+    final deleted = entry.value.difference(currentCards);
+    if (deleted.isNotEmpty) deletedCardIdsByDeck[entry.key] = deleted;
+  }
+
+  final currentCustomSetKeys = <String>{};
+  final customSetItemKeysBySet = <String, Set<String>>{};
+  ((local['customSets'] as Map<String, dynamic>?) ?? {}).forEach((key, value) {
+    currentCustomSetKeys.add(key);
+    final set = value as Map<String, dynamic>;
+    customSetItemKeysBySet[key] = {
+      for (final it in ((set['items'] as List<dynamic>?) ?? [])) '${(it as Map<String, dynamic>)['japanese']}|${it['itemType']}',
+    };
+  });
+  final deletedCustomSetKeys = snapshot.customSetKeys.difference(currentCustomSetKeys);
+
+  final deletedCustomSetItemKeys = <String, Set<String>>{};
+  for (final entry in snapshot.customSetItemKeys.entries) {
+    final currentItems = customSetItemKeysBySet[entry.key];
+    if (currentItems == null) continue;
+    final deleted = entry.value.difference(currentItems);
+    if (deleted.isNotEmpty) deletedCustomSetItemKeys[entry.key] = deleted;
+  }
+
+  final currentReadingTextIds = <String>{
+    for (final t in ((local['readingTexts'] as List<dynamic>?) ?? [])) (t as Map<String, dynamic>)['id'] as String,
+  };
+  final deletedReadingTextIds = snapshot.readingTextIds.difference(currentReadingTextIds);
+
+  return _SyncTombstones(
+    deckIds: {for (final id in deletedDeckIds) id: now},
+    cardIdsByDeck: deletedCardIdsByDeck.map((k, v) => MapEntry(k, {for (final id in v) id: now})),
+    customSetKeys: {for (final key in deletedCustomSetKeys) key: now},
+    customSetItemKeys: deletedCustomSetItemKeys.map((k, v) => MapEntry(k, {for (final id in v) id: now})),
+    readingTextIds: {for (final id in deletedReadingTextIds) id: now},
   );
 }
 
@@ -440,15 +624,14 @@ Future<void> _saveSyncSnapshot(_SyncSnapshot snapshot) async {
 // seen" for next time, so anything missing on a future sync that WAS in this
 // set is recognised as a deletion rather than pulled back in.
 _SyncSnapshot _snapshotFromExport(Map<String, dynamic> export) {
-  final deckNames = <String>{};
-  final cardKeysByDeck = <String, Set<String>>{};
+  final deckIds = <String>{};
+  final cardIdsByDeck = <String, Set<String>>{};
   for (final d in ((export['studyDecks'] as List<dynamic>?) ?? [])) {
     final deck = d as Map<String, dynamic>;
-    final name = deck['name'] as String? ?? '';
-    deckNames.add(name);
-    cardKeysByDeck[name] = {
-      for (final c in ((deck['cards'] as List<dynamic>?) ?? []))
-        '${(c as Map<String, dynamic>)['japanese']}|${c['cardType']}',
+    final id = _deckId(deck);
+    deckIds.add(id);
+    cardIdsByDeck[id] = {
+      for (final c in ((deck['cards'] as List<dynamic>?) ?? [])) _cardId(c as Map<String, dynamic>),
     };
   }
 
@@ -480,8 +663,8 @@ _SyncSnapshot _snapshotFromExport(Map<String, dynamic> export) {
   };
 
   return _SyncSnapshot(
-    deckNames: deckNames,
-    cardKeysByDeck: cardKeysByDeck,
+    deckIds: deckIds,
+    cardIdsByDeck: cardIdsByDeck,
     customSetKeys: customSetKeys,
     customSetItemKeys: customSetItemKeys,
     overrideSetKeys: overrideSetKeys,
@@ -519,55 +702,74 @@ dynamic _mergeGems(dynamic l, dynamic c) {
   });
 }
 
-List<Map<String, dynamic>> _pullForwardDecks(dynamic localRaw, dynamic cloudRaw, _SyncSnapshot snapshot) {
+List<Map<String, dynamic>> _pullForwardDecks(
+  dynamic localRaw,
+  dynamic cloudRaw,
+  _SyncSnapshot snapshot,
+  _SyncTombstones tombstones,
+) {
   final local = (localRaw as List<dynamic>?) ?? [];
   final cloud = (cloudRaw as List<dynamic>?) ?? [];
-  final localByName = <String, Map<String, dynamic>>{
-    for (final d in local) (d as Map<String, dynamic>)['name'] as String: d,
-  };
-  final cloudByName = <String, Map<String, dynamic>>{
-    for (final d in cloud) (d as Map<String, dynamic>)['name'] as String: d,
-  };
+  final localById = <String, Map<String, dynamic>>{for (final d in local) _deckId(d as Map<String, dynamic>): d};
+  final cloudById = <String, Map<String, dynamic>>{for (final d in cloud) _deckId(d as Map<String, dynamic>): d};
 
   final result = <String, Map<String, dynamic>>{
-    for (final entry in localByName.entries) entry.key: Map<String, dynamic>.from(entry.value),
+    for (final entry in localById.entries) entry.key: Map<String, dynamic>.from(entry.value),
   };
 
-  cloudByName.forEach((name, cloudDeck) {
-    final localDeck = result[name];
+  // Honor deletions made on another device: a deck this device still has
+  // locally but that's now tombstoned (deleted elsewhere since this device
+  // last synced it) gets removed too, not just left alone - otherwise this
+  // sync's own upload below would push it straight back up and resurrect it.
+  result.removeWhere((id, _) => tombstones.deckIds.containsKey(id));
+
+  cloudById.forEach((id, cloudDeck) {
+    if (tombstones.deckIds.containsKey(id)) return; // deleted somewhere - never pull back in
+    final localDeck = result[id];
     if (localDeck == null) {
       // Missing locally - only pull it in if this device has never seen a
-      // deck by this name before (truly new, e.g. created via the
-      // extension). Previously seen means it was deliberately deleted here.
-      if (!snapshot.deckNames.contains(name)) {
-        result[name] = Map<String, dynamic>.from(cloudDeck);
+      // deck by this id before (truly new, e.g. created via the extension).
+      // Previously seen means it was deliberately deleted here.
+      if (!snapshot.deckIds.contains(id)) {
+        result[id] = Map<String, dynamic>.from(cloudDeck);
       }
       return;
     }
-    final seenCardKeys = snapshot.cardKeysByDeck[name] ?? const <String>{};
+    final seenCardIds = snapshot.cardIdsByDeck[id] ?? const <String>{};
+    final tombstonedCardIds = tombstones.cardIdsByDeck[id] ?? const <String, String>{};
     final localCards = ((localDeck['cards'] as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
-    final localCardKeys = {for (final c in localCards) '${c['japanese']}|${c['cardType']}'};
+    final keptLocalCards = [for (final c in localCards) if (!tombstonedCardIds.containsKey(_cardId(c))) c];
+    final keptLocalCardIds = {for (final c in keptLocalCards) _cardId(c)};
     final cloudCards = ((cloudDeck['cards'] as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
     final additions = <Map<String, dynamic>>[
       for (final c in cloudCards)
-        if (!localCardKeys.contains('${c['japanese']}|${c['cardType']}') &&
-            !seenCardKeys.contains('${c['japanese']}|${c['cardType']}'))
+        if (!keptLocalCardIds.contains(_cardId(c)) &&
+            !seenCardIds.contains(_cardId(c)) &&
+            !tombstonedCardIds.containsKey(_cardId(c)))
           c,
     ];
-    if (additions.isNotEmpty) {
-      localDeck['cards'] = [...localCards, ...additions];
-    }
+    localDeck['cards'] = [...keptLocalCards, ...additions];
   });
 
   return result.values.toList();
 }
 
-Map<String, dynamic> _pullForwardCustomSets(dynamic localRaw, dynamic cloudRaw, _SyncSnapshot snapshot) {
+Map<String, dynamic> _pullForwardCustomSets(
+  dynamic localRaw,
+  dynamic cloudRaw,
+  _SyncSnapshot snapshot,
+  _SyncTombstones tombstones,
+) {
   final local = (localRaw as Map<String, dynamic>?) ?? {};
   final cloud = (cloudRaw as Map<String, dynamic>?) ?? {};
   final result = <String, dynamic>{...local};
 
+  // Honor deletions made on another device - same reasoning as
+  // _pullForwardDecks' equivalent line.
+  result.removeWhere((key, _) => tombstones.customSetKeys.containsKey(key));
+
   cloud.forEach((key, cloudSetRaw) {
+    if (tombstones.customSetKeys.containsKey(key)) return;
     final cloudSet = cloudSetRaw as Map<String, dynamic>;
     final localSet = result[key] as Map<String, dynamic>?;
     if (localSet == null) {
@@ -575,16 +777,21 @@ Map<String, dynamic> _pullForwardCustomSets(dynamic localRaw, dynamic cloudRaw, 
       return;
     }
     final seenItemKeys = snapshot.customSetItemKeys[key] ?? const <String>{};
+    final tombstonedItemKeys = tombstones.customSetItemKeys[key] ?? const <String, String>{};
     final localItems = ((localSet['items'] as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
-    final localItemKeys = {for (final it in localItems) '${it['japanese']}|${it['itemType']}'};
+    final keptLocalItems = [
+      for (final it in localItems) if (!tombstonedItemKeys.containsKey('${it['japanese']}|${it['itemType']}')) it,
+    ];
+    final keptLocalItemKeys = {for (final it in keptLocalItems) '${it['japanese']}|${it['itemType']}'};
     final cloudItems = ((cloudSet['items'] as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
     final additions = <Map<String, dynamic>>[
       for (final it in cloudItems)
-        if (!localItemKeys.contains('${it['japanese']}|${it['itemType']}') &&
-            !seenItemKeys.contains('${it['japanese']}|${it['itemType']}'))
+        if (!keptLocalItemKeys.contains('${it['japanese']}|${it['itemType']}') &&
+            !seenItemKeys.contains('${it['japanese']}|${it['itemType']}') &&
+            !tombstonedItemKeys.containsKey('${it['japanese']}|${it['itemType']}'))
           it,
     ];
-    if (additions.isNotEmpty) localSet['items'] = [...localItems, ...additions];
+    localSet['items'] = [...keptLocalItems, ...additions];
   });
 
   return result;
@@ -618,14 +825,25 @@ Map<String, dynamic> _pullForwardSetOverrides(dynamic localRaw, dynamic cloudRaw
   return result;
 }
 
-List<Map<String, dynamic>> _pullForwardReadingTexts(dynamic localRaw, dynamic cloudRaw, _SyncSnapshot snapshot) {
+List<Map<String, dynamic>> _pullForwardReadingTexts(
+  dynamic localRaw,
+  dynamic cloudRaw,
+  _SyncSnapshot snapshot,
+  _SyncTombstones tombstones,
+) {
   final local = ((localRaw as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
   final cloud = ((cloudRaw as List<dynamic>?) ?? []).cast<Map<String, dynamic>>();
-  final localIds = {for (final t in local) t['id'] as String};
+  // Honor deletions made on another device - same reasoning as
+  // _pullForwardDecks' equivalent line.
+  final keptLocal = [for (final t in local) if (!tombstones.readingTextIds.containsKey(t['id'] as String)) t];
+  final keptLocalIds = {for (final t in keptLocal) t['id'] as String};
   return [
-    ...local,
+    ...keptLocal,
     for (final t in cloud)
-      if (!localIds.contains(t['id'] as String) && !snapshot.readingTextIds.contains(t['id'] as String)) t,
+      if (!keptLocalIds.contains(t['id'] as String) &&
+          !snapshot.readingTextIds.contains(t['id'] as String) &&
+          !tombstones.readingTextIds.containsKey(t['id'] as String))
+        t,
   ];
 }
 
@@ -646,15 +864,27 @@ Future<String> computeSyncUpload(String localJson, String? cloudJson) async {
       final cloud = jsonDecode(cloudJson) as Map<String, dynamic>;
       if (((cloud['exportFormatVersion'] as num?)?.toInt() ?? 1) >= 2) {
         final snapshot = await _loadSyncSnapshot();
+        // Deletions this device made since its last sync (missing now vs.
+        // snapshot) plus whatever's already tombstoned on the cloud from any
+        // device's past sync - union of both is what every pull-forward call
+        // below honors, and what gets uploaded back so the next device to
+        // sync learns about it too.
+        final cloudTombstones = _SyncTombstones.fromJson((cloud['tombstones'] as Map<String, dynamic>?) ?? const {});
+        final newTombstones = _detectNewTombstones(local, snapshot);
+        final tombstones = _SyncTombstones.union(
+          cloudTombstones,
+          newTombstones,
+        ).prunedOlderThan(_tombstoneRetention);
         final pulled = {
           'exportFormatVersion': _exportFormatVersion,
           'exportedAt': DateTime.now().toIso8601String(),
           'userProfile': _mergeUserProfile(local['userProfile'], cloud['userProfile']),
           'gems': _mergeGems(local['gems'], cloud['gems']),
-          'customSets': _pullForwardCustomSets(local['customSets'], cloud['customSets'], snapshot),
+          'customSets': _pullForwardCustomSets(local['customSets'], cloud['customSets'], snapshot, tombstones),
           'setOverrides': _pullForwardSetOverrides(local['setOverrides'], cloud['setOverrides'], snapshot),
-          'studyDecks': _pullForwardDecks(local['studyDecks'], cloud['studyDecks'], snapshot),
-          'readingTexts': _pullForwardReadingTexts(local['readingTexts'], cloud['readingTexts'], snapshot),
+          'studyDecks': _pullForwardDecks(local['studyDecks'], cloud['studyDecks'], snapshot, tombstones),
+          'readingTexts': _pullForwardReadingTexts(local['readingTexts'], cloud['readingTexts'], snapshot, tombstones),
+          'tombstones': tombstones.toJson(),
         };
         const encoder = JsonEncoder.withIndent('  ');
         finalJson = encoder.convert(pulled);

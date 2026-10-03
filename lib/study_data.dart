@@ -4,6 +4,15 @@ import 'sets_data.dart';
 
 const String _studyDecksPrefsKey = 'study_decks';
 
+// Stable identity for a deck/card, independent of its name/content so a
+// rename isn't indistinguishable from a delete+create, and so cloud sync's
+// tombstones (see backup_data.dart) can tell "this exact deck was deleted"
+// apart from "a different deck happens to have the same name". A counter
+// suffix guards against two ids generated in the same microsecond, e.g. when
+// duplicating a deck full of cards in a tight loop.
+int _idCounter = 0;
+String _generateId() => '${DateTime.now().microsecondsSinceEpoch}_${_idCounter++}';
+
 Future<List<StudyDeck>> loadStudyDecks() async {
   final prefs = await SharedPreferences.getInstance();
   final encoded = prefs.getString(_studyDecksPrefsKey);
@@ -324,6 +333,11 @@ List<String> extractKanjiOnly(String text) {
 }
 
 class StudyCard {
+  // See _generateId's doc comment above. Pre-existing cards saved before
+  // this field existed fall back to a name-derived id on load (fromMap)
+  // instead of a fresh random one, so every device migrates to the exact
+  // same id for the same card independently, with no coordination needed.
+  final String id;
   String japanese;
   String hiragana;
   String romaji;
@@ -369,6 +383,7 @@ class StudyCard {
   String cardType;
 
   StudyCard({
+    String? id,
     required this.japanese,
     required this.hiragana,
     this.romaji = '',
@@ -386,9 +401,11 @@ class StudyCard {
     this.challengeDay,
     this.memoryImageAsset,
     this.cardType = 'Vocab',
-  }) : kanjiVGCodes = kanjiVGCodes ?? [];
+  }) : id = id ?? _generateId(),
+       kanjiVGCodes = kanjiVGCodes ?? [];
 
   Map<String, dynamic> toMap() => {
+    'id': id,
     'japanese': japanese,
     'hiragana': hiragana,
     'romaji': romaji,
@@ -409,6 +426,11 @@ class StudyCard {
   };
 
   factory StudyCard.fromMap(Map<String, dynamic> map) => StudyCard(
+    // Deterministic fallback (not _generateId()) so a card saved before ids
+    // existed migrates to the same id on every device, rather than each
+    // device randomly minting its own and permanently disagreeing on
+    // whether it's "the same card" for sync purposes.
+    id: map['id'] as String? ?? '${map['japanese'] ?? ''}|${map['cardType'] ?? 'Vocab'}',
     japanese: map['japanese'] ?? '',
     hiragana: map['hiragana'] ?? '',
     romaji: map['romaji'] ?? '',
@@ -554,6 +576,8 @@ String dueLabel(StudyCard card) {
 }
 
 class StudyDeck {
+  // See StudyCard.id's doc comment - same reasoning, same fallback pattern.
+  final String id;
   String name;
   final List<StudyCard> cards;
 
@@ -596,6 +620,7 @@ class StudyDeck {
   bool hasShownAnswerIntro;
 
   StudyDeck({
+    String? id,
     required this.name,
     List<StudyCard>? cards,
     this.newCardsPerDay = 10,
@@ -606,10 +631,12 @@ class StudyDeck {
     this.lessonSetId,
     this.deckCreatedDate,
     this.hasShownAnswerIntro = false,
-  }) : cards = cards ?? [],
+  }) : id = id ?? _generateId(),
+       cards = cards ?? [],
        completedLessonDays = completedLessonDays ?? [];
 
   Map<String, dynamic> toMap() => {
+    'id': id,
     'name': name,
     'cards': cards.map((c) => c.toMap()).toList(),
     'newCardsPerDay': newCardsPerDay,
@@ -627,6 +654,8 @@ class StudyDeck {
         .map((c) => StudyCard.fromMap(Map<String, dynamic>.from(c)))
         .toList();
     return StudyDeck(
+      // Deterministic fallback - see StudyCard.fromMap's id for why.
+      id: map['id'] as String? ?? (map['name'] as String? ?? ''),
       name: map['name'] ?? '',
       cards: cards,
       newCardsPerDay: map['newCardsPerDay'] ?? 10,
