@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -80,11 +81,42 @@ class _VideoImmersionPlayerScreenState extends State<VideoImmersionPlayerScreen>
   Color _highlightColor = _defaultHighlightColor;
   bool _backgroundEnabled = _defaultBackgroundEnabled;
   InAppWebViewController? _webViewController;
+  // Flutter-controlled fullscreen rather than relying on YouTube's own tiny
+  // fullscreen button (fiddly to hit on a touchscreen, especially forced
+  // into the desktop layout - see initialSettings' userAgent) or on
+  // InAppWebView's onEnterFullscreen/onExitFullscreen callbacks (reported
+  // unreliable on Android).
+  bool _isFullscreen = false;
 
   @override
   void initState() {
     super.initState();
     _prepare();
+  }
+
+  @override
+  void dispose() {
+    if (_isFullscreen) _restoreSystemChrome();
+    super.dispose();
+  }
+
+  void _restoreSystemChrome() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([]);
+  }
+
+  Future<void> _toggleFullscreen() async {
+    final next = !_isFullscreen;
+    setState(() => _isFullscreen = next);
+    if (next) {
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    } else {
+      _restoreSystemChrome();
+    }
   }
 
   Future<void> _prepare() async {
@@ -690,86 +722,135 @@ class _VideoImmersionPlayerScreenState extends State<VideoImmersionPlayerScreen>
     if (changed) await saveStudyDecks(decks);
   }
 
+  Widget _buildWebView() {
+    return InAppWebView(
+      // Back to the full watch page (not /embed/): the embed player
+      // is meant to be loaded inside an iframe on someone else's
+      // page, not navigated to directly as a standalone page like
+      // this does - diagnostics showed its Subtitles/CC submenu
+      // click consistently falling through to the raw video element,
+      // which looks like exactly the kind of thing that mismatch
+      // could cause. The actual "no captions" bug turned out to be
+      // this script's own innerHTML/Trusted-Types crash, now fixed,
+      // so there's no longer a reason to prefer the embed player.
+      initialUrlRequest: URLRequest(url: WebUri(widget.initialUrl)),
+      initialSettings: InAppWebViewSettings(
+        mediaPlaybackRequiresUserGesture: false,
+        userAgent:
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+            '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        // Deliberately NOT using useWideViewPort/loadWithOverviewMode here -
+        // those are meant for old pages without a proper viewport meta tag.
+        // YouTube's watch page is fully responsive and manages its own
+        // layout/sizing in JS, and forcing Android's legacy overview-zoom
+        // behavior on top of that broke its own rendering (captions and
+        // controls both went missing). The dedicated Flutter fullscreen
+        // button above the WebView is the fix for touchscreen navigation
+        // instead.
+      ),
+      initialUserScripts: UnmodifiableListView<UserScript>([
+        UserScript(source: _buildInjectedScript(), injectionTime: UserScriptInjectionTime.AT_DOCUMENT_END),
+      ]),
+      onWebViewCreated: (controller) {
+        _webViewController = controller;
+        controller.addJavaScriptHandler(
+          handlerName: 'kaWordTapped',
+          callback: (args) {
+            final text = args.isNotEmpty ? args[0] as String : '';
+            if (text.isEmpty) return;
+            final entry = _highlightIndex[text];
+            if (entry != null) {
+              _showKnownWordSheet(entry);
+            } else {
+              _showUnknownTextSheet(text);
+            }
+          },
+        );
+      },
+      // Cheap safety net: forwards the page's own JS console (including
+      // YouTube's own script errors, via the injected window.onerror hook
+      // below) into Flutter's debug log, in case something on YouTube's
+      // end breaks the injected script again in the future.
+      onConsoleMessage: (controller, consoleMessage) {
+        debugPrint('[KA webview console] ${consoleMessage.messageLevel}: ${consoleMessage.message}');
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text(widget.title),
-        backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-        foregroundColor: widget.isDarkMode ? Colors.white : Colors.black87,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-            tooltip: 'Back',
-            onPressed: () async {
-              if (await _webViewController?.canGoBack() ?? false) {
-                _webViewController?.goBack();
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Reload page',
-            onPressed: () => _webViewController?.reload(),
-          ),
-          IconButton(
-            icon: const Icon(Icons.format_size),
-            tooltip: 'Subtitle appearance',
-            onPressed: _loading ? null : _showTextSizeSheet,
-          ),
-        ],
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: _accent))
-          : InAppWebView(
-              // Back to the full watch page (not /embed/): the embed player
-              // is meant to be loaded inside an iframe on someone else's
-              // page, not navigated to directly as a standalone page like
-              // this does - diagnostics showed its Subtitles/CC submenu
-              // click consistently falling through to the raw video element,
-              // which looks like exactly the kind of thing that mismatch
-              // could cause. The actual "no captions" bug turned out to be
-              // this script's own innerHTML/Trusted-Types crash, now fixed,
-              // so there's no longer a reason to prefer the embed player.
-              initialUrlRequest: URLRequest(url: WebUri(widget.initialUrl)),
-              initialSettings: InAppWebViewSettings(
-                mediaPlaybackRequiresUserGesture: false,
-                userAgent:
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                    '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    return PopScope(
+      canPop: !_isFullscreen,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _isFullscreen) _toggleFullscreen();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: _isFullscreen
+            ? null
+            : AppBar(
+                title: Text(widget.title),
+                backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+                foregroundColor: widget.isDarkMode ? Colors.white : Colors.black87,
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                    tooltip: 'Back',
+                    onPressed: () async {
+                      if (await _webViewController?.canGoBack() ?? false) {
+                        _webViewController?.goBack();
+                      }
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'Reload page',
+                    onPressed: () => _webViewController?.reload(),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.format_size),
+                    tooltip: 'Subtitle appearance',
+                    onPressed: _loading ? null : _showTextSizeSheet,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.fullscreen),
+                    tooltip: 'Fullscreen',
+                    onPressed: _loading ? null : _toggleFullscreen,
+                  ),
+                ],
               ),
-              initialUserScripts: UnmodifiableListView<UserScript>([
-                UserScript(
-                  source: _buildInjectedScript(),
-                  injectionTime: UserScriptInjectionTime.AT_DOCUMENT_END,
-                ),
-              ]),
-              onWebViewCreated: (controller) {
-                _webViewController = controller;
-                controller.addJavaScriptHandler(
-                  handlerName: 'kaWordTapped',
-                  callback: (args) {
-                    final text = args.isNotEmpty ? args[0] as String : '';
-                    if (text.isEmpty) return;
-                    final entry = _highlightIndex[text];
-                    if (entry != null) {
-                      _showKnownWordSheet(entry);
-                    } else {
-                      _showUnknownTextSheet(text);
-                    }
-                  },
-                );
-              },
-              // Temporary diagnostic: forwards the page's own JS console
-              // (including YouTube's own script errors, via the injected
-              // window.onerror hook below) into Flutter's debug log, so the
-              // Subtitles/CC submenu failure can be diagnosed from a real
-              // error instead of guessing at CSS/DOM causes blind.
-              onConsoleMessage: (controller, consoleMessage) {
-                debugPrint('[KA webview console] ${consoleMessage.messageLevel}: ${consoleMessage.message}');
-              },
-            ),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator(color: _accent))
+            // Always the same Stack shape (just with/without the overlay
+            // exit button) rather than switching between a bare WebView and
+            // a Stack-wrapped one, so the WebView's position in the tree
+            // never changes across the fullscreen toggle - swapping parents
+            // would make Flutter tear down and recreate the platform view,
+            // reloading the page and losing playback position.
+            : Stack(
+                children: [
+                  Positioned.fill(child: _buildWebView()),
+                  if (_isFullscreen)
+                    SafeArea(
+                      child: Align(
+                        alignment: Alignment.topRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Material(
+                            color: Colors.black54,
+                            shape: const CircleBorder(),
+                            child: IconButton(
+                              icon: const Icon(Icons.fullscreen_exit, color: Colors.white),
+                              tooltip: 'Exit fullscreen',
+                              onPressed: _toggleFullscreen,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+      ),
     );
   }
 }
