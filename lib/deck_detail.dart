@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'sets_data.dart';
 import 'study_data.dart';
+import 'card_context_screen.dart';
 import 'card_edit_dialog.dart';
 
 class DeckDetailScreen extends StatefulWidget {
@@ -914,6 +915,23 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
     );
   }
 
+  void _openCardContext(StudyCard card) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CardContextScreen(
+          card: card,
+          isDarkMode: widget.isDarkMode,
+          highlightIndex: buildHighlightIndex(widget.deck.cards),
+          onChanged: () {
+            setState(() {});
+            widget.onChanged();
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _buildCardTile(StudyCard card) {
     final isSelected = _selected.contains(card);
     return Card(
@@ -924,7 +942,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
               : Colors.grey[100],
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        onTap: _selectionMode ? () => _toggleSelection(card) : null,
+        onTap: _selectionMode ? () => _toggleSelection(card) : () => _openCardContext(card),
         onLongPress: () => _selectionMode ? _toggleSelection(card) : _startSelection(card),
         leading: _selectionMode
             ? Checkbox(

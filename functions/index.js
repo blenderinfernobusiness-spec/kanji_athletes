@@ -73,7 +73,7 @@ function shuffle(arr) {
 async function fetchAndFilter(word) {
   const uri = `https://tatoeba.org/en/api_v0/search?from=jpn&query=${encodeURIComponent(word)}&limit=30`;
   const response = await fetch(uri, { headers: { Accept: "application/json" } });
-  if (!response.ok) return [];
+  if (!response.ok) throw new Error(`Tatoeba responded ${response.status}`);
   const decoded = await response.json();
   const results = decoded.results || [];
   const vulgarIds = await getVulgarIds();
@@ -126,7 +126,9 @@ exports.tatoebaSentences = onRequest({ cors: true }, async (req, res) => {
   const cacheRef = db.collection("tatoebaCache").doc(word);
   try {
     const cached = await cacheRef.get();
-    if (cached.exists) {
+    // Empty entries were cached by an earlier version whenever Tatoeba failed,
+    // so they're treated as a miss and refetched rather than trusted.
+    if (cached.exists && cached.data().sentences?.length) {
       res.json(cached.data().sentences);
       return;
     }
@@ -137,7 +139,9 @@ exports.tatoebaSentences = onRequest({ cors: true }, async (req, res) => {
 
   try {
     const sentences = await fetchAndFilter(word);
-    cacheRef.set({ sentences, cachedAt: new Date().toISOString() }).catch(() => {});
+    if (sentences.length) {
+      cacheRef.set({ sentences, cachedAt: new Date().toISOString() }).catch(() => {});
+    }
     res.json(sentences);
   } catch (e) {
     res.status(502).json({ error: "fetch failed", details: String(e) });
