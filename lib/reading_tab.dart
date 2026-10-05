@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'study_data.dart';
 import 'reading_text_screen.dart';
+import 'beta_tag.dart';
 import 'immersion_tab.dart';
 
 // The Study screen's "Reading & Immersion" tab: a sub-tab for the existing
@@ -24,9 +25,17 @@ class ReadingAndImmersionTabView extends StatelessWidget {
               indicatorColor: const Color(0xFF9A00FE),
               labelColor: const Color(0xFF9A00FE),
               unselectedLabelColor: isDarkMode ? Colors.white54 : Colors.black45,
-              tabs: const [
-                Tab(text: "Reading"),
-                Tab(text: "Immersion"),
+              tabs: [
+                const Tab(text: "Reading"),
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text("Immersion"),
+                      if (isImmersionBeta) ...[const SizedBox(width: 6), const BetaTag()],
+                    ],
+                  ),
+                ),
               ],
             ),
           ),

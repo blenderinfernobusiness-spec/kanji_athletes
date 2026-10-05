@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'beta_tag.dart';
+import 'immersion_word_lookup.dart';
 import 'study_data.dart';
 import 'study_settings.dart';
-import 'listening_player.dart' show WordPopupCard, DeckPickerDialog;
 
 const Color _accent = Color(0xFF9A00FE);
 const double _defaultCaptionTextSize = 24;
@@ -533,193 +533,17 @@ class _VideoImmersionPlayerScreenState extends State<VideoImmersionPlayerScreen>
   }
 
   void _showKnownWordSheet(HighlightEntry entry) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: WordPopupCard(
-          entry: entry,
-          isDarkMode: widget.isDarkMode,
-          width: double.infinity,
-          settings: _settings,
-          highlightIndex: _highlightIndex,
-          onClose: () => Navigator.pop(context),
-          onAddToDeck: () {
-            Navigator.pop(context);
-            _addEntryToDeck(entry);
-          },
-          onEditMemoryTechnique: () {
-            Navigator.pop(context);
-            _editMemoryTechnique(entry);
-          },
-          onOpenKanji: (kEntry) {
-            Navigator.pop(context);
-            _showKnownWordSheet(kEntry);
-          },
-        ),
-      ),
+    showImmersionKnownWord(
+      context,
+      entry: entry,
+      isDarkMode: widget.isDarkMode,
+      settings: _settings,
+      highlightIndex: _highlightIndex,
     );
   }
 
   void _showUnknownTextSheet(String text) {
-    final meaningController = TextEditingController();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: widget.isDarkMode ? Colors.white : Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "Not in your dictionary/decks",
-              style: TextStyle(color: widget.isDarkMode ? Colors.white54 : Colors.black45, fontSize: 12),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () {
-                final url = 'https://translate.google.com/?sl=ja&tl=en&text=${Uri.encodeComponent(text)}&op=translate';
-                launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-              },
-              icon: const Icon(Icons.translate, color: _accent),
-              label: const Text("Open in Google Translate", style: TextStyle(color: _accent)),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: meaningController,
-              style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
-              decoration: InputDecoration(
-                hintText: "English meaning (optional, for adding to a deck)",
-                hintStyle: TextStyle(color: widget.isDarkMode ? Colors.white38 : Colors.black38),
-                filled: true,
-                fillColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.grey[200],
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: _accent, foregroundColor: Colors.white),
-                onPressed: () async {
-                  Navigator.pop(context);
-                  await _addRawTextToDeck(text, meaningController.text.trim());
-                },
-                child: const Text("Add to deck"),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _addEntryToDeck(HighlightEntry entry) async {
-    final decks = await loadStudyDecks();
-    if (!mounted) return;
-    final chosen = await showDialog<StudyDeck>(
-      context: context,
-      builder: (context) => DeckPickerDialog(decks: decks, isDarkMode: widget.isDarkMode),
-    );
-    if (chosen == null || !mounted) return;
-
-    final card = StudyCard(
-      japanese: entry.japanese,
-      hiragana: entry.reading,
-      english: entry.meaning,
-      kanjiVGCodes: findKanjiVGCodesForWord(entry.japanese),
-    );
-    chosen.cards.add(card);
-    await saveStudyDecks(decks);
-    if (!mounted) return;
-    entry.isDeckWord = true;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added "${entry.japanese}" to ${chosen.name}')));
-  }
-
-  Future<void> _addRawTextToDeck(String text, String meaning) async {
-    final decks = await loadStudyDecks();
-    if (!mounted) return;
-    final chosen = await showDialog<StudyDeck>(
-      context: context,
-      builder: (context) => DeckPickerDialog(decks: decks, isDarkMode: widget.isDarkMode),
-    );
-    if (chosen == null || !mounted) return;
-
-    final card = StudyCard(japanese: text, hiragana: '', english: meaning);
-    chosen.cards.add(card);
-    await saveStudyDecks(decks);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added "$text" to ${chosen.name}')));
-  }
-
-  Future<void> _editMemoryTechnique(HighlightEntry entry) async {
-    final controller = TextEditingController(text: entry.memoryTechnique);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          entry.memoryTechnique.isEmpty ? "Add Memory Technique" : "Edit Memory Technique",
-          style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
-        ),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: 4,
-          style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
-          decoration: InputDecoration(
-            hintText: "e.g. a mnemonic or memory aid",
-            hintStyle: TextStyle(color: widget.isDarkMode ? Colors.white38 : Colors.black38),
-            filled: true,
-            fillColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.grey[200],
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _accent, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text("Save"),
-          ),
-        ],
-      ),
-    );
-    if (result == null || !mounted) return;
-
-    final technique = result.trim();
-    entry.memoryTechnique = technique;
-    entry.card?.memoryTechnique = technique;
-
-    final decks = await loadStudyDecks();
-    var changed = false;
-    for (final deck in decks) {
-      for (final card in deck.cards) {
-        if (card.japanese.trim() == entry.japanese) {
-          card.memoryTechnique = technique;
-          changed = true;
-        }
-      }
-    }
-    if (changed) await saveStudyDecks(decks);
+    showImmersionUnknownText(context, text: text, isDarkMode: widget.isDarkMode);
   }
 
   Widget _buildWebView() {
@@ -755,9 +579,18 @@ class _VideoImmersionPlayerScreenState extends State<VideoImmersionPlayerScreen>
         _webViewController = controller;
         controller.addJavaScriptHandler(
           handlerName: 'kaWordTapped',
-          callback: (args) {
+          callback: (args) async {
             final text = args.isNotEmpty ? args[0] as String : '';
             if (text.isEmpty) return;
+            // A lookup sheet shown while still in the landscape-locked,
+            // immersive fullscreen state doesn't actually render on Android
+            // (it silently queues instead) - tapping several words in a row
+            // without ever seeing one appear then dumps them all on screen
+            // stacked together the moment fullscreen is exited. Exiting
+            // first guarantees exactly one sheet is ever queued at a time,
+            // and it's one that actually shows up.
+            if (_isFullscreen) await _toggleFullscreen();
+            if (!mounted) return;
             final entry = _highlightIndex[text];
             if (entry != null) {
               _showKnownWordSheet(entry);
@@ -789,7 +622,13 @@ class _VideoImmersionPlayerScreenState extends State<VideoImmersionPlayerScreen>
         appBar: _isFullscreen
             ? null
             : AppBar(
-                title: Text(widget.title),
+                title: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(child: Text(widget.title, overflow: TextOverflow.ellipsis)),
+                    if (isImmersionBeta) ...[const SizedBox(width: 8), const BetaTag()],
+                  ],
+                ),
                 backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
                 foregroundColor: widget.isDarkMode ? Colors.white : Colors.black87,
                 actions: [

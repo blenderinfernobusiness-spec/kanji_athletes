@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'video_immersion_player.dart';
+import 'beta_tag.dart';
+import 'video_subtitle_panel_screen.dart';
 
 const Color _accent = Color(0xFF9A00FE);
 
@@ -49,7 +50,7 @@ class _ImmersionTabViewState extends State<ImmersionTabView> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => VideoImmersionPlayerScreen(initialUrl: url, title: title, isDarkMode: widget.isDarkMode),
+        builder: (context) => VideoSubtitlePanelScreen(initialUrl: url, title: title, isDarkMode: widget.isDarkMode),
       ),
     );
   }
@@ -106,6 +107,21 @@ class _ImmersionTabViewState extends State<ImmersionTabView> {
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          if (isImmersionBeta) ...[
+            Row(
+              children: [
+                const BetaTag(),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Immersion is still rough around the edges on Android - browsing and watching work, but may be fiddly.',
+                    style: TextStyle(color: _fgMuted, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(

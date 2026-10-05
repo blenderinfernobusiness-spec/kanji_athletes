@@ -143,6 +143,9 @@ class _GemGridAppState extends State<GemGridApp> {
         scaffoldBackgroundColor: const Color(0xFF1A1A1A),
       ),
       themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      // Android draws edge-to-edge, so keep every screen clear of the system
+      // navigation bar. Top is left alone since each app bar already handles it.
+      builder: (context, child) => SafeArea(top: false, child: child!),
       home: HomeScreen(onThemeChanged: _setThemePreference, isDarkMode: _isDarkMode),
     );
   }
