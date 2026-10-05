@@ -184,6 +184,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '田',
       english: 'Field, rice paddy',
       memoryNotes: ["Rice plots from a rice paddy with a fence around it"],
+      imageAsset: 'assets/kanji_memory/07530.webp',
     ),
     ChallengeKanji(
       japanese: '雨',
@@ -224,6 +225,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '可',
       english: 'Can, possible',
       memoryNotes: ["A man shocked with his mouth wide open because a street is completely normal"],
+      imageAsset: 'assets/kanji_memory/053ef.webp',
     ),
     ChallengeKanji(
       japanese: '川',
@@ -235,6 +237,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '半',
       english: 'Half',
       memoryNotes: ["A cake cut in half unfairly, one half is '2' small"],
+      imageAsset: 'assets/kanji_memory/0534a.webp',
     ),
     ChallengeKanji(
       japanese: '舌',
@@ -298,6 +301,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '糸',
       english: 'Thread',
       memoryNotes: ["A person holding a small piece of thread"],
+      imageAsset: 'assets/kanji_memory/07cf8.webp',
     ),
     ChallengeKanji(
       japanese: '足',
@@ -318,6 +322,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '夕',
       english: 'Evening',
       memoryNotes: ["Looks like a crescent moon (moon comes out at evening/night time)"],
+      imageAsset: 'assets/kanji_memory/05915.webp',
     ),
     ChallengeKanji(
       japanese: '土',
@@ -333,16 +338,19 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '寸',
       english: 'Measure',
       memoryNotes: ["Two rulers crossed over each other"],
+      imageAsset: 'assets/kanji_memory/05bf8.webp',
     ),
     ChallengeKanji(
       japanese: '寺',
       english: 'Temple',
       memoryNotes: ["rulers making a small torii gate on the soil at a temple"],
+      imageAsset: 'assets/kanji_memory/05bfa.webp',
     ),
     ChallengeKanji(
       japanese: '又',
       english: 'Again',
       memoryNotes: ["A fisherman catches fish again again and again (kanji looks like a fish)"],
+      imageAsset: 'assets/kanji_memory/053c8.webp',
     ),
     ChallengeKanji(
       japanese: '乙',
@@ -368,6 +376,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '亠',
       english: 'Lid',
       memoryNotes: ["Looks like a lid on a cooking pot"],
+      imageAsset: 'assets/kanji_memory/04ea0.webp',
     ),
     ChallengeKanji(
       japanese: '儿',
@@ -379,6 +388,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '冖',
       english: 'Crown, cover',
       memoryNotes: ["A flat crown"],
+      imageAsset: 'assets/kanji_memory/05196.webp',
     ),
     ChallengeKanji(
       japanese: '冫',
@@ -389,11 +399,13 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '几',
       english: 'Desk, table',
       memoryNotes: ["A table with two legs"],
+      imageAsset: 'assets/kanji_memory/051e0.webp',
     ),
     ChallengeKanji(
       japanese: '凵',
       english: 'Open box, open mouth',
       memoryNotes: ["An open box"],
+      imageAsset: 'assets/kanji_memory/051f5.webp',
     ),
     ChallengeKanji(
       japanese: '勹',
@@ -404,6 +416,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '匕',
       english: 'Spoon',
       memoryNotes: ["Seven spoons"],
+      imageAsset: 'assets/kanji_memory/05315.webp',
     ),
     const ChallengeKanji(japanese: '囗', english: 'Box'),
     ChallengeKanji(
@@ -416,6 +429,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '卜',
       english: 'Divination, oracle, diving rod',
       memoryNotes: ["Here's what a divining rod looks like"],
+      imageAsset: 'assets/kanji_memory/0535c.webp',
     ),
     ChallengeKanji(
       japanese: '卩',
@@ -432,6 +446,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '亻',
       english: 'Person',
       memoryNotes: ["A person balancing on one leg side profile view"],
+      imageAsset: 'assets/kanji_memory/04ebb.webp',
     ),
   ],
   // Day 6 - more radicals
@@ -440,11 +455,13 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '宀',
       english: 'Roof',
       memoryNotes: ["The line in the middle looks like a chimney"],
+      imageAsset: 'assets/kanji_memory/05b80.webp',
     ),
     ChallengeKanji(
       japanese: '艹',
       english: 'Grass',
       memoryNotes: ["The two lines look like grass growing from the ground"],
+      imageAsset: 'assets/kanji_memory/08279.webp',
     ),
     const ChallengeKanji(japanese: '⺌', english: 'Small'),
     ChallengeKanji(
@@ -456,6 +473,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '禾',
       english: 'Two branched tree, grain',
       memoryNotes: ["A tree with two big branches slanted like this"],
+      imageAsset: 'assets/kanji_memory/079be.webp',
     ),
     ChallengeKanji(
       japanese: '衤',
@@ -532,6 +550,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '攵',
       english: 'Strike',
       memoryNotes: ["Two people clashing swords"],
+      imageAsset: 'assets/kanji_memory/06535.webp',
     ),
     ChallengeKanji(
       japanese: '广',
@@ -540,6 +559,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
         "A cliff with rocks sticking out",
         "A slanted roof (like a cliff is slanted) with a chimney on top",
       ],
+      imageAsset: 'assets/kanji_memory/05e7f.webp',
     ),
   ],
   // Day 7
@@ -576,16 +596,19 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '出',
       english: 'Leave',
       memoryNotes: ["2 arrows pointing toward an exit"],
+      imageAsset: 'assets/kanji_memory/051fa.webp',
     ),
     ChallengeKanji(
       japanese: '本',
       english: 'Book, foundation',
       memoryNotes: ["A book about trees"],
+      imageAsset: 'assets/kanji_memory/0672c.webp',
     ),
     ChallengeKanji(
       japanese: '中',
       english: 'Inside, center, during',
       memoryNotes: ["A totem"],
+      imageAsset: 'assets/kanji_memory/04e2d.webp',
     ),
     ChallengeKanji(
       japanese: '子',
@@ -596,6 +619,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '見',
       english: 'See, look',
       memoryNotes: ["An eye on legs looking at the tv"],
+      imageAsset: 'assets/kanji_memory/0898b.webp',
     ),
   ],
   // Day 8
@@ -611,11 +635,13 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '上',
       english: 'Up, above',
       memoryNotes: ["A stick above the ground"],
+      imageAsset: 'assets/kanji_memory/04e0a.webp',
     ),
     ChallengeKanji(
       japanese: '分',
       english: 'Part, minute',
       memoryNotes: ["A sword separated into its different parts"],
+      imageAsset: 'assets/kanji_memory/05206.webp',
     ),
     ChallengeKanji(
       japanese: '生',
@@ -636,6 +662,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '間',
       english: 'Gap',
       memoryNotes: ["A gate that takes you to the sun called the gap in space time"],
+      imageAsset: 'assets/kanji_memory/09593.webp',
     ),
     ChallengeKanji(
       japanese: '時',
@@ -644,11 +671,13 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
         "A temple with a sundial",
         "This is what a sundial looks like if you don't know",
       ],
+      imageAsset: 'assets/kanji_memory/06642.webp',
     ),
     ChallengeKanji(
       japanese: '気',
       english: 'Energy, mood, spirit',
       memoryNotes: ["Steam from forging a sword"],
+      imageAsset: 'assets/kanji_memory/06c17.webp',
     ),
     ChallengeKanji(
       japanese: '十',
@@ -672,6 +701,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '前',
       english: 'Before, in front',
       memoryNotes: ["A grass field in front of a moon and sword"],
+      imageAsset: 'assets/kanji_memory/0524d.webp',
     ),
     ChallengeKanji(
       japanese: '入',
@@ -692,11 +722,13 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '長',
       english: 'Long, leader',
       memoryNotes: ["A long closet with only 3 outfits in it"],
+      imageAsset: 'assets/kanji_memory/09577.webp',
     ),
     ChallengeKanji(
       japanese: '下',
       english: 'Below, under',
       memoryNotes: ["A stick below the ground"],
+      imageAsset: 'assets/kanji_memory/04e0b.webp',
     ),
     ChallengeKanji(
       japanese: '学',
@@ -725,6 +757,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '話',
       english: 'Speech, talk',
       memoryNotes: ["Two people talking whilst sticking out their tongues"],
+      imageAsset: 'assets/kanji_memory/08a71.webp',
     ),
     ChallengeKanji(
       japanese: '山',
@@ -737,6 +770,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       memoryNotes: [
         "Etymology: Depicts a tall structure\nLooks a bit like traffic lights to me so I think of really high up traffic lights",
       ],
+      imageAsset: 'assets/kanji_memory/09ad8.webp',
     ),
     ChallengeKanji(
       japanese: '今',
@@ -752,6 +786,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '五',
       english: 'Five',
       memoryNotes: ["Looks like the number 5 with a line through it"],
+      imageAsset: 'assets/kanji_memory/04e94.webp',
     ),
     ChallengeKanji(
       japanese: '名',
@@ -759,11 +794,13 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       memoryNotes: [
         "Etymology: Saying one's name to identify themselves in the dark.\nSomeone saying their name at night time to identify themselves",
       ],
+      imageAsset: 'assets/kanji_memory/0540d.webp',
     ),
     ChallengeKanji(
       japanese: '金',
       english: 'Gold, money',
       memoryNotes: ["A person gets loads of money and gold from the king"],
+      imageAsset: 'assets/kanji_memory/091d1.webp',
     ),
   ],
   // Day 11
@@ -782,6 +819,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '四',
       english: 'Four',
       memoryNotes: ["A cat (an animal with 4 legs) in a box"],
+      imageAsset: 'assets/kanji_memory/056db.webp',
     ),
     ChallengeKanji(
       japanese: '先',
@@ -815,6 +853,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
         "9 looks a lot like the kanji for power (力), for those who like my hero academia Deku is the 9th user of one for all a very powerful quirk.",
         "A powerful looking number nine",
       ],
+      imageAsset: 'assets/kanji_memory/04e5d.webp',
     ),
     ChallengeKanji(
       japanese: '食',
@@ -833,6 +872,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '八',
       english: 'Eight, (separate as radical)',
       memoryNotes: ["Building off of the meaning for 4 四, two cats lying in the shape of the 8 kanji (4 + 4 = 8)"],
+      imageAsset: 'assets/kanji_memory/0516b.webp',
     ),
     ChallengeKanji(
       japanese: '水',
@@ -853,21 +893,25 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '六',
       english: 'Six',
       memoryNotes: ["A lid separated into 6 pieces"],
+      imageAsset: 'assets/kanji_memory/0516d.webp',
     ),
     ChallengeKanji(
       japanese: '万',
       english: 'Ten thousand',
       memoryNotes: ["A 10,000 dollar katana"],
+      imageAsset: 'assets/kanji_memory/04e07.webp',
     ),
     ChallengeKanji(
       japanese: '白',
       english: 'White',
       memoryNotes: ["The bright white sun"],
+      imageAsset: 'assets/kanji_memory/0767d.webp',
     ),
     ChallengeKanji(
       japanese: '七',
       english: 'Seven',
       memoryNotes: ["An upside down 7"],
+      imageAsset: 'assets/kanji_memory/04e03.webp',
     ),
     ChallengeKanji(
       japanese: '円',
@@ -876,6 +920,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
         "The enclose radical wraps around = round",
         "Coins are round",
       ],
+      imageAsset: 'assets/kanji_memory/05186.webp',
     ),
     ChallengeKanji(
       japanese: '電',
@@ -934,6 +979,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '千',
       english: 'Thousand',
       memoryNotes: ["A crooked sign saying 1000 miles"],
+      imageAsset: 'assets/kanji_memory/05343.webp',
     ),
   ],
   // Day 14
@@ -947,6 +993,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '右',
       english: 'Right (as in right or left)',
       memoryNotes: ["Imagine your holding a rock in your right hand, imagine your left hand fingers turn into construction tools"],
+      imageAsset: 'assets/kanji_memory/053f3.webp',
     ),
     ChallengeKanji(
       japanese: '南',
@@ -960,6 +1007,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '左',
       english: 'Left (as in right or left)',
       memoryNotes: ["Imagine your left hand fingers turn into construction tools"],
+      imageAsset: 'assets/kanji_memory/05de6.webp',
     ),
     ChallengeKanji(
       japanese: '友',
@@ -988,6 +1036,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '休',
       english: 'Rest, holiday',
       memoryNotes: ["A person resting by a tree"],
+      imageAsset: 'assets/kanji_memory/04f11.webp',
     ),
     ChallengeKanji(
       japanese: '午',
@@ -1018,36 +1067,43 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '者',
       english: 'Person, someone',
       memoryNotes: ["The old wise sun who tells you who you are."],
+      imageAsset: 'assets/kanji_memory/08005.webp',
     ),
     ChallengeKanji(
       japanese: '事',
       english: 'Thing, matter',
       memoryNotes: ["A broom with a mouth thinking about things."],
+      imageAsset: 'assets/kanji_memory/04e8b.webp',
     ),
     ChallengeKanji(
       japanese: '思',
       english: 'Think',
       memoryNotes: ["Thoughts are like a field in your mind."],
+      imageAsset: 'assets/kanji_memory/0601d.webp',
     ),
     ChallengeKanji(
       japanese: '会',
       english: 'Meet, association',
       memoryNotes: ["A person saying something at a meeting."],
+      imageAsset: 'assets/kanji_memory/04f1a.webp',
     ),
     ChallengeKanji(
       japanese: '家',
       english: 'House, home',
       memoryNotes: ["A pig living in a house."],
+      imageAsset: 'assets/kanji_memory/05bb6.webp',
     ),
     ChallengeKanji(
       japanese: '的',
       english: 'Target, -like (suffix)',
       memoryNotes: ["A target with white circles wrapping around it."],
+      imageAsset: 'assets/kanji_memory/07684.webp',
     ),
     ChallengeKanji(
       japanese: '方',
       english: 'Direction, way of doing, person (polite)',
       memoryNotes: ["Looks like a person pointing which direction to go."],
+      imageAsset: 'assets/kanji_memory/065b9.webp',
     ),
     ChallengeKanji(
       japanese: '地',
@@ -1063,6 +1119,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '場',
       english: 'Place',
       memoryNotes: ["The sun reveals a place on the soil."],
+      imageAsset: 'assets/kanji_memory/05834.webp',
     ),
     ChallengeKanji(
       japanese: '代',
@@ -1073,6 +1130,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '私',
       english: 'I, private',
       memoryNotes: ["Imagine yourself as a tree thinking about something personal."],
+      imageAsset: 'assets/kanji_memory/079c1.webp',
     ),
   ],
   // Day 17
@@ -1086,6 +1144,7 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '物',
       english: 'Thing, object',
       memoryNotes: ["A cow with their box of things and a comb."],
+      imageAsset: 'assets/kanji_memory/07269.webp',
     ),
     ChallengeKanji(
       japanese: '田',
@@ -1096,31 +1155,37 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '体',
       english: 'Body',
       memoryNotes: ["A person reading a book about the human body."],
+      imageAsset: 'assets/kanji_memory/04f53.webp',
     ),
     ChallengeKanji(
       japanese: '動',
       english: 'Move',
       memoryNotes: ["A strong man moves a heavy boulder."],
+      imageAsset: 'assets/kanji_memory/052d5.webp',
     ),
     ChallengeKanji(
       japanese: '社',
       english: 'Company, shrine',
       memoryNotes: ["A festival on the soil where a company celebrates."],
+      imageAsset: 'assets/kanji_memory/0793e.webp',
     ),
     ChallengeKanji(
       japanese: '知',
       english: 'Know',
       memoryNotes: ["Knowledge is like an arrow hitting your head."],
+      imageAsset: 'assets/kanji_memory/077e5.webp',
     ),
     ChallengeKanji(
       japanese: '理',
       english: 'Reason, logic',
       memoryNotes: ["Go to the king of the village for logic and wisdom."],
+      imageAsset: 'assets/kanji_memory/07406.webp',
     ),
     ChallengeKanji(
       japanese: '同',
       english: 'Same',
       memoryNotes: ["When you enclose one mouth, everyone speaks the same, so it becomes \"same.\""],
+      imageAsset: 'assets/kanji_memory/0540c.webp',
     ),
     ChallengeKanji(
       japanese: '心',
@@ -1131,26 +1196,31 @@ final List<List<ChallengeKanji>> kanjiChallengeDays = [
       japanese: '発',
       english: 'Depart, emit',
       memoryNotes: ["A person's footsteps are heard as she departs and she waves with both hands."],
+      imageAsset: 'assets/kanji_memory/0767a.webp',
     ),
     ChallengeKanji(
       japanese: '作',
       english: 'Make, create',
       memoryNotes: ["A person is during the process of making something"],
+      imageAsset: 'assets/kanji_memory/04f5c.webp',
     ),
     ChallengeKanji(
       japanese: '新',
       english: 'New',
       memoryNotes: ["A man stands up and cuts into a tree with an axe to make something new."],
+      imageAsset: 'assets/kanji_memory/065b0.webp',
     ),
     ChallengeKanji(
       japanese: '世',
       english: 'World, generation',
       memoryNotes: ["W for world."],
+      imageAsset: 'assets/kanji_memory/04e16.webp',
     ),
     ChallengeKanji(
       japanese: '度',
       english: 'Degree, measure',
       memoryNotes: ["Under a slanted roof, I do 20 push ups with my right hand."],
+      imageAsset: 'assets/kanji_memory/05ea6.webp',
     ),
   ],
   // Day 18
