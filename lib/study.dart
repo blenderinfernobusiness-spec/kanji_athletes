@@ -158,6 +158,40 @@ class _StudyScreenState extends State<StudyScreen> {
     );
   }
 
+  // A 12%-alpha purple fill reads as a moody tinted card on dark mode's
+  // #2A2A2A dialog background, but the exact same blend over a light-mode
+  // white dialog comes out as a flat, washed-out pastel lavender - looks
+  // cheap rather than "featured". Light mode instead gets only a hint of
+  // tint, leaning on the solid purple border (kept in both modes) to carry
+  // the "special" look instead of the fill.
+  Widget _specialDeckCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      color: const Color(0xFF9A00FE).withValues(alpha: widget.isDarkMode ? 0.12 : 0.05),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Color(0xFF9A00FE)),
+      ),
+      margin: EdgeInsets.zero,
+      child: ListTile(
+        leading: Icon(icon, color: const Color(0xFF9A00FE)),
+        title: Text(
+          title,
+          style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+        ),
+        onTap: onTap,
+      ),
+    );
+  }
+
   void _showPremadeDeckPicker() {
     final searchController = TextEditingController();
     showDialog(
@@ -179,102 +213,52 @@ class _StudyScreenState extends State<StudyScreen> {
             content: SizedBox(
               width: 320,
               height: 460,
-              child: Column(
+              // A single scrollable list for everything - the special decks,
+              // search field, and browsable sets - rather than a fixed
+              // Column with just the sets list scrolling in whatever cramped
+              // space happened to be left over underneath.
+              child: ListView(
                 children: [
-                  Card(
-                    color: const Color(0xFF9A00FE).withValues(alpha: 0.12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: const BorderSide(color: Color(0xFF9A00FE)),
-                    ),
-                    margin: EdgeInsets.zero,
-                    child: ListTile(
-                      leading: const Icon(Icons.spa, color: Color(0xFF9A00FE)),
-                      title: Text(
-                        hiraganaChallengeDeckName,
-                        style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
-                      ),
-                      subtitle: Text(
+                  _specialDeckCard(
+                    icon: Icons.spa,
+                    title: hiraganaChallengeDeckName,
+                    subtitle:
                         '${hiraganaChallengeDays.fold<int>(0, (sum, day) => sum + day.length)} hiragana so far · new to Japanese? start here',
-                        style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
-                      ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _createHiraganaChallengeDeck();
-                      },
-                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _createHiraganaChallengeDeck();
+                    },
                   ),
                   const SizedBox(height: 8),
-                  Card(
-                    color: const Color(0xFF9A00FE).withValues(alpha: 0.12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: const BorderSide(color: Color(0xFF9A00FE)),
-                    ),
-                    margin: EdgeInsets.zero,
-                    child: ListTile(
-                      leading: const Icon(Icons.local_fire_department, color: Color(0xFF9A00FE)),
-                      title: Text(
-                        kanjiChallengeDeckName,
-                        style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
-                      ),
-                      subtitle: Text(
+                  _specialDeckCard(
+                    icon: Icons.local_fire_department,
+                    title: kanjiChallengeDeckName,
+                    subtitle:
                         '${kanjiChallengeDays.fold<int>(0, (sum, day) => sum + day.length)} kanji so far · new kanji unlock automatically each day',
-                        style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
-                      ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _createKanjiChallengeDeck();
-                      },
-                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _createKanjiChallengeDeck();
+                    },
                   ),
                   const SizedBox(height: 8),
-                  Card(
-                    color: const Color(0xFF9A00FE).withValues(alpha: 0.12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: const BorderSide(color: Color(0xFF9A00FE)),
-                    ),
-                    margin: EdgeInsets.zero,
-                    child: ListTile(
-                      leading: const Icon(Icons.menu_book, color: Color(0xFF9A00FE)),
-                      title: Text(
-                        "Essential Vocabulary Challenge",
-                        style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
-                      ),
-                      subtitle: Text(
-                        '${setsData['Essential Vocabulary']?.items.length ?? 0} words · you set how many new words per day',
-                        style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
-                      ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _createEssentialVocabDeck();
-                      },
-                    ),
+                  _specialDeckCard(
+                    icon: Icons.menu_book,
+                    title: "Essential Vocabulary Challenge",
+                    subtitle: '${setsData['Essential Vocabulary']?.items.length ?? 0} words · you set how many new words per day',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _createEssentialVocabDeck();
+                    },
                   ),
                   const SizedBox(height: 8),
-                  Card(
-                    color: const Color(0xFF9A00FE).withValues(alpha: 0.12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: const BorderSide(color: Color(0xFF9A00FE)),
-                    ),
-                    margin: EdgeInsets.zero,
-                    child: ListTile(
-                      leading: const Icon(Icons.translate, color: Color(0xFF9A00FE)),
-                      title: Text(
-                        kGrammarDeckName,
-                        style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
-                      ),
-                      subtitle: Text(
-                        '${grammarPoints.length} grammar points · one new point each day, learned through lessons',
-                        style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
-                      ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _createGrammarDeck();
-                      },
-                    ),
+                  _specialDeckCard(
+                    icon: Icons.translate,
+                    title: kGrammarDeckName,
+                    subtitle: '${grammarPoints.length} grammar points · one new point each day, learned through lessons',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _createGrammarDeck();
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -292,32 +276,29 @@ class _StudyScreenState extends State<StudyScreen> {
                     onChanged: (_) => setDialogState(() {}),
                   ),
                   const SizedBox(height: 12),
-                  Expanded(
-                    child: entries.isEmpty
-                        ? Center(
-                            child: Text(
-                              "No sets found",
-                              style: TextStyle(color: widget.isDarkMode ? Colors.white54 : Colors.black45),
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: entries.length,
-                            itemBuilder: (context, index) {
-                              final set = entries[index].value;
-                              return ListTile(
-                                title: Text(set.name, style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black)),
-                                subtitle: Text(
-                                  '${set.items.length} item${set.items.length == 1 ? '' : 's'} · ${set.setType}',
-                                  style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
-                                ),
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  _createDeckFromSet(set);
-                                },
-                              );
-                            },
-                          ),
-                  ),
+                  if (entries.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Center(
+                        child: Text(
+                          "No sets found",
+                          style: TextStyle(color: widget.isDarkMode ? Colors.white54 : Colors.black45),
+                        ),
+                      ),
+                    )
+                  else
+                    for (final entry in entries)
+                      ListTile(
+                        title: Text(entry.value.name, style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black)),
+                        subtitle: Text(
+                          '${entry.value.items.length} item${entry.value.items.length == 1 ? '' : 's'} · ${entry.value.setType}',
+                          style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _createDeckFromSet(entry.value);
+                        },
+                      ),
                 ],
               ),
             ),
@@ -955,7 +936,7 @@ class _StudyScreenState extends State<StudyScreen> {
       case kEssentialVocabTrackId:
         return 'Essential Vocabulary Challenge';
       case kHiraganaTrackId:
-        return 'Hiragana Challenge';
+        return 'Kana Course';
       case kGrammarTrackId:
         return kGrammarDeckName;
       default:
@@ -1051,10 +1032,10 @@ class _StudyScreenState extends State<StudyScreen> {
   // the order they happen - an end-of-day lesson sits after its day's cards.
   List<Widget> _lessonSectionWidgets() {
     const sections = [
-      MapEntry(kHiraganaTrackId, 'Kana course'),
+      MapEntry(kHiraganaTrackId, 'Kana Course'),
       MapEntry(kKanjiChallengeTrackId, '90 Day Kanji Challenge'),
       MapEntry(kEssentialVocabTrackId, 'Vocabulary'),
-      MapEntry(kGrammarTrackId, 'Grammar'),
+      MapEntry(kGrammarTrackId, kGrammarDeckName),
     ];
     double sortKey(Lesson l) => l.endOfDay != null ? l.endOfDay! + 0.5 : l.day.toDouble();
     final widgets = <Widget>[];

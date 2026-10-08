@@ -90,8 +90,20 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                     _currentItem.kunYomi = kunYomiController.text;
                     _currentItem.naNori = naNoriController.text;
                   });
-                  // Save to sets_data if needed (if item is part of a set, trigger persistence)
-                  await SetPreferences.saveAllSets();
+                  // Persist just the one set this item actually belongs to,
+                  // rather than every set in the dictionary - on web,
+                  // shared_preferences is backed by localStorage, which has
+                  // a hard per-origin size quota that a couple of the
+                  // larger default sets are big enough to blow through on
+                  // their own, so re-saving all of them for a one-item edit
+                  // risked failing (or silently not persisting) an edit to
+                  // an entirely unrelated set.
+                  for (final entry in setsData.entries) {
+                    if (entry.value.items.contains(_currentItem)) {
+                      await SetPreferences.saveSet(entry.key, entry.value);
+                      break;
+                    }
+                  }
                   Navigator.of(context).pop();
                 },
                 child: const Text('Save'),

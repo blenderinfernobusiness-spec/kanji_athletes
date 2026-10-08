@@ -1,6 +1,6 @@
 import 'study_data.dart';
 
-const String hiraganaChallengeDeckName = 'Hiragana Challenge';
+const String hiraganaChallengeDeckName = 'Kana Course';
 
 // One example word shown for a Hiragana Challenge character: written in pure
 // hiragana - all a beginner can actually read at this stage - with its

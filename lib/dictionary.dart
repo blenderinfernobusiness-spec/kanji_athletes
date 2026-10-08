@@ -9,7 +9,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'set_preferences.dart';
 import 'quick_sync_button.dart';
 
 class DictionaryScreen extends StatefulWidget {
@@ -331,13 +330,12 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
         setType: preset.setType,
       );
     });
-
-    // Persist defaults to preferences
-    try {
-      await SetPreferences.saveAllSets();
-    } catch (e) {
-      print('Error saving default sets: $e');
-    }
+    // Nothing to persist here - the saved set_* prefs were just cleared
+    // above, and every set is now sitting at exactly its pristine default,
+    // which loadAllSets() already produces on its own with nothing saved.
+    // Writing every set back out unconditionally used to happen here, but
+    // was both pointless and, on web, risked blowing shared_preferences'
+    // localStorage quota on the larger default sets for no reason.
   }
 
   void _showSettingsMenu() {

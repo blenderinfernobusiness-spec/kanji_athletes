@@ -333,12 +333,24 @@ Future<void> applyImportedJson(String content) async {
     }
   }
 
-  // Default-backed sets need persisting too now that they've been reset and
-  // patched in memory, so the result survives an app restart - loadAllSets()
-  // below only pulls in whatever's already saved to prefs, it doesn't
-  // persist what's currently sitting in memory.
-  for (final key in pristineDefaults.keys) {
-    await SetPreferences.saveSet(key, setsData[key]!);
+  // Default-backed sets that actually received an override need persisting
+  // too, now that they've been reset and patched in memory, so the patch
+  // survives an app restart - loadAllSets() below only pulls in whatever's
+  // already saved to prefs, it doesn't persist what's currently sitting in
+  // memory. A default set with no override is already correctly at its
+  // pristine state after the reset above, so it's skipped here rather than
+  // re-writing every single shipped set regardless of whether anything
+  // about it actually changed - on web, shared_preferences is backed by
+  // localStorage, which has a hard per-origin size quota, and some of the
+  // larger default sets (the bigger JMdict word lists) are big enough on
+  // their own to blow straight through it despite being completely
+  // unmodified, failing the whole restore on a set nothing happened to.
+  if (data.containsKey('setOverrides')) {
+    final overrides = data['setOverrides'] as Map<String, dynamic>;
+    for (final key in overrides.keys) {
+      final set = setsData[key];
+      if (set != null) await SetPreferences.saveSet(key, set);
+    }
   }
 
   await SetPreferences.loadAllSets();

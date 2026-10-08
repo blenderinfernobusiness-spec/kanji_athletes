@@ -8,7 +8,7 @@ import 'tatoeba_service.dart';
 // study, and the flashcards are for the games and everything else.
 
 const String kGrammarTrackId = 'grammar';
-const String kGrammarDeckName = 'Grammar';
+const String kGrammarDeckName = 'JLPT N5 Grammar Lessons';
 
 // The grammar curriculum is broken into named sections, each starting on a
 // given day and running up to (but not including) the next section's start -
