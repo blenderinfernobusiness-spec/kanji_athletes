@@ -18,6 +18,8 @@ import 'answer_flashcards_intro_screen.dart';
 import 'similar_kanji_screen.dart';
 import 'kanji_challenge_data.dart' show similarKanjiFor, SimilarKanji;
 import 'tatoeba_service.dart';
+import 'deck_videos.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // XP awarded per correct answer, matching the arcade modes' per-item reward.
 const int _xpPerCorrectAnswer = 10;
@@ -26,12 +28,17 @@ class SpacedRepetitionStandardScreen extends StatefulWidget {
   final StudyDeck deck;
   final bool isDarkMode;
   final VoidCallback onChanged;
+  // Revision-only: no new cards are introduced (the queue is just today's
+  // due reviews), and nothing ever offers to pull more new cards in. The
+  // caller skips the lesson recap for this mode too - see study_mode.dart.
+  final bool revisionOnly;
 
   const SpacedRepetitionStandardScreen({
     super.key,
     required this.deck,
     required this.isDarkMode,
     required this.onChanged,
+    this.revisionOnly = false,
   });
 
   @override
@@ -75,6 +82,12 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
   _UndoEntry? _lastUndo;
   final List<_ReviewResult> _results = [];
   bool _endedEarly = false;
+  // Shown once all of today's new cards are answered - see _answer and
+  // _buildNewCardsCompleteScreen.
+  bool _showNewCardsComplete = false;
+  // Set alongside _showNewCardsComplete when that day's capstone lesson is
+  // waiting to be shown once the screen above is dismissed.
+  int? _pendingEndOfDayLessonDay;
   // How many challenge days beyond the currently-unlocked one the user has
   // chosen to pull in early this session (see _buildContinuePrompt).
   int _extraChallengeDaysUnlocked = 0;
@@ -135,33 +148,13 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
     }
   }
 
-  // Due cards split into reviews (already studied at least once) and new
-  // (never studied) - reviews are never capped. New cards are either capped
-  // by the deck's flat newCardsPerDay setting (tracked per calendar day, so
-  // re-opening the session later the same day doesn't hand out more of
-  // them), or, for a day-scheduled challenge deck, gated by each card's own
-  // challengeDay against how many days have elapsed since the deck started.
+  // See buildSpacedRepetitionQueue (study_data.dart) for the actual queue
+  // logic, shared with main_mini.dart's companion-window version.
   void _buildQueue() {
     final deck = widget.deck;
-    final due = deck.cards.where(isCardDue).toList();
-    final reviews = due.where((c) => c.nextReviewDate != null).toList();
-    final newCards = due.where((c) => c.nextReviewDate == null).toList();
-
-    List<StudyCard> newCardsForSession;
-    if (deck.challengeStartDate != null) {
-      final currentDay = _currentChallengeDay();
-      newCardsForSession = newCards.where((c) => (c.challengeDay ?? 1) <= currentDay).toList();
-    } else {
-      final today = todayStamp();
-      if (deck.newCardsIntroducedDate != today) {
-        deck.newCardsIntroducedDate = today;
-        deck.newCardsIntroducedToday = 0;
-        widget.onChanged();
-      }
-      final newAllowed = (deck.newCardsPerDay - deck.newCardsIntroducedToday).clamp(0, newCards.length);
-      newCardsForSession = newCards.take(newAllowed).toList();
-    }
-    _queue = [...reviews, ...newCardsForSession];
+    final introducedDateBefore = deck.newCardsIntroducedDate;
+    _queue = buildSpacedRepetitionQueue(deck, revisionOnly: widget.revisionOnly);
+    if (deck.newCardsIntroducedDate != introducedDateBefore) widget.onChanged();
   }
 
   // How many days into a challenge deck's schedule today is (day 1 = the
@@ -205,7 +198,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
     if (lesson != null && !widget.deck.completedLessonDays.contains(day)) {
       final completed = await Navigator.push<bool>(
         context,
-        MaterialPageRoute(builder: (context) => LessonViewerScreen(lesson: lesson, isDarkMode: widget.isDarkMode)),
+        MaterialPageRoute(builder: (context) => LessonViewerScreen(lesson: lesson, isDarkMode: widget.isDarkMode, deck: widget.deck, onChanged: widget.onChanged)),
       );
       if (completed != true || !mounted) return;
       widget.deck.completedLessonDays.add(day);
@@ -651,7 +644,12 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
       _index++;
       _resetAttemptState();
     });
-    _afterFinishingCard(finishedDay);
+    // New cards sit at the front of the queue (see buildSpacedRepetitionQueue),
+    // but aren't necessarily contiguous once "keep going with more new cards"
+    // has appended extra ones past some reviews - so this checks the rest of
+    // the queue rather than just the next card, to still catch that case.
+    final justFinishedAllNewCards = wasNew && !_queue.skip(_index).any((c) => c.nextReviewDate == null);
+    _afterFinishingCard(finishedDay, justFinishedAllNewCards);
   }
 
   // Whether every card belonging to challenge day [day] has now been
@@ -664,10 +662,20 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
     return dayCards.isNotEmpty && dayCards.every((c) => c.nextReviewDate != null);
   }
 
-  // The moment a challenge day's cards are all reviewed for the first time,
-  // show that day's capstone lesson (if one's authored) right then - before
-  // whatever comes next, whether that's the session summary screen or
-  // (falling behind a day) cards from a day already unlocked past it.
+  // Whether day [day] has its own capstone lesson, authored and not already
+  // completed - the same filter _maybeShowEndOfDayLesson itself uses, so the
+  // "today's new cards complete" screen's button can know what it's about to
+  // do before the user taps it.
+  bool _hasPendingEndOfDayLesson(int day) {
+    final trackId = widget.deck.lessonSetId;
+    if (trackId == null) return false;
+    return lessons.any(
+      (lesson) => lesson.trackId == trackId && lesson.endOfDay == day && !widget.deck.completedLessonDays.contains(lesson.day),
+    );
+  }
+
+  // Shows day [day]'s capstone lesson(s), if any are authored and not
+  // already completed.
   Future<void> _maybeShowEndOfDayLesson(int day) async {
     final trackId = widget.deck.lessonSetId;
     if (trackId == null) return;
@@ -681,7 +689,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
       if (!mounted) return;
       final done = await Navigator.push<bool>(
         context,
-        MaterialPageRoute(builder: (context) => LessonViewerScreen(lesson: lesson, isDarkMode: widget.isDarkMode)),
+        MaterialPageRoute(builder: (context) => LessonViewerScreen(lesson: lesson, isDarkMode: widget.isDarkMode, deck: widget.deck, onChanged: widget.onChanged)),
       );
       if (done == true && mounted) {
         widget.deck.completedLessonDays.add(lesson.day);
@@ -691,9 +699,35 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
     }
   }
 
-  Future<void> _afterFinishingCard(int? finishedDay) async {
+  Future<void> _afterFinishingCard(int? finishedDay, bool justFinishedAllNewCards) async {
+    if (justFinishedAllNewCards) {
+      // Held until "today's new cards complete" is dismissed, rather than
+      // shown automatically here - its button is what decides whether to go
+      // straight to the lesson, since there may be nothing else after it.
+      final pendingDay = (finishedDay != null && _dayFullyReviewed(finishedDay) && _hasPendingEndOfDayLesson(finishedDay))
+          ? finishedDay
+          : null;
+      setState(() {
+        _pendingEndOfDayLessonDay = pendingDay;
+        _showNewCardsComplete = true;
+      });
+      return;
+    }
     if (finishedDay != null && _dayFullyReviewed(finishedDay)) {
       await _maybeShowEndOfDayLesson(finishedDay);
+      if (!mounted) return;
+    }
+    await _afterAdvancingToNewCard();
+  }
+
+  Future<void> _dismissNewCardsComplete() async {
+    final pendingDay = _pendingEndOfDayLessonDay;
+    setState(() {
+      _showNewCardsComplete = false;
+      _pendingEndOfDayLessonDay = null;
+    });
+    if (pendingDay != null) {
+      await _maybeShowEndOfDayLesson(pendingDay);
       if (!mounted) return;
     }
     await _afterAdvancingToNewCard();
@@ -727,6 +761,8 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
     setState(() {
       _index = undo.index;
       _lastUndo = null;
+      _showNewCardsComplete = false;
+      _pendingEndOfDayLessonDay = null;
       _resetAttemptState();
     });
     _afterAdvancingToNewCard();
@@ -1022,11 +1058,11 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
   @override
   Widget build(BuildContext context) {
     final isDarkMode = widget.isDarkMode;
-    final hasCurrentCard = _queue.isNotEmpty && _index < _queue.length;
+    final hasCurrentCard = _queue.isNotEmpty && _index < _queue.length && !_showNewCardsComplete;
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
       appBar: AppBar(
-        title: Text('${widget.deck.name} - Spaced Repetition'),
+        title: Text('${widget.deck.name} - Spaced Repetition${widget.revisionOnly ? ' (Revision)' : ''}'),
         backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
         foregroundColor: isDarkMode ? Colors.white : Colors.black87,
         elevation: 0,
@@ -1079,9 +1115,130 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
       body: SafeArea(
         child: _queue.isEmpty
             ? _buildMessage(isDarkMode, "No cards are due for review right now.")
-            : (_index >= _queue.length || _endedEarly)
-                ? _buildSummaryScreen(isDarkMode)
-                : _buildCard(isDarkMode),
+            : _showNewCardsComplete
+                ? _buildNewCardsCompleteScreen(isDarkMode)
+                : (_index >= _queue.length || _endedEarly)
+                    ? _buildSummaryScreen(isDarkMode)
+                    : _buildCard(isDarkMode),
+      ),
+    );
+  }
+
+  // Shown once between finishing today's new cards and whatever's next - see
+  // _answer. A video button up top for the curricula that have one
+  // (deckCompletionVideo); no video button at all for a custom deck or one
+  // with none for today. The single button below it adapts to what's
+  // actually next: revision if there's anything due, else today's capstone
+  // activity if one's pending, else straight on to the summary screen.
+  // A video-player-style card: thumbnail with a play button overlay, and the
+  // video's caption underneath - used by _buildNewCardsCompleteScreen.
+  Widget _buildVideoRecapCard(DeckVideo video, Color labelColor) {
+    const purple = Color(0xFF9A00FE);
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 440),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: purple.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: purple, width: 1.5),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => launchUrl(Uri.parse(video.url), mode: LaunchMode.externalApplication),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.asset(video.thumbnail, fit: BoxFit.cover),
+                        Container(color: Colors.black.withValues(alpha: 0.18)),
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.45),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.play_arrow, color: Colors.white, size: 32),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  video.label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: labelColor),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNewCardsCompleteScreen(bool isDarkMode) {
+    final video = deckCompletionVideo(widget.deck);
+    final fg = isDarkMode ? Colors.white : Colors.black87;
+    final muted = isDarkMode ? Colors.white60 : Colors.black54;
+    final hasReviews = _queue.skip(_index).any((c) => c.nextReviewDate != null);
+    final String subtitle;
+    final String buttonLabel;
+    if (hasReviews) {
+      subtitle = 'Nice work. Next up: revising what you already know.';
+      buttonLabel = 'Move on to revision';
+    } else if (_pendingEndOfDayLessonDay != null) {
+      subtitle = "Nice work. Next up: today's activity.";
+      buttonLabel = 'Move on to activity';
+    } else {
+      subtitle = "Nice work. That's everything for today.";
+      buttonLabel = 'Next';
+    }
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (video != null) ...[
+              _buildVideoRecapCard(video, fg),
+              const SizedBox(height: 32),
+            ],
+            const Icon(Icons.celebration_outlined, size: 56, color: Color(0xFF9A00FE)),
+            const SizedBox(height: 16),
+            Text(
+              "Today's new cards complete!",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: fg),
+            ),
+            const SizedBox(height: 8),
+            Text(subtitle, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: muted)),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF9A00FE),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                onPressed: _dismissNewCardsComplete,
+                child: Text(buttonLabel),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1211,6 +1368,8 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
   // - for the day-scheduled 90 Day Kanji Challenge - the next day's kanji
   // early, for a user working through it faster than one day at a time.
   Widget _buildContinuePrompt(bool isDarkMode) {
+    // Revision-only never offers more new cards - that's the whole point.
+    if (widget.revisionOnly) return const SizedBox.shrink();
     final String message;
     final String buttonLabel;
     final VoidCallback onPressed;

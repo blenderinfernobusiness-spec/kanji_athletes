@@ -1,0 +1,19 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Each user's own Cloud Backup file - only that signed-in account can
+    // read or write it (see cloud_sync_service.dart).
+    match /backups/{uid}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // The "is a new version available" check (see update_check_service.dart)
+    // runs before/without any sign-in, so this one file has to be readable
+    // by anyone. Nobody can write to it from the app - it's only ever
+    // updated by hand (or an admin script) after cutting a release.
+    match /public/app_version.json {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

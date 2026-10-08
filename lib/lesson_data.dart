@@ -5,6 +5,9 @@ import 'sets_data.dart';
 import 'kanji_challenge_data.dart';
 import 'deck_detail.dart';
 import 'skool_activity_screen.dart';
+import 'grammar_activities.dart';
+import 'grammar_data.dart';
+import 'ruby_text.dart';
 
 // One step of an interactive lesson journey. Every step shows [before]
 // first; if [question] is set, the learner has to pick an answer from
@@ -70,6 +73,12 @@ class Lesson {
   // [day] still governs unlocking/triggering either way; only set when it
   // differs from [day] - 1 in meaning (i.e. never for an ordinary lesson).
   final int? endOfDay;
+  // Lets an activity step back a slide itself. Returns false once it's on
+  // its first slide, so the lesson can go back to its intro instead.
+  final bool Function()? activityBack;
+  // How far through the activity it is, 0 to 1, so the lesson's bar moves
+  // with every press inside it rather than only when it changes phase.
+  final ValueNotifier<double>? activityProgress;
 
   const Lesson({
     this.trackId = kKanjiChallengeTrackId,
@@ -79,11 +88,36 @@ class Lesson {
     this.steps = const [],
     this.activityBuilder,
     this.endOfDay,
+    this.activityBack,
+    this.activityProgress,
   });
 }
 
+// The Grammar deck's lessons, one per grammar point (see grammar_data.dart).
+final List<Lesson> grammarLessons = [for (final point in grammarPoints) _grammarLesson(point)];
+
+Lesson _grammarLesson(GrammarPoint point) {
+  final activityKey = GlobalKey<GrammarLessonActivityState>();
+  final progress = ValueNotifier<double>(0);
+  return Lesson(
+    trackId: kGrammarTrackId,
+    day: point.day,
+    title: point.title,
+    introSubtitle: "Today's grammar point",
+    activityBuilder: (context, isDarkMode, onDone) => GrammarLessonActivity(
+      key: activityKey,
+      point: point,
+      isDarkMode: isDarkMode,
+      onDone: onDone,
+      progress: progress,
+    ),
+    activityBack: () => activityKey.currentState?.goBack() ?? false,
+    activityProgress: progress,
+  );
+}
+
 Lesson? lessonForTrackAndDay(String trackId, int day) {
-  for (final l in lessons) {
+  for (final l in [...lessons, ...grammarLessons]) {
     if (l.trackId == trackId && l.day == day) return l;
   }
   return null;
@@ -150,11 +184,19 @@ Widget labeledChar(String char, String label, Color color, {double size = 44}) {
 
 // A kanji/word with small furigana tucked tightly above it, the way real
 // furigana is typeset - not a loose caption floating above the word.
+// The reading goes over the kanji only (see rubyWord), so pass the reading of
+// the whole word, okurigana included (私の趣味 is わたしのしゅみ).
 Widget withFurigana(String furigana, String word, bool isDarkMode, {double wordSize = 44, Color? wordColor}) {
   return lessonCol([
-    Text(furigana, style: TextStyle(fontSize: wordSize * 0.32, color: isDarkMode ? Colors.white54 : Colors.black45)),
-    const SizedBox(height: 2),
-    Text(word, style: TextStyle(fontSize: wordSize, fontWeight: FontWeight.w900, color: wordColor ?? (isDarkMode ? Colors.white : Colors.black))),
+    rubyWord(
+      text: word,
+      reading: furigana,
+      fontSize: wordSize,
+      textColor: wordColor ?? (isDarkMode ? Colors.white : Colors.black),
+      rubyColor: isDarkMode ? Colors.white54 : Colors.black45,
+      fontWeight: FontWeight.w900,
+      rubyScale: 0.32,
+    ),
   ]);
 }
 
@@ -979,7 +1021,7 @@ final List<Lesson> lessons = [
         question: 'What do you think small hiragana written above a kanji is for?',
         options: const ['Shows the meaning', 'Shows how to say it', "It's just decoration"],
         correctIndex: 1,
-        after: (dark) => withFurigana('かわい', '可愛い', dark, wordSize: 44),
+        after: (dark) => withFurigana('かわいい', '可愛い', dark, wordSize: 44),
         explanation: "It's called furigana, and it simply shows how to pronounce the kanji next to it - handy for "
             "rare readings, or for learners.",
       ),
@@ -1470,6 +1512,723 @@ final List<Lesson> lessons = [
           ),
         ]),
         explanation: "Time to start building your Essential Vocabulary - keep all four aspects in mind as you go!",
+      ),
+    ],
+  ),
+
+  // Grammar deck, Section 2: Verb Fundamentals (see grammarSections in
+  // grammar_data.dart). Unlike the particle-based days above, these three
+  // teach a concept by example verb rather than a single fill-in-the-blank
+  // form, so they're authored directly as ordinary step lessons rather than
+  // through GrammarPoint - their example verbs still become cards, via
+  // buildGrammarCards' _verbGroupExamples.
+  Lesson(
+    trackId: kGrammarTrackId,
+    day: 19,
+    title: '一段動詞 - Ichidan Verbs',
+    introSubtitle: "The first of three verb groups. Every Ichidan verb changes the exact same way, no exceptions "
+        "once you've spotted one.",
+    steps: [
+      // 1. What Ichidan verbs have in common
+      LessonStep(
+        kickerPlain: 'VERB GROUPS',
+        kickerHighlight: 'ICHIDAN',
+        before: (dark) => lessonCol([
+          Text('食べる', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          const SizedBox(height: 4),
+          Text('たべる - to eat', style: lessonBodyStyle(dark, size: 14, weight: FontWeight.w500)),
+        ]),
+        question: 'Every Ichidan verb ends in る. What comes right before that る in 食べる?',
+        options: const ['An e-sound (be)', 'An i-sound', 'A consonant'],
+        correctIndex: 0,
+        after: (dark) => Text('た・べ・る　→　an "e" sound before る', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "一段動詞 (ichidan doushi) literally means \"one-step verb\". Every one of them has an e or i "
+            "sound right before る, and they all conjugate the exact same way: just swap out the る.",
+      ),
+      // 2. More genuine examples
+      LessonStep(
+        kickerPlain: 'VERB GROUPS',
+        kickerHighlight: 'ICHIDAN',
+        before: (dark) => lessonRow([
+          lessonCol([Text('生きる', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: dark ? Colors.white : Colors.black)), Text('いきる', style: lessonBodyStyle(dark, size: 12, weight: FontWeight.w500))]),
+          const SizedBox(width: 16),
+          lessonCol([Text('居る', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: dark ? Colors.white : Colors.black)), Text('いる', style: lessonBodyStyle(dark, size: 12, weight: FontWeight.w500))]),
+          const SizedBox(width: 16),
+          lessonCol([Text('寝る', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: dark ? Colors.white : Colors.black)), Text('ねる', style: lessonBodyStyle(dark, size: 12, weight: FontWeight.w500))]),
+        ]),
+        question: '生きる (to live), 居る (to exist), and 寝る (to sleep). Do they all have an e or i sound right before る?',
+        options: const ['Yes - い, い, and え', 'No, only one of them does'],
+        correctIndex: 0,
+        after: (dark) => Text('いき・る　居(い)・る　ね・る', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "生きる (ikiru), 居る (iru), and 寝る (neru) are all genuine Ichidan verbs. い, い, and え are "
+            "all fine i/e sounds right before る.",
+      ),
+      // 3. The trap: not every る verb like this is Ichidan
+      LessonStep(
+        kickerPlain: 'VERB GROUPS',
+        kickerHighlight: 'ICHIDAN',
+        before: (dark) => lessonCol([
+          Text('走る', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          const SizedBox(height: 4),
+          Text('はしる - to run', style: lessonBodyStyle(dark, size: 14, weight: FontWeight.w500)),
+        ]),
+        question: '走る (hashiru) has an i-sound right before る too. So is it an Ichidan verb?',
+        options: const ["No - it's actually a Godan verb", 'Yes, it must be'],
+        correctIndex: 0,
+        after: (dark) => const Icon(Icons.warning_amber_rounded, size: 40, color: kLessonPurple),
+        explanation: "Not every verb ending in an e/i sound + る is Ichidan. 走る (to run) looks exactly like one "
+            "but is actually Godan. There's no shortcut that covers every verb; a few just have to be "
+            "memorised as exceptions.",
+      ),
+      // 4. ます - polite present/future
+      LessonStep(
+        kickerPlain: 'VERB GROUPS',
+        kickerHighlight: 'ICHIDAN',
+        before: (dark) => lessonCol([
+          Text('食べる　→　食べます', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        ]),
+        question: 'Every Ichidan verb makes its polite form the same way. Drop る, add ます. What does 食べます mean?',
+        options: const ['I eat / will eat (polite)', 'I ate (polite)', "I don't eat (polite)"],
+        correctIndex: 0,
+        after: (dark) => Text('食べ・ます　-　just drop る, add ます', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "ます is the polite present/future ending. Every Ichidan verb takes it the exact same way, "
+            "no exceptions.",
+      ),
+      // 5. ません - polite negative
+      LessonStep(
+        kickerPlain: 'VERB GROUPS',
+        kickerHighlight: 'ICHIDAN',
+        before: (dark) => lessonCol([
+          Text('見る　→　見ません', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        ]),
+        question: '見る becomes 見ません in polite speech. What does it mean?',
+        options: const ["I won't watch / don't watch (polite)", 'I watched (polite)', 'I want to watch'],
+        correctIndex: 0,
+        after: (dark) => Text('見・ません　-　drop る, add ません', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "ません is the polite negative, the opposite of ます, built the exact same way.",
+      ),
+      // 6. ました - polite past
+      LessonStep(
+        kickerPlain: 'VERB GROUPS',
+        kickerHighlight: 'ICHIDAN',
+        before: (dark) => lessonCol([
+          Text('寝る　→　寝ました', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        ]),
+        question: '寝ました is the polite past of 寝る. What does it mean?',
+        options: const ['I slept (polite)', "I won't sleep (polite)", 'I am sleeping (polite)'],
+        correctIndex: 0,
+        after: (dark) => Text('寝・ました　-　drop る, add ました', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "ました is the polite past. Swap ます for ました and you're done.",
+      ),
+      // 7. ませんでした - polite past negative
+      LessonStep(
+        kickerPlain: 'VERB GROUPS',
+        kickerHighlight: 'ICHIDAN',
+        before: (dark) => lessonCol([
+          Text('起きる　→　起きませんでした', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        ]),
+        question: '起きませんでした is the polite past negative of 起きる. What does it mean?',
+        options: const ["I didn't wake up (polite)", 'I woke up (polite)', 'I will wake up (polite)'],
+        correctIndex: 0,
+        after: (dark) => Text('起き・ませんでした　-　drop る, add ませんでした', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 13, weight: FontWeight.w600)),
+        explanation: "ます, ません, ました, ませんでした are the present, negative, past, and past negative, all built "
+            "the exact same way for every Ichidan verb: just drop る.",
+      ),
+      // 8. Preview of what's still to come (no question)
+      LessonStep(
+        before: (dark) => lessonCol([
+          Text('食べて・食べた・食べない...', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: dark ? Colors.white : Colors.black)),
+        ]),
+        explanation: "There's more to Ichidan verbs than ます forms: て (and/doing), た (did), ない (won't do), and "
+            "plenty more are all on their way in later lessons.",
+      ),
+      // 9. Transition (no question)
+      LessonStep(
+        before: (dark) => lessonCol([
+          Text('一段動詞', style: TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            color: kLessonPurple,
+            child: const Text('ICHIDAN VERBS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white)),
+          ),
+        ]),
+        explanation: "Next up: Godan verbs, the group with five different ways their ending can change.",
+      ),
+    ],
+  ),
+  Lesson(
+    trackId: kGrammarTrackId,
+    day: 20,
+    title: '五段動詞 - Godan Verbs',
+    introSubtitle: "The second verb group. Godan verbs change in five different ways depending on how they end.",
+    steps: [
+      // 1. Intro
+      LessonStep(
+        kickerPlain: 'VERB GROUPS',
+        kickerHighlight: 'GODAN',
+        before: (dark) => lessonRow([
+          lessonCol([Text('書く', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)), Text('かく', style: lessonBodyStyle(dark, size: 12, weight: FontWeight.w500))]),
+          const SizedBox(width: 14),
+          lessonCol([Text('読む', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)), Text('よむ', style: lessonBodyStyle(dark, size: 12, weight: FontWeight.w500))]),
+          const SizedBox(width: 14),
+          lessonCol([Text('買う', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)), Text('かう', style: lessonBodyStyle(dark, size: 12, weight: FontWeight.w500))]),
+        ]),
+        question: '書く (kaku), 読む (yomu), and 買う (kau) all end differently: く, む, う. Is that normal for Godan verbs?',
+        options: const ['Yes - Godan verbs can end in several different sounds', 'No, they should all end the same way'],
+        correctIndex: 0,
+        after: (dark) => Text('五段動詞 - "five-step verb"', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "五段動詞 (godan doushi) means \"five-step verb\". Their ending changes in five different ways "
+            "depending on the grammar, and unlike Ichidan verbs, that ending isn't always る. Most Japanese "
+            "verbs are Godan.",
+      ),
+      // 2. The exception that looks Ichidan
+      LessonStep(
+        kickerPlain: 'VERB GROUPS',
+        kickerHighlight: 'GODAN',
+        before: (dark) => lessonCol([
+          Text('走る', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          const SizedBox(height: 4),
+          Text('はしる - to run', style: lessonBodyStyle(dark, size: 14, weight: FontWeight.w500)),
+        ]),
+        question: 'Remember 走る from the last lesson? Even though it ends in an i-sound + る, which group is it actually in?',
+        options: const ['Godan', 'Ichidan'],
+        correctIndex: 0,
+        after: (dark) => Text('走る is Godan, despite looking like Ichidan', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 14, weight: FontWeight.w600)),
+        explanation: "走る (hashiru, \"to run\") is a Godan verb hiding in Ichidan's clothing, one of a handful of "
+            "る verbs worth just memorising rather than guessing from the ending alone.",
+      ),
+      // 3. ます - polite present/future (the u -> i sound shift)
+      LessonStep(
+        kickerPlain: 'VERB GROUPS',
+        kickerHighlight: 'GODAN',
+        before: (dark) => lessonCol([
+          Text('書く　→　書きます', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        ]),
+        question: 'To make 書く (to write) polite, く changes to き before ます. What does 書きます mean?',
+        options: const ['I will write (polite)', 'I wrote (polite)', "I won't write (polite)"],
+        correctIndex: 0,
+        after: (dark) => Text('か・き・く・け・こ　→　書き・ます', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "Unlike Ichidan verbs, a Godan verb's ending swaps to its row's い-sound before ます: "
+            "く→き, む→み, う→い, and so on for every row.",
+      ),
+      // 4. ません - polite negative
+      LessonStep(
+        kickerPlain: 'VERB GROUPS',
+        kickerHighlight: 'GODAN',
+        before: (dark) => lessonCol([
+          Text('読む　→　読みません', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        ]),
+        question: '読みません is the polite negative of 読む. What does it mean?',
+        options: const ["I won't read / don't read (polite)", 'I read it (polite)', 'I want to read'],
+        correctIndex: 0,
+        after: (dark) => Text('読・み・ません　-　む→み, then add ません', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "ません is the polite negative, the same い-sound shift as ます, just with ません on the end instead.",
+      ),
+      // 5. ました - polite past
+      LessonStep(
+        kickerPlain: 'VERB GROUPS',
+        kickerHighlight: 'GODAN',
+        before: (dark) => lessonCol([
+          Text('買う　→　買いました', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        ]),
+        question: '買いました is the polite past of 買う. What does it mean?',
+        options: const ['I bought it (polite)', "I won't buy it (polite)", 'I am buying it (polite)'],
+        correctIndex: 0,
+        after: (dark) => Text('買・い・ました　-　う→い, then add ました', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "ました is the polite past. う becomes い here too, just like every other row does before ます.",
+      ),
+      // 6. ませんでした - polite past negative
+      LessonStep(
+        kickerPlain: 'VERB GROUPS',
+        kickerHighlight: 'GODAN',
+        before: (dark) => lessonCol([
+          Text('走る　→　走りませんでした', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        ]),
+        question: 'Remember 走る, the Godan verb that looks like Ichidan? 走りませんでした is its polite past negative. What does it mean?',
+        options: const ["I didn't run (polite)", 'I ran (polite)', 'I will run (polite)'],
+        correctIndex: 0,
+        after: (dark) => Text('走・り・ませんでした　-　る→り, then add ませんでした', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 13, weight: FontWeight.w600)),
+        explanation: "ます, ません, ました, ませんでした are present, negative, past, and past negative. The ending "
+            "changes with the row, but the ます/ません/ました/ませんでした part is always the same.",
+      ),
+      // 7. Preview of what's still to come (no question)
+      LessonStep(
+        before: (dark) => lessonCol([
+          Text('書いて・書いた・書かない...', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: dark ? Colors.white : Colors.black)),
+        ]),
+        explanation: "There's more to Godan verbs than ます forms too: て (and/doing), た (did), ない (won't do), "
+            "and more are all on their way in later lessons.",
+      ),
+      // 8. Transition (no question)
+      LessonStep(
+        before: (dark) => lessonCol([
+          Text('五段動詞', style: TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            color: kLessonPurple,
+            child: const Text('GODAN VERBS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white)),
+          ),
+        ]),
+        explanation: "Last for this section: the two Irregular verbs that don't follow either pattern.",
+      ),
+    ],
+  ),
+  Lesson(
+    trackId: kGrammarTrackId,
+    day: 21,
+    title: '不規則動詞 - Irregular Verbs',
+    introSubtitle: "Just two verbs left outside Ichidan and Godan. You already use both of them constantly.",
+    steps: [
+      // 1. The only two
+      LessonStep(
+        kickerPlain: 'VERB GROUPS',
+        kickerHighlight: 'IRREGULAR',
+        before: (dark) => lessonRow([
+          lessonCol([Text('する', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)), Text('to do', style: lessonBodyStyle(dark, size: 12, weight: FontWeight.w500))]),
+          const SizedBox(width: 24),
+          lessonCol([Text('来る', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)), Text('くる - to come', style: lessonBodyStyle(dark, size: 12, weight: FontWeight.w500))]),
+        ]),
+        question: "する and 来る don't conjugate like Ichidan or Godan verbs at all. How many irregular verbs are there in Japanese?",
+        options: const ['Just these two', 'Dozens', 'Hundreds'],
+        correctIndex: 0,
+        after: (dark) => Text('不規則動詞 - only する and 来る', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "する (to do) and 来る (kuru, to come) are the only two irregular verbs in Japanese. "
+            "Everything else is Ichidan or Godan. Because they're used so often, their odd conjugations are "
+            "worth memorising directly rather than deriving them from a rule.",
+      ),
+      // 2. Compound する verbs inherit the irregularity
+      LessonStep(
+        kickerPlain: 'VERB GROUPS',
+        kickerHighlight: 'IRREGULAR',
+        before: (dark) => lessonCol([
+          Text('勉強する', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          const SizedBox(height: 4),
+          Text('べんきょうする - to study', style: lessonBodyStyle(dark, size: 13, weight: FontWeight.w500)),
+        ]),
+        question: 'Lots of Japanese verbs are a noun + する, like 勉強する (to study). Do those conjugate like する too?',
+        options: const ['Yes - only the する part changes', 'No, they conjugate differently each time'],
+        correctIndex: 0,
+        after: (dark) => Text('勉強する → 勉強します・勉強した・勉強しない...', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 13, weight: FontWeight.w600)),
+        explanation: "Once you know how する conjugates, you already know how to conjugate every noun+する verb. "
+            "The noun in front never changes, only する does.",
+      ),
+      // 3. Preview of what's still to come (no question)
+      LessonStep(
+        before: (dark) => lessonCol([
+          Text('します・来ます', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          const SizedBox(height: 4),
+          Text('して・来て・した・来た・しない・来ない...', style: lessonBodyStyle(dark, size: 14, weight: FontWeight.w600)),
+        ]),
+        explanation: "Because する and 来る are used constantly, you'll meet their ます, て, た, ない forms and more "
+            "throughout the lessons to come. Each one just has to be learned directly.",
+      ),
+      // 4. Transition (no question)
+      LessonStep(
+        before: (dark) => lessonCol([
+          Text('不規則動詞', style: TextStyle(fontSize: 44, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            color: kLessonPurple,
+            child: const Text('THREE VERB GROUPS DONE', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white)),
+          ),
+        ]),
+        explanation: "That's all three verb groups: Ichidan, Godan, and Irregular. Next time: how to build the "
+            "て-form for any of them.",
+      ),
+    ],
+  ),
+  Lesson(
+    trackId: kGrammarTrackId,
+    day: 22,
+    title: 'て形の作り方 - "How to Build the Te-Form"',
+    introSubtitle: "Before more て-form grammar, here's exactly how to build て from a verb's dictionary form, for "
+        "every verb type.",
+    steps: [
+      // 1. Ichidan
+      LessonStep(
+        kickerPlain: 'TE-FORM',
+        kickerHighlight: 'ICHIDAN',
+        before: (dark) => Text('食べる　→　食べて', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        question: "Ichidan verbs build て the same way they build every other form. Just drop る. What is 食べる's て-form?",
+        options: const ['食べて', '食べった', '食べいて'],
+        correctIndex: 0,
+        after: (dark) => Text('食べ・て　-　just drop る, add て', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "Every Ichidan verb builds て the exact same way: drop る, add て. No exceptions.",
+      ),
+      // 2. Godan う/つ/る
+      LessonStep(
+        kickerPlain: 'TE-FORM',
+        kickerHighlight: 'GODAN',
+        before: (dark) => Text('買う　→　買って', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        question: 'Godan verbs ending in う, つ, or る all change the same way for て. What is 買う\'s て-form?',
+        options: const ['買って', '買いて', '買んで'],
+        correctIndex: 0,
+        after: (dark) => Text('う・つ・る　→　って', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "う, つ, and る verbs all swap their final kana for って: 買う→買って, 待つ→待って, 乗る→乗って.",
+      ),
+      // 3. Godan む/ぬ/ぶ
+      LessonStep(
+        kickerPlain: 'TE-FORM',
+        kickerHighlight: 'GODAN',
+        before: (dark) => Text('読む　→　読んで', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        question: 'む, ぬ, and ぶ verbs take a different ending for て. What is 読む\'s て-form?',
+        options: const ['読んで', '読んて', '読って'],
+        correctIndex: 0,
+        after: (dark) => Text('む・ぬ・ぶ　→　んで', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "む, ぬ, and ぶ verbs all swap their final kana for んで (a voiced で, not て): 読む→読んで, 遊ぶ→遊んで.",
+      ),
+      // 4. Godan く (with the 行く exception)
+      LessonStep(
+        kickerPlain: 'TE-FORM',
+        kickerHighlight: 'GODAN',
+        before: (dark) => Text('書く　→　書いて', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        question: 'く verbs swap their ending for いて. What is 書く\'s て-form?',
+        options: const ['書いて', '書て', '書って'],
+        correctIndex: 0,
+        after: (dark) => Text('く　→　いて　（exception: 行く → 行って）', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 13, weight: FontWeight.w600)),
+        explanation: "く verbs swap く for いて. Except 行く (to go), which irregularly becomes 行って instead of "
+            "行いて. It's one of the few verbs worth memorising as an exception.",
+      ),
+      // 5. Godan ぐ
+      LessonStep(
+        kickerPlain: 'TE-FORM',
+        kickerHighlight: 'GODAN',
+        before: (dark) => Text('泳ぐ　→　泳いで', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        question: 'ぐ verbs work just like く verbs, but voiced. What is 泳ぐ\'s て-form?',
+        options: const ['泳いで', '泳いて', '泳って'],
+        correctIndex: 0,
+        after: (dark) => Text('ぐ　→　いで', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "ぐ verbs swap ぐ for いで, the voiced counterpart of く's いて.",
+      ),
+      // 6. Godan す
+      LessonStep(
+        kickerPlain: 'TE-FORM',
+        kickerHighlight: 'GODAN',
+        before: (dark) => Text('話す　→　話して', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        question: 'す verbs are the simplest Godan group. What is 話す\'s て-form?',
+        options: const ['話して', '話いて', '話んで'],
+        correctIndex: 0,
+        after: (dark) => Text('す　→　して', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "す verbs just swap す for して. No euphonic change needed, unlike the other rows.",
+      ),
+      // 7. Irregular
+      LessonStep(
+        kickerPlain: 'TE-FORM',
+        kickerHighlight: 'IRREGULAR',
+        before: (dark) => lessonRow([
+          lessonCol([Text('する', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)), Text('して', style: lessonBodyStyle(dark, size: 14, weight: FontWeight.w600))]),
+          const SizedBox(width: 24),
+          lessonCol([Text('来る', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)), Text('来て', style: lessonBodyStyle(dark, size: 14, weight: FontWeight.w600))]),
+        ]),
+        question: 'する and 来る have their own て-forms, just like everywhere else. What is する\'s て-form?',
+        options: const ['して', 'すて', 'しんで'],
+        correctIndex: 0,
+        after: (dark) => Text('する　→　して　　来る　→　来て', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "する becomes して, and 来る becomes 来て (the reading changes from くる to きて). Both just "
+            "have to be memorised directly.",
+      ),
+      // 8. Summary + transition (no question)
+      LessonStep(
+        before: (dark) => lessonCol([
+          Text(
+            'る→て　う・つ・る→って\nむ・ぬ・ぶ→んで　く→いて\nぐ→いで　す→して',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: dark ? Colors.white : Colors.black, height: 1.6),
+          ),
+        ]),
+        explanation: "Now that you can build て yourself, let's put it to use, starting with asking someone to "
+            "do something.",
+      ),
+    ],
+  ),
+
+  // Section 3: Adjectives and Describing (see grammarSections). な-adjectives,
+  // い-adjectives, and the 小さい/小さな exception are concept recap lessons
+  // like Section 2's Ichidan/Godan/Irregular trio, authored directly here
+  // rather than through GrammarPoint. なる, とても, 一番, and すぎる (days
+  // 45-48) are single-form GrammarPoints in grammar_data.dart instead.
+  Lesson(
+    trackId: kGrammarTrackId,
+    day: 43,
+    title: 'な-adjectives',
+    introSubtitle: "A recap of the adjectives that borrow a な before a noun, and how they turn negative and past.",
+    steps: [
+      // 1. What makes a な-adjective different
+      LessonStep(
+        kickerPlain: 'ADJECTIVES',
+        kickerHighlight: 'な-ADJECTIVES',
+        before: (dark) => lessonCol([
+          Text('静か', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          const SizedBox(height: 4),
+          Text('しずか - quiet', style: lessonBodyStyle(dark, size: 14, weight: FontWeight.w500)),
+        ]),
+        question: 'To describe a noun directly with 静か (quiet), what do you need to add between them?',
+        options: const ['な - 静かな町 (a quiet town)', 'Nothing - 静か町', 'の - 静かの町'],
+        correctIndex: 0,
+        after: (dark) => Text('静かな町　-　a quiet town', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 16, weight: FontWeight.w600)),
+        explanation: "な-adjectives borrow な only when they come directly before a noun they're describing. On "
+            "their own, or before です, they drop it: 静かです (it's quiet), not 静かなです.",
+      ),
+      // 2. Negative recap. じゃない/ではない
+      LessonStep(
+        kickerPlain: 'ADJECTIVES',
+        kickerHighlight: 'な-ADJECTIVES',
+        before: (dark) => lessonCol([
+          Text('静かじゃない', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        ]),
+        question: 'You already met じゃない and ではない for nouns. Do な-adjectives turn negative the exact same way?',
+        options: const ['Yes - 静かじゃない / 静かではない (not quiet)', 'No, they use a different ending'],
+        correctIndex: 0,
+        after: (dark) => Text('静か　→　静かじゃない / 静かではない', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 14, weight: FontWeight.w600)),
+        explanation: "な-adjectives behave just like nouns for negatives and です. じゃない/ではない, formal or "
+            "casual, works exactly the same way you already learned.",
+      ),
+      // 3. Past tense recap. だった/でした
+      LessonStep(
+        kickerPlain: 'ADJECTIVES',
+        kickerHighlight: 'な-ADJECTIVES',
+        before: (dark) => lessonCol([
+          Text('静かでした', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        ]),
+        question: 'What about the past? How would you say 静か (quiet) "was quiet"?',
+        options: const ['静かでした / 静かだった (was quiet)', '静かました', '静かいた'],
+        correctIndex: 0,
+        after: (dark) => Text('静か　→　静かでした / 静かだった', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 14, weight: FontWeight.w600)),
+        explanation: "Past and past-negative for な-adjectives also follow the noun pattern exactly: でした/だった "
+            "for \"was\", and じゃなかった/ではなかった for \"was not\". Nothing new to learn here.",
+      ),
+      // 4. Transition (no question)
+      LessonStep(
+        before: (dark) => lessonCol([
+          Text('な形容詞', style: TextStyle(fontSize: 44, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            color: kLessonPurple,
+            child: const Text('な-ADJECTIVES', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white)),
+          ),
+        ]),
+        explanation: "Next up: い-adjectives. The other adjective group, with its own negative and past endings.",
+      ),
+    ],
+  ),
+  Lesson(
+    trackId: kGrammarTrackId,
+    day: 44,
+    title: 'い-adjectives',
+    introSubtitle: "A recap of the adjectives that end in い, and how they turn negative and past.",
+    steps: [
+      // 1. What makes an い-adjective different
+      LessonStep(
+        kickerPlain: 'ADJECTIVES',
+        kickerHighlight: 'い-ADJECTIVES',
+        before: (dark) => lessonCol([
+          Text('寒い', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          const SizedBox(height: 4),
+          Text('さむい - cold', style: lessonBodyStyle(dark, size: 14, weight: FontWeight.w500)),
+        ]),
+        question: 'Unlike な-adjectives, how does 寒い (cold) go directly before a noun it describes?',
+        options: const ['No change needed - 寒い日 (a cold day)', 'Add な - 寒いな日', 'Add の - 寒いの日'],
+        correctIndex: 0,
+        after: (dark) => Text('寒い日　-　a cold day', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 16, weight: FontWeight.w600)),
+        explanation: "い-adjectives never need な or any other connector before a noun. The い ending does that "
+            "job on its own.",
+      ),
+      // 2. Negative recap. くない
+      LessonStep(
+        kickerPlain: 'ADJECTIVES',
+        kickerHighlight: 'い-ADJECTIVES',
+        before: (dark) => lessonCol([
+          Text('寒くない', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        ]),
+        question: 'You already learned くない for this. How do you make 寒い (cold) negative?',
+        options: const ['Drop い, add くない - 寒くない (not cold)', 'Add じゃない - 寒いじゃない', 'Add ません - 寒いません'],
+        correctIndex: 0,
+        after: (dark) => Text('寒い　→　寒くない', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "い-adjectives never take じゃない/ではない. Only nouns and な-adjectives do. For い-adjectives "
+            "it's always drop い, add くない.",
+      ),
+      // 3. Past tense recap. かった/くなかった
+      LessonStep(
+        kickerPlain: 'ADJECTIVES',
+        kickerHighlight: 'い-ADJECTIVES',
+        before: (dark) => lessonCol([
+          Text('寒かった・寒くなかった', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        ]),
+        question: 'What are the past and past-negative of 寒い (cold)?',
+        options: const ['寒かった (was cold) and 寒くなかった (was not cold)', '寒いでした and 寒いじゃなかった', '寒ました and 寒ませんでした'],
+        correctIndex: 0,
+        after: (dark) => Text('寒い　→　寒かった　→　寒くなかった', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 13, weight: FontWeight.w600)),
+        explanation: "Drop い, add かった for \"was\", or くなかった for \"was not\". い-adjectives build all four "
+            "forms (is/isn't/was/wasn't) from their own い ending, never from です/じゃない.",
+      ),
+      // 4. Transition (no question)
+      LessonStep(
+        before: (dark) => lessonCol([
+          Text('い形容詞', style: TextStyle(fontSize: 44, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            color: kLessonPurple,
+            child: const Text('い-ADJECTIVES', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white)),
+          ),
+        ]),
+        explanation: "Next up: two very common い-adjectives that break their own rule in front of a noun.",
+      ),
+    ],
+  ),
+  Lesson(
+    trackId: kGrammarTrackId,
+    day: 45,
+    title: '小さい・小さな and 大きい・大きな',
+    introSubtitle: "Two everyday い-adjectives that also have a special な-only form for right before a noun.",
+    steps: [
+      // 1. 小さい is normal
+      LessonStep(
+        kickerPlain: 'ADJECTIVES',
+        kickerHighlight: '小さい・大きい',
+        before: (dark) => lessonCol([
+          Text('小さい猫', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          const SizedBox(height: 4),
+          Text('ちいさいねこ - a small cat', style: lessonBodyStyle(dark, size: 13, weight: FontWeight.w500)),
+        ]),
+        question: '小さい (small) is an ordinary い-adjective. Does it conjugate like every other one you\'ve met (くない, かった...)?',
+        options: const ['Yes - exactly like 寒い does', 'No, it has its own special endings'],
+        correctIndex: 0,
+        after: (dark) => Text('小さい　→　小さくない・小さかった', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 14, weight: FontWeight.w600)),
+        explanation: "小さい (chiisai, small) and 大きい (ookii, big) both conjugate completely normally as "
+            "い-adjectives: 小さくない (not small), 大きかった (was big), and so on.",
+      ),
+      // 2. 小さな / 大きな only before a noun
+      LessonStep(
+        kickerPlain: 'ADJECTIVES',
+        kickerHighlight: '小さな・大きな',
+        before: (dark) => lessonCol([
+          Text('小さな猫', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          const SizedBox(height: 4),
+          Text('ちいさなねこ - a small cat', style: lessonBodyStyle(dark, size: 13, weight: FontWeight.w500)),
+        ]),
+        question: '小さな猫 means the same thing as 小さい猫. Can you also say 猫は小さなです (the cat is small) with 小さな?',
+        options: const ['No - 小さな only ever goes directly before a noun', 'Yes, it works anywhere 小さい does'],
+        correctIndex: 0,
+        after: (dark) => const Icon(Icons.info_outline, size: 40, color: kLessonPurple),
+        explanation: "小さな and 大きな look like な-adjectives, but they're a special exception: they ONLY appear "
+            "directly in front of a noun, and never conjugate. No 小さなです, no 小さなかった. For everything "
+            "else, use 小さい/大きい instead.",
+      ),
+      // 3. Transition (no question)
+      LessonStep(
+        before: (dark) => lessonCol([
+          Text('小さい・小さな', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          Text('大きい・大きな', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            color: kLessonPurple,
+            child: const Text('SMALL & BIG', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white)),
+          ),
+        ]),
+        explanation: "Next up: なる, how to say something \"becomes\" a certain way.",
+      ),
+    ],
+  ),
+
+  // Section 8: Questions, day 88 (see grammarSections). てください already
+  // has its own full GrammarPoint lesson on day 23 - this is just a short
+  // recap bridging into をください and お願いします, two more ways to ask
+  // for something.
+  Lesson(
+    trackId: kGrammarTrackId,
+    day: 88,
+    title: 'てください (Recap) - "Please Do"',
+    introSubtitle: "A quick recap before two more ways to ask for something: てください, をください, and お願いします.",
+    steps: [
+      // 1. Recap quiz
+      LessonStep(
+        kickerPlain: 'QUESTIONS',
+        kickerHighlight: 'REQUESTS',
+        before: (dark) => Text('待ってください', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        question: 'Remember てください from day 23? How is it built?',
+        options: const ["Verb て-form + ください", 'Verb dictionary form + ください', 'Noun + ください'],
+        correctIndex: 0,
+        after: (dark) => Text('待っ・てください', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 16, weight: FontWeight.w600)),
+        explanation: "てください asks someone to DO something. Attach it to a verb's て-form, exactly like you learned "
+            "back on day 23.",
+      ),
+      // 2. Three ways to say please (no question)
+      LessonStep(
+        before: (dark) => lessonCol([
+          Text('てください・をください・お願いします', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: dark ? Colors.white : Colors.black, height: 1.6)),
+        ]),
+        explanation: "てください asks someone to do an action, をください asks for a THING, and お願いします is the "
+            "simplest, most all-purpose way to just say \"please\". Next: をください.",
+      ),
+    ],
+  ),
+
+  // Section 9: Things You Have To Do, day 98 (see grammarSections). なくても
+  // いい already has its own full GrammarPoint on day 29 - this is just a
+  // short recap bridging the obligation forms (ないといけない, なくちゃ...)
+  // back to the one case where you DON'T have to.
+  Lesson(
+    trackId: kGrammarTrackId,
+    day: 98,
+    title: 'なくてもいい (Recap) - "Don\'t Have To"',
+    introSubtitle: "A quick recap, now that you know several ways to say \"must\", and the one case where you don't have to.",
+    steps: [
+      // 1. Recap quiz
+      LessonStep(
+        kickerPlain: 'OBLIGATION',
+        kickerHighlight: 'RECAP',
+        before: (dark) => Text('焦らなくてもいいですよ', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        question: 'Remember なくてもいい from day 29? What does it mean?',
+        options: const ["You don't have to do something", 'You must do something', "You're not allowed to do something"],
+        correctIndex: 0,
+        after: (dark) => Text('焦らない・くてもいい - no need to hurry', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 14, weight: FontWeight.w600)),
+        explanation: "なくてもいい is the flip side of everything in this section: ないといけない, なくちゃ, "
+            "なくてはいけない, and なくてはならない all say something IS required; なくてもいい says it isn't.",
+      ),
+      // 2. Transition (no question)
+      LessonStep(
+        before: (dark) => lessonCol([
+          Text('ないといけない　⇔　なくてもいい', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: dark ? Colors.white : Colors.black, height: 1.6)),
+        ]),
+        explanation: "Required vs optional, now you have both sides covered. Next up: Section 10, starting with "
+            "how to talk about your plans.",
+      ),
+    ],
+  ),
+
+  // Section 10: Experiencing, Listing, and Nuance, day 105 (see
+  // grammarSections). まだ～ていません already has its own full GrammarPoint
+  // on day 62. This is a short recap between てある and だけ/しか.
+  Lesson(
+    trackId: kGrammarTrackId,
+    day: 105,
+    title: 'まだ～ていません (Recap) - "Have Not Yet"',
+    introSubtitle: "A quick recap of まだ～ていません before two ways to say \"only\".",
+    steps: [
+      // 1. Recap quiz
+      LessonStep(
+        kickerPlain: 'RECAP',
+        kickerHighlight: 'NOT YET',
+        before: (dark) => Text('まだ決めていません', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        question: 'Remember まだ～ていません from day 62? What does it mean?',
+        options: const ["Haven't done something yet", 'Have already done something', 'Are currently doing something'],
+        correctIndex: 0,
+        after: (dark) => Text('まだ・決め・ていません', textAlign: TextAlign.center, style: lessonBodyStyle(dark, size: 15, weight: FontWeight.w600)),
+        explanation: "まだ signals \"not yet\" early in the sentence, and ていません confirms it at the end, exactly "
+            "like you learned back on day 62.",
+      ),
+      // 2. Transition (no question)
+      LessonStep(
+        before: (dark) => lessonCol([
+          Text('だけ・しか～ない', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: dark ? Colors.white : Colors.black)),
+        ]),
+        explanation: "Next up: two ways to say \"only\": だけ and しか～ない.",
       ),
     ],
   ),

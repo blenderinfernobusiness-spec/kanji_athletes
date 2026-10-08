@@ -19,7 +19,10 @@ class WordPopupCard extends StatelessWidget {
   final StudySettings settings;
   final Map<String, HighlightEntry> highlightIndex;
   final VoidCallback onClose;
-  final VoidCallback onAddToDeck;
+  // Takes the entry to actually add - the tapped entry itself, unless it's a
+  // conjugated form, in which case the default button passes its dictionary
+  // form (see the "Add ... instead" link for adding the literal conjugation).
+  final void Function(HighlightEntry) onAddToDeck;
   final VoidCallback onEditMemoryTechnique;
   final void Function(HighlightEntry) onOpenKanji;
 
@@ -34,6 +37,76 @@ class WordPopupCard extends StatelessWidget {
     required this.onEditMemoryTechnique,
     required this.onOpenKanji,
   });
+
+  // The dictionary form of a conjugated match (食べる, for 食べなかった): its own
+  // deck status, a default "add this" button, and a link to add the literal
+  // conjugated text instead for anyone who specifically wants that.
+  Widget _dictionaryFormBlock() {
+    final base = entry.dictionaryForm;
+    if (base == null) return const SizedBox.shrink();
+    final muted = isDarkMode ? Colors.white60 : Colors.black45;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Dictionary form', style: TextStyle(fontSize: 11, color: muted, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                base.japanese,
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+              ),
+              if (base.reading.isNotEmpty && base.reading != base.japanese) ...[
+                const SizedBox(width: 6),
+                Text(base.reading, style: TextStyle(fontSize: 12, color: muted)),
+              ],
+            ],
+          ),
+          const SizedBox(height: 6),
+          if (base.isDeckWord)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF9A00FE).withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                "Already in your deck",
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF9A00FE)),
+              ),
+            )
+          else
+            TextButton.icon(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 28),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: () => onAddToDeck(base),
+              icon: const Icon(Icons.add, size: 16, color: Color(0xFF9A00FE)),
+              label: const Text("Add to deck", style: TextStyle(color: Color(0xFF9A00FE), fontSize: 13)),
+            ),
+          TextButton(
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(0, 24),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            onPressed: () => onAddToDeck(entry),
+            child: Text('Add "${entry.japanese}" instead', style: TextStyle(color: muted, fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,9 +182,28 @@ class WordPopupCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (entry.reading.isNotEmpty) ...[
+              // A list of readings (ふる, おりる) is ambiguous for this word, so it's
+              // left out rather than showing the wrong one.
+              if (entry.reading.isNotEmpty && !entry.reading.contains(',')) ...[
                 const SizedBox(height: 4),
-                Text(entry.reading, style: TextStyle(fontSize: 13, color: isDarkMode ? Colors.white70 : Colors.black54)),
+                Text(entry.reading.replaceAll('.', ''), style: TextStyle(fontSize: 13, color: isDarkMode ? Colors.white70 : Colors.black54)),
+              ],
+              // The conjugation (Past negative, Te form, ...) takes priority
+              // over the plain word type, since it says more: which form of
+              // the word this actually is.
+              if (entry.conjugationLabel.isNotEmpty || entry.wordType.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF9A00FE),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    entry.conjugationLabel.isNotEmpty ? entry.conjugationLabel : entry.wordType,
+                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                ),
               ],
               if (entry.romaji.isNotEmpty) ...[
                 const SizedBox(height: 2),
@@ -152,7 +244,14 @@ class WordPopupCard extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 8),
-              if (entry.isDeckWord) ...[
+              // A conjugated form (食べなかった): show the dictionary form it
+              // comes from (食べる), its own deck status, and a default
+              // add-to-deck that adds that dictionary form rather than the
+              // literal conjugated text - with a link to add the literal
+              // text instead, for anyone who specifically wants that.
+              if (entry.conjugationLabel.isNotEmpty)
+                _dictionaryFormBlock()
+              else if (entry.isDeckWord) ...[
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -188,7 +287,7 @@ class WordPopupCard extends StatelessWidget {
                     minimumSize: const Size(0, 32),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  onPressed: onAddToDeck,
+                  onPressed: () => onAddToDeck(entry),
                   icon: const Icon(Icons.add, size: 18, color: Color(0xFF9A00FE)),
                   label: const Text("Add to deck", style: TextStyle(color: Color(0xFF9A00FE))),
                 ),
@@ -494,12 +593,16 @@ class ListeningPlayerScreen extends StatefulWidget {
   final String title;
   final List<StudyCard> cards;
   final bool isDarkMode;
+  // Hard-coded sentences keyed by card text (the Grammar deck). When a card
+  // has an entry here, it plays those instead of fetching from Tatoeba.
+  final Map<String, List<TatoebaSentence>>? fixedSentences;
 
   const ListeningPlayerScreen({
     super.key,
     required this.title,
     required this.cards,
     required this.isDarkMode,
+    this.fixedSentences,
   });
 
   @override
@@ -616,7 +719,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
     for (final card in widget.cards) {
       final word = card.japanese.trim();
       if (word.isEmpty) continue;
-      final sentences = await getTatoebaSentencesFor(word);
+      final sentences = widget.fixedSentences?[word] ?? await getTatoebaSentencesFor(word);
       final chosen = sentences.take(_kSentencesPerWord).toList();
       if (!mounted) return;
       if (chosen.isNotEmpty) {
@@ -1053,9 +1156,9 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
               settings: _settings,
               highlightIndex: _highlightIndex,
               onClose: _closeWordPopup,
-              onAddToDeck: () {
+              onAddToDeck: (toAdd) {
                 _closeWordPopup();
-                _addEntryToDeck(entry);
+                _addEntryToDeck(toAdd);
               },
               onEditMemoryTechnique: () {
                 _closeWordPopup();

@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'grammar_data.dart';
 import 'lesson_data.dart';
+import 'study_data.dart';
+import 'study_progress_screen.dart';
 
 // Fades + slides a child in on first build. Give it a fresh key (or let it
 // mount fresh, e.g. inside a step that just became visible) to replay it.
@@ -289,11 +292,17 @@ class _StepViewState extends State<_StepView> {
 class LessonViewerScreen extends StatefulWidget {
   final Lesson lesson;
   final bool isDarkMode;
+  // When given, the finish screen offers to jump to this deck's study progress
+  // (completing the lesson on the way).
+  final StudyDeck? deck;
+  final VoidCallback? onChanged;
 
   const LessonViewerScreen({
     super.key,
     required this.lesson,
     required this.isDarkMode,
+    this.deck,
+    this.onChanged,
   });
 
   @override
@@ -310,6 +319,22 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
 
   bool get _hasActivity => widget.lesson.activityBuilder != null;
 
+  @override
+  void initState() {
+    super.initState();
+    widget.lesson.activityProgress?.addListener(_onActivityProgress);
+  }
+
+  @override
+  void dispose() {
+    widget.lesson.activityProgress?.removeListener(_onActivityProgress);
+    super.dispose();
+  }
+
+  void _onActivityProgress() {
+    if (mounted) setState(() {});
+  }
+
   double get _progress {
     final totalUnits = widget.lesson.steps.length + (_hasActivity ? 1 : 0) + 2; // intro + steps + activity? + closing
     double doneUnits;
@@ -321,7 +346,10 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
         doneUnits = (1 + _stepIndex).toDouble();
         break;
       case _Phase.activity:
-        doneUnits = (1 + widget.lesson.steps.length).toDouble();
+        final activityProgress = widget.lesson.activityProgress;
+        doneUnits = activityProgress != null
+            ? activityProgress.value * totalUnits
+            : (1 + widget.lesson.steps.length).toDouble();
         break;
       case _Phase.closing:
         doneUnits = totalUnits.toDouble();
@@ -368,6 +396,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
   void _finishActivity() => _deferred(() => setState(() => _phase = _Phase.closing));
 
   void _back() => _deferred(() {
+    if (_phase == _Phase.activity && (widget.lesson.activityBack?.call() ?? false)) return;
     if (_phase == _Phase.closing) {
       setState(() => _phase = _hasActivity ? _Phase.activity : _Phase.steps);
       return;
@@ -438,7 +467,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                     const SizedBox(width: 10),
                     Flexible(
                       child: Text(
-                        "You don't need to have watched anything beforehand - and don't worry about getting the "
+                        "You don't need to have watched anything beforehand. Don't worry about getting the "
                         "questions wrong. Guessing (even wrong!) is part of how you learn.",
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 13, color: isDarkMode ? Colors.white70 : Colors.black54),
@@ -475,6 +504,24 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
     );
   }
 
+  // Completes this lesson, then goes to the deck's study progress in its place.
+  void _openProgress() {
+    final deck = widget.deck!;
+    final slot = widget.lesson.endOfDay ?? widget.lesson.day;
+    if (!deck.completedLessonDays.contains(slot)) deck.completedLessonDays.add(slot);
+    widget.onChanged?.call();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StudyProgressScreen(
+          deck: deck,
+          isDarkMode: widget.isDarkMode,
+          onChanged: widget.onChanged,
+        ),
+      ),
+    );
+  }
+
   Widget _buildClosing(bool isDarkMode) {
     return Container(
       key: const ValueKey('closing'),
@@ -501,7 +548,10 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                 // bookkeeping number (so it doesn't collide with another
                 // lesson sharing the same endOfDay), not the day that's
                 // actually about to start - that's endOfDay + 1.
-                "You're ready for Day ${widget.lesson.endOfDay != null ? widget.lesson.endOfDay! + 1 : widget.lesson.day}!",
+                widget.lesson.trackId == kGrammarTrackId
+                    ? '${widget.lesson.title} complete'
+                    : "You're ready for Day ${widget.lesson.endOfDay != null ? widget.lesson.endOfDay! + 1 : widget.lesson.day}!",
+                textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
               ),
             ),
@@ -509,7 +559,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
             _FadeIn(
               delay: const Duration(milliseconds: 250),
               child: Text(
-                "You can find this lesson - and any future ones - anytime in Study → Lessons.",
+                "You can find this lesson, and any future ones, anytime in Study → Lessons, or in Study progress.",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 15, color: isDarkMode ? Colors.white70 : Colors.black54),
               ),
@@ -531,10 +581,65 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                 ),
               ),
             ),
+            if (widget.deck != null) ...[
+              const SizedBox(height: 12),
+              _FadeIn(
+                delay: const Duration(milliseconds: 460),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: kLessonPurple,
+                      side: const BorderSide(color: kLessonPurple),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: _openProgress,
+                    child: const Text('Study progress', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  // The X button normally just backs out - but an end-of-day lesson
+  // (widget.lesson.endOfDay != null) is the capstone activity for the day,
+  // easy to close by accident, so confirm first and remind the learner where
+  // to find it again if they do mean to leave.
+  Future<void> _handleClose(BuildContext context, bool isDarkMode) async {
+    if (widget.lesson.endOfDay == null) {
+      Navigator.pop(context, false);
+      return;
+    }
+    final fg = isDarkMode ? Colors.white : Colors.black87;
+    final muted = isDarkMode ? Colors.white70 : Colors.black54;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Are you sure you want to cancel?', style: TextStyle(color: fg, fontWeight: FontWeight.bold)),
+        content: Text(
+          'You can find "${widget.lesson.title}" again in Study → Study Progress, or in Lessons.',
+          style: TextStyle(color: muted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep going'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Cancel lesson'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) Navigator.pop(context, false);
   }
 
   @override
@@ -571,6 +676,30 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
         body = _buildClosing(isDarkMode);
         switchKey = 'closing';
         break;
+    }
+
+    if (widget.lesson.activityBack != null && (_phase == _Phase.activity || _phase == _Phase.closing)) {
+      // Keeps the activity mounted under the closing page, so going back from
+      // the closing page returns to where the activity was rather than
+      // starting it over.
+      body = Stack(
+        children: [
+          Positioned.fill(
+            child: Offstage(
+              offstage: _phase == _Phase.closing,
+              child: widget.lesson.activityBuilder!(context, isDarkMode, _finishActivity),
+            ),
+          ),
+          if (_phase == _Phase.closing)
+            Positioned.fill(
+              child: ColoredBox(
+                color: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+                child: _buildClosing(isDarkMode),
+              ),
+            ),
+        ],
+      );
+      switchKey = 'activity';
     }
 
     return Scaffold(
@@ -612,7 +741,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                   ),
                   IconButton(
                     icon: Icon(Icons.close, color: isDarkMode ? Colors.white70 : Colors.black54),
-                    onPressed: () => Navigator.pop(context, false),
+                    onPressed: () => _handleClose(context, isDarkMode),
                   ),
                 ],
               ),

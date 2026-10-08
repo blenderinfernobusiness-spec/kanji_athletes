@@ -24,6 +24,8 @@ import 'backup_data.dart';
 import 'cloud_sync_page.dart';
 import 'quick_sync_button.dart';
 import 'main_mini.dart';
+import 'update_check_service.dart';
+import 'update_dialog.dart';
 // Application entrypoint. A single build serves both the full app and
 // "Kanji Athletes Mini" (a small always-on-top flashcard/listening
 // companion window, see main_mini.dart) - launching with a --mini argument
@@ -813,6 +815,19 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadUserProfile();
     _pickRandomPracticeKanji();
+    _checkForUpdate();
+  }
+
+  // Fire-and-forget: shows an update prompt if a newer release is published
+  // (see update_check_service.dart), or does nothing at all on failure/no
+  // update/an unsupported platform (web, iOS, etc.). Skips a dismissed,
+  // non-required update so it doesn't nag on every single launch.
+  Future<void> _checkForUpdate() async {
+    final info = await UpdateCheckService.check();
+    if (info == null || !mounted) return;
+    if (!info.required && await UpdateCheckService.wasDismissed(info.latestVersion)) return;
+    if (!mounted) return;
+    showUpdateDialog(context, info, widget.isDarkMode);
   }
 
   Future<void> _loadUserProfile() async {

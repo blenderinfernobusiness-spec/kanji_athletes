@@ -214,7 +214,7 @@
     // inside a longer selection instead of respecting what they actually
     // selected. A selection that isn't itself a dictionary entry is shown
     // as-is (the usual "not in dictionary" popup), not narrowed down.
-    const entry = lookupIndex.get(text) || null;
+    const entry = entryForExactWord(text);
     showLookupPopup(rect, text, entry);
     markJustShowedPopup();
   });

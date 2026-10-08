@@ -408,31 +408,12 @@ class _MiniFlashcardsScreenState extends State<MiniFlashcardsScreen> {
     _buildQueue();
   }
 
-  // Mirrors spaced_repetition_standard.dart's queue logic (due reviews, plus
-  // new cards capped by the deck's own pacing) without the full app's lesson
+  // Uses the same queue logic as the full app's Spaced Repetition screen (see
+  // buildSpacedRepetitionQueue in study_data.dart) without its lesson
   // intros/tutorials - this is meant for quick practice, not first exposure
   // to brand-new material.
   void _buildQueue() {
-    final deck = widget.deck;
-    final due = deck.cards.where(isCardDue).toList();
-    final reviews = due.where((c) => c.nextReviewDate != null).toList();
-    final newCards = due.where((c) => c.nextReviewDate == null).toList();
-
-    List<StudyCard> newCardsForSession;
-    if (deck.challengeStartDate != null) {
-      final start = DateTime.parse(deck.challengeStartDate!);
-      final currentDay = DateTime.now().difference(start).inDays + 1;
-      newCardsForSession = newCards.where((c) => (c.challengeDay ?? 1) <= currentDay).toList();
-    } else {
-      final today = todayStamp();
-      if (deck.newCardsIntroducedDate != today) {
-        deck.newCardsIntroducedDate = today;
-        deck.newCardsIntroducedToday = 0;
-      }
-      final newAllowed = (deck.newCardsPerDay - deck.newCardsIntroducedToday).clamp(0, newCards.length);
-      newCardsForSession = newCards.take(newAllowed).toList();
-    }
-    _queue = [...reviews, ...newCardsForSession];
+    _queue = buildSpacedRepetitionQueue(widget.deck);
   }
 
   Future<void> _grade(bool correct) async {

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'beta_tag.dart';
 import 'immersion_word_lookup.dart';
 import 'kana_romaji.dart';
+import 'ruby_text.dart';
 import 'listening_player.dart' show SelectionTranslateCard, WordPopupCard;
 import 'study_data.dart';
 import 'study_settings.dart';
@@ -256,9 +257,9 @@ class _VideoSubtitlePanelScreenState extends State<VideoSubtitlePanelScreen> {
         settings: _settings,
         highlightIndex: _highlightIndex,
         onClose: close,
-        onAddToDeck: () {
+        onAddToDeck: (toAdd) {
           close();
-          addImmersionEntryToDeck(context, entry: entry, isDarkMode: widget.isDarkMode);
+          addImmersionEntryToDeck(context, entry: toAdd, isDarkMode: widget.isDarkMode);
         },
         onEditMemoryTechnique: () {
           close();
@@ -768,9 +769,7 @@ class _TokenView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final entry = token.entry;
-    final hasKanji = extractKanjiOnly(token.text).isNotEmpty;
     final reading = entry?.reading ?? '';
-    final furigana = hasKanji ? reading : '';
 
     final knownRomaji = entry?.romaji ?? '';
     final romajiSource = reading.isNotEmpty ? reading : (_kanaOnly.hasMatch(token.text) ? token.text : '');
@@ -792,15 +791,14 @@ class _TokenView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (showFurigana)
-              Text(furigana.isEmpty ? ' ' : furigana, style: TextStyle(fontSize: 11 * scale, color: muted)),
-            Text(
-              token.text,
-              style: TextStyle(
-                fontSize: (emphasized ? 26 : 20) * scale,
-                fontWeight: FontWeight.w600,
-                color: fg,
-              ),
+            rubyWord(
+              text: token.text,
+              reading: reading,
+              fontSize: (emphasized ? 26 : 20) * scale,
+              textColor: fg,
+              rubyColor: muted,
+              fontWeight: FontWeight.w600,
+              showRuby: showFurigana,
             ),
             if (showRomaji)
               Text(romaji.isEmpty ? ' ' : romaji, style: TextStyle(fontSize: 11 * scale, color: muted)),

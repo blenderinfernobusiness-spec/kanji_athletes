@@ -186,7 +186,7 @@
       const wordSpan = e.target.closest ? e.target.closest('.ka-highlight') : null;
       if (wordSpan) {
         const word = wordSpan.dataset.word;
-        showLookupPopup(wordSpan.getBoundingClientRect(), word, lookupIndex ? lookupIndex.get(word) : null);
+        showLookupPopup(wordSpan.getBoundingClientRect(), word, entryForExactWord(word));
         markJustShowedPopup();
       }
       if (wasSelecting) syncOverlayFromDom();
@@ -208,7 +208,7 @@
     // dictionary" popup), not narrowed down to a smaller piece of it.
     const range = selection.getRangeAt(0);
     const rect = range.getBoundingClientRect();
-    const entry = lookupIndex.get(text) || null;
+    const entry = entryForExactWord(text);
     if (wasSelecting) syncOverlayFromDom(); // safe now - rect/text are already captured above
     showLookupPopup(rect, text, entry);
     markJustShowedPopup();

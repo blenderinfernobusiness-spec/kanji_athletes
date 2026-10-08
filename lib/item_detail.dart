@@ -8,6 +8,8 @@ import 'set_preferences.dart';
 import 'stroke_order_animator.dart';
 import 'writing_practice_canvas.dart';
 import 'view_set.dart';
+import 'ruby_text.dart';
+import 'verb_conjugation.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final Item item;
@@ -27,6 +29,23 @@ class ItemDetailScreen extends StatefulWidget {
 
   @override
   State<ItemDetailScreen> createState() => _ItemDetailScreenState();
+}
+
+// The Forms section's rows for a dictionary item, by its word type - empty
+// for anything that isn't a verb or an i-adjective (so the section hides).
+List<VerbForm> _wordForms(Item item) {
+  switch (item.wordType) {
+    case 'Ichidan Verb':
+      return ichidanForms(item.japanese, item.reading);
+    case 'Godan Verb':
+      return godanForms(item.japanese, item.reading);
+    case 'Irregular Verb':
+      return irregularForms(item.japanese, item.reading);
+    case 'I-Adjective':
+      return iAdjectiveForms(item.japanese, item.reading);
+    default:
+      return const [];
+  }
 }
 
 class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProviderStateMixin {
@@ -1261,6 +1280,20 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                   ],
                 ),
               ),
+              if (_currentItem.wordType.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF9A00FE),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _currentItem.wordType,
+                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
             ],
             // Show onyomi, kunyomi, nanori for Kanji items only
             if (!isVocab && _currentItem.itemType == 'Kanji') ...[
@@ -1813,6 +1846,69 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                 ),
               ),
             ),
+            if (_wordForms(_currentItem).isNotEmpty) ...[
+              const SizedBox(height: 40),
+              Text(
+                'Forms',
+                style: TextStyle(
+                  color: widget.isDarkMode ? Colors.white : Colors.black,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Builder(builder: (context) {
+                final forms = _wordForms(_currentItem);
+                final muted = widget.isDarkMode ? Colors.white60 : Colors.black54;
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < forms.length; i++) ...[
+                        if (i > 0) Divider(height: 1, color: muted.withValues(alpha: 0.2)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              rubyWord(
+                                text: forms[i].japanese,
+                                reading: forms[i].reading,
+                                fontSize: 20,
+                                textColor: widget.isDarkMode ? Colors.white : Colors.black,
+                                rubyColor: muted,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(forms[i].label, style: TextStyle(fontSize: 13, color: muted)),
+                                    if (forms[i].note.isNotEmpty) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        forms[i].note,
+                                        style: TextStyle(fontSize: 11, color: muted, fontStyle: FontStyle.italic),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }),
+            ],
             const SizedBox(height: 40),
             // More info section
             Text(

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'sets_data.dart';
+import 'verb_conjugation.dart';
+import 'word_types.dart';
 
 const String _studyDecksPrefsKey = 'study_decks';
 
@@ -205,6 +207,12 @@ class HighlightEntry {
   // same object still referenced by whatever deck is showing it elsewhere,
   // so editing it here (e.g. its memory technique) is reflected there too.
   StudyCard? card;
+  // Set when this entry is a conjugated form (食べなかった) rather than a
+  // dictionary word itself: which conjugation it is (see verb_conjugation.dart's
+  // VerbForm.label) and the dictionary form it conjugates from, carrying its
+  // own up-to-date deck status (isDeckWord/card) from whatever index built it.
+  final String conjugationLabel;
+  final HighlightEntry? dictionaryForm;
 
   HighlightEntry({
     required this.japanese,
@@ -215,8 +223,59 @@ class HighlightEntry {
     this.item,
     this.isDeckWord = false,
     this.card,
+    this.conjugationLabel = '',
+    this.dictionaryForm,
   });
+
+  // Verb type (Godan Verb, Irregular Verb), shown in the word popups.
+  String get wordType => wordTypeFor(japanese);
 }
+
+// The full reading of each inflected or conjugated form used in the lessons,
+// keyed by the exact text as it appears in a sentence. Only forms the
+// dictionary doesn't have as an entry need listing.
+const Map<String, String> kWordReadingOverrides = {
+  '行った': 'いった',
+  '行きます': 'いきます',
+  '行きました': 'いきました',
+  '来ます': 'きます',
+  '来て': 'きて',
+  '帰りましょう': 'かえりましょう',
+  '住んでいる': 'すんでいる',
+  '借りてきた': 'かりてきた',
+  '働いています': 'はたらいています',
+  '見たい': 'みたい',
+  '読みました': 'よみました',
+  '食べた': 'たべた',
+  '飲んだ': 'のんだ',
+  'また明日': 'またあした',
+  '分かった': 'わかった',
+  '危なくない': 'あぶなくない',
+  '痛くない': 'いたくない',
+  '暑くない': 'あつくない',
+  '寒かった': 'さむかった',
+  '寒くない': 'さむくない',
+  '怖かった': 'こわかった',
+  '怖くなかった': 'こわくなかった',
+  '難しくなかった': 'むずかしくなかった',
+};
+
+// A handful of the forms above are compound/volitional conjugations
+// (ましょう, ています, てきた) that _conjugationTable's generators don't cover,
+// so they'd otherwise show no meaning in a word popup even though they're a
+// plain inflection of an ordinary dictionary verb. Maps the surface form to
+// that verb's dictionary form, so its existing meaning can be reused.
+const Map<String, String> kOverrideBaseWords = {
+  '帰りましょう': '帰る',
+  '借りてきた': '借りる',
+  '働いています': '働く',
+};
+
+// また明日 isn't a conjugated verb form at all (just a set phrase), so it has
+// no dictionary form to borrow a meaning from - given one directly instead.
+const Map<String, String> kOverrideMeanings = {
+  'また明日': 'See you tomorrow',
+};
 
 // Indexes every Vocab/Kanji dictionary entry - skipping the bare hiragana/
 // katakana practice tables, which would otherwise match almost every single
@@ -234,18 +293,44 @@ Map<String, HighlightEntry> buildHighlightIndex(List<StudyCard> deckCards) {
       if (item.itemType != 'Vocab' && item.itemType != 'Kanji') continue;
       final key = item.japanese;
       if (key.isEmpty) continue;
-      index.putIfAbsent(
-        key,
-        () => HighlightEntry(
-          japanese: key,
-          reading: item.itemType == 'Vocab'
-              ? item.reading
-              : (item.kunYomi.isNotEmpty ? item.kunYomi : item.onYomi),
-          meaning: item.translation,
-          item: item,
-        ),
-      );
+      final reading = item.itemType == 'Vocab'
+          ? item.reading
+          : (item.kunYomi.isNotEmpty ? item.kunYomi : item.onYomi);
+      // The same text can appear in several sets, and some copies have no
+      // reading (the first 雨 in the dictionary is one). Keep a copy with a
+      // reading, and prefer a Vocab entry (a word) over a Kanji entry.
+      final existing = index[key];
+      final better = existing == null ||
+          (existing.reading.isEmpty && reading.isNotEmpty) ||
+          (existing.item?.itemType == 'Kanji' && item.itemType == 'Vocab' && reading.isNotEmpty);
+      if (better) {
+        index[key] = HighlightEntry(japanese: key, reading: reading, meaning: item.translation, item: item);
+      }
     }
+  }
+  // Inflected forms (降った, 行きました) aren't dictionary entries, so without
+  // these the tokenizer would split them into a kanji and its kana.
+  for (final override in kWordReadingOverrides.entries) {
+    final existing = index[override.key];
+    var meaning = existing?.meaning ?? '';
+    HighlightEntry? dictionaryForm;
+    if (meaning.isEmpty) {
+      final baseWord = kOverrideBaseWords[override.key];
+      final base = baseWord == null ? null : index[baseWord];
+      if (base != null) {
+        meaning = base.meaning;
+        dictionaryForm = base;
+      } else {
+        meaning = kOverrideMeanings[override.key] ?? '';
+      }
+    }
+    index[override.key] = HighlightEntry(
+      japanese: override.key,
+      reading: override.value,
+      meaning: meaning,
+      item: existing?.item,
+      dictionaryForm: dictionaryForm,
+    );
   }
   for (final card in deckCards) {
     // A bare hiragana/katakana character deck (e.g. the Hiragana Beginner
@@ -284,6 +369,115 @@ class SentenceToken {
   SentenceToken(this.text, this.entry);
 }
 
+// One conjugated form of a dictionary verb/adjective (食べなかった), as found
+// in _conjugationTable - the reading, which conjugation it is, and the
+// dictionary form it conjugates from (so the popup can show "食べる" and offer
+// to add that instead of the literal conjugated text).
+class _ConjugatedForm {
+  final String reading;
+  final String formLabel;
+  final String baseJapanese;
+  final String baseReading;
+  final String baseMeaning;
+  const _ConjugatedForm(this.reading, this.formLabel, this.baseJapanese, this.baseReading, this.baseMeaning);
+}
+
+class _ConjugationTable {
+  final Map<String, _ConjugatedForm> index;
+  final int maxLength;
+  const _ConjugationTable(this.index, this.maxLength);
+}
+
+_ConjugationTable? _conjugationTableCache;
+
+// A handful of verbs have a kanji form in the dictionary but are almost
+// always actually written in plain kana in real sentences (居る/いる,
+// 有る/ある - the two "there is/I have" existence verbs this app teaches by
+// name). The generators below always conjugate from the dictionary's own
+// (kanji) spelling, so a sentence using います/いた/ある/あって etc. wouldn't
+// otherwise match anything in the table at all - not even a wrong match,
+// just nothing, leaving every kana of the word as its own ungrouped
+// character. For exactly these words, forms are generated a second time
+// from the kana reading as well, so either spelling is recognised.
+const Set<String> kKanaPreferredVerbs = {'居る', '有る'};
+
+// Every conjugated form (see verb_conjugation.dart) of every dictionary verb
+// and i-adjective whose word type is known (see word_types.dart), keyed by
+// the exact surface text - so 分かった, 食べ始める, 高くなかった etc. can be
+// matched in a sentence even though none of them are dictionary entries of
+// their own. Built once and cached, since the dictionary doesn't change at
+// runtime; tokenizeSentence (below) is what actually uses this.
+_ConjugationTable _conjugationTable() {
+  final cached = _conjugationTableCache;
+  if (cached != null) return cached;
+  final index = <String, _ConjugatedForm>{};
+  final seen = <String>{};
+  for (final set in setsData.values) {
+    for (final item in set.items) {
+      if (item.itemType != 'Vocab' || !seen.add(item.japanese)) continue;
+      final kind = item.wordType;
+      List<VerbForm> formsFor(String japanese, String reading) {
+        if (kind == 'Ichidan Verb') return ichidanForms(japanese, reading);
+        if (kind == 'Godan Verb') return godanForms(japanese, reading);
+        if (kind == 'Irregular Verb') return irregularForms(japanese, reading);
+        if (kind == 'I-Adjective') return iAdjectiveForms(japanese, reading);
+        return const [];
+      }
+      final spellings = [item.japanese];
+      if (kKanaPreferredVerbs.contains(item.japanese) && item.japanese != item.reading) {
+        spellings.add(item.reading);
+      }
+      for (final spelling in spellings) {
+        for (final form in formsFor(spelling, item.reading)) {
+          if (form.label == 'Dictionary form') continue; // that's the word itself, already in the main index
+          // The first verb/adjective to claim a surface form keeps it - a
+          // rare word sharing a conjugated spelling with a common one
+          // shouldn't win.
+          index.putIfAbsent(
+            form.japanese,
+            () => _ConjugatedForm(form.reading, form.label, item.japanese, item.reading, item.translation),
+          );
+        }
+      }
+    }
+  }
+  var maxLength = 1;
+  for (final key in index.keys) {
+    if (key.length > maxLength) maxLength = key.length;
+  }
+  final table = _ConjugationTable(index, maxLength);
+  _conjugationTableCache = table;
+  return table;
+}
+
+// Builds the entry for a conjugated-form match: its own surface text and
+// reading, plus the dictionary form it conjugates from - looked up in the
+// caller's own index first, so "already in your deck" reflects the user's
+// actual decks rather than just the dictionary.
+HighlightEntry _conjugatedEntry(String surface, _ConjugatedForm form, Map<String, HighlightEntry> index) {
+  final base = index[form.baseJapanese] ??
+      HighlightEntry(japanese: form.baseJapanese, reading: form.baseReading, meaning: form.baseMeaning);
+  return HighlightEntry(
+    japanese: surface,
+    reading: form.reading,
+    meaning: form.baseMeaning,
+    conjugationLabel: form.formLabel,
+    dictionaryForm: base,
+  );
+}
+
+// Looks [surface] up directly against the conjugation table, skipping the
+// plain word index - so it isn't shadowed by a kWordReadingOverrides entry
+// for the same surface text (those exist purely for their reading and carry
+// no meaning, since they're not meant to be looked up on their own). Used
+// where the richer conjugated-form info - its base word and that word's own
+// meaning - is specifically what's wanted, e.g. explaining a verb/adjective
+// stem that's been cut off mid-word.
+HighlightEntry? conjugatedEntryFor(String surface, Map<String, HighlightEntry> index) {
+  final conjugated = _conjugationTable().index[surface];
+  return conjugated == null ? null : _conjugatedEntry(surface, conjugated, index);
+}
+
 // Greedy longest-match tokenizer: splits [text] into runs that exist in
 // [index] (highlightable) and runs that don't (plain), always preferring the
 // longest match starting at each position - capped to the longest key
@@ -291,17 +485,41 @@ class SentenceToken {
 // phrase or compound word is never skipped in favor of a shorter word it
 // happens to contain. Not full word segmentation, but good enough since it
 // only needs to catch words the dictionary or deck already knows about.
+//
+// A position is also checked against every conjugated verb/adjective form
+// (_conjugationTable) at each length, right alongside [index], so a longer
+// conjugated match (食べなかった) isn't lost to a coincidental shorter
+// dictionary match (a lone kanji, say) tried first.
 List<SentenceToken> tokenizeSentence(String text, Map<String, HighlightEntry> index) {
   final maxWordLength = index.keys.isEmpty ? 1 : index.keys.map((k) => k.length).reduce((a, b) => a > b ? a : b);
+  final conjugations = _conjugationTable();
+  final overallMax = maxWordLength > conjugations.maxLength ? maxWordLength : conjugations.maxLength;
   final tokens = <SentenceToken>[];
   int i = 0;
   while (i < text.length) {
     HighlightEntry? found;
     int matchedLen = 0;
-    final maxLen = (text.length - i).clamp(1, maxWordLength);
+    final maxLen = (text.length - i).clamp(1, overallMax);
     for (int len = maxLen; len >= 1; len--) {
       final sub = text.substring(i, i + len);
       final entry = index[sub];
+      // A real dictionary/deck entry (non-empty meaning) always wins
+      // immediately. But a kWordReadingOverrides entry carries no meaning of
+      // its own - if the conjugation table also matches this exact text (the
+      // word's dictionary form is properly tagged with a verb/adjective
+      // type), prefer that: it comes with the word's actual meaning, where
+      // the override would otherwise leave the popup blank.
+      if (entry != null && entry.meaning.isNotEmpty) {
+        found = entry;
+        matchedLen = len;
+        break;
+      }
+      final conjugated = conjugations.index[sub];
+      if (conjugated != null) {
+        found = _conjugatedEntry(sub, conjugated, index);
+        matchedLen = len;
+        break;
+      }
       if (entry != null) {
         found = entry;
         matchedLen = len;
@@ -497,6 +715,42 @@ bool isCardDue(StudyCard card) {
   if (card.nextReviewDate == null) return true;
   final today = _parseStamp(todayStamp());
   return !_parseStamp(card.nextReviewDate!).isAfter(today);
+}
+
+// Builds a Spaced Repetition session's queue from a deck's due cards. New
+// cards come before reviews, so a session works through everything freshly
+// introduced before moving on to revising what's already been learned -
+// unless [revisionOnly] is set, in which case no new cards are introduced at
+// all and the queue is just today's due reviews (see study_mode.dart's
+// "Spaced Repetition (Only Revision)").
+//
+// New cards are either capped by the deck's flat newCardsPerDay setting
+// (tracked per calendar day, rolling that counter over here when it's a new
+// day - the caller should persist the deck afterwards), or, for a
+// day-scheduled challenge deck, gated by each card's own challengeDay
+// against how many days have elapsed since the deck started. Reviews are
+// never capped.
+List<StudyCard> buildSpacedRepetitionQueue(StudyDeck deck, {bool revisionOnly = false}) {
+  final due = deck.cards.where(isCardDue).toList();
+  final reviews = due.where((c) => c.nextReviewDate != null).toList();
+  if (revisionOnly) return reviews;
+  final newCards = due.where((c) => c.nextReviewDate == null).toList();
+
+  List<StudyCard> newCardsForSession;
+  if (deck.challengeStartDate != null) {
+    final start = DateTime.parse(deck.challengeStartDate!);
+    final currentDay = DateTime.now().difference(start).inDays + 1;
+    newCardsForSession = newCards.where((c) => (c.challengeDay ?? 1) <= currentDay).toList();
+  } else {
+    final today = todayStamp();
+    if (deck.newCardsIntroducedDate != today) {
+      deck.newCardsIntroducedDate = today;
+      deck.newCardsIntroducedToday = 0;
+    }
+    final newAllowed = (deck.newCardsPerDay - deck.newCardsIntroducedToday).clamp(0, newCards.length);
+    newCardsForSession = newCards.take(newAllowed).toList();
+  }
+  return [...newCardsForSession, ...reviews];
 }
 
 // Simplified SM-2: only two grades (correct/incorrect) instead of 0-5 quality.

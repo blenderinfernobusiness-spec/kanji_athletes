@@ -1,8 +1,18 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'beta_tag.dart';
 import 'video_subtitle_panel_screen.dart';
 
 const Color _accent = Color(0xFF9A00FE);
+
+// Immersion needs a real embedded browser to read YouTube's caption track
+// live (see video_subtitle_panel_screen.dart) - something no web page can do
+// to another site's embedded content, by browser design, so there's no web
+// version of this screen. These are where to get one instead.
+const String _androidDownloadUrl = 'https://drive.google.com/file/d/1mm57-tEzo3Ov752sFYJBNUEm03LsNIz2/view';
+const String _windowsDownloadUrl = 'https://drive.google.com/file/d/1Vg-b6I7zILQHjJxme38etXWxm4SuOcNL/view';
+const String _chromeExtensionUrl = 'https://drive.google.com/file/d/12yO5-Ppb0sgp_c7OBpGt3TNSbxNvJnD8/view';
 
 class _ImmersionChannel {
   final String name;
@@ -47,10 +57,51 @@ class _ImmersionTabViewState extends State<ImmersionTabView> {
   Color get _cardBg => widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
 
   void _openInApp(String url, String title) {
+    if (kIsWeb) {
+      _showWebUnavailableDialog();
+      return;
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => VideoSubtitlePanelScreen(initialUrl: url, title: title, isDarkMode: widget.isDarkMode),
+      ),
+    );
+  }
+
+  void _showWebUnavailableDialog() {
+    final fg = _fg;
+    final fgMuted = _fgMuted;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+        title: Text('Immersion isn\'t available on web', style: TextStyle(color: fg)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Watching a video with clickable subtitles needs a real browser window, which a web page can\'t open inside itself.',
+              style: TextStyle(color: fgMuted, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Use one of these instead:',
+              style: TextStyle(color: fgMuted, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            _WebUnavailableLink(label: 'Android app', url: _androidDownloadUrl, fg: fg),
+            _WebUnavailableLink(label: 'Windows app', url: _windowsDownloadUrl, fg: fg),
+            _WebUnavailableLink(label: 'Chrome extension', url: _chromeExtensionUrl, fg: fg),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Close', style: TextStyle(color: fgMuted)),
+          ),
+        ],
       ),
     );
   }
@@ -195,6 +246,31 @@ class _ImmersionTabViewState extends State<ImmersionTabView> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _WebUnavailableLink extends StatelessWidget {
+  final String label;
+  final String url;
+  final Color fg;
+  const _WebUnavailableLink({required this.label, required this.url, required this.fg});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: InkWell(
+        onTap: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.open_in_new, color: _accent, size: 16),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.w600)),
+          ],
+        ),
       ),
     );
   }

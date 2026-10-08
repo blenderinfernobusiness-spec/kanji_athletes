@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Kanji Athletes - YouTube Subtitles",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Highlight Japanese text in YouTube subtitles or on any web page, look words up against your Kanji Athletes dictionary, and add them straight to a deck.",
   "permissions": ["storage"],
   "host_permissions": [

@@ -145,9 +145,9 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
               settings: _settings,
               highlightIndex: _highlightIndex,
               onClose: _closeWordPopup,
-              onAddToDeck: () {
+              onAddToDeck: (toAdd) {
                 _closeWordPopup();
-                _addEntryToDeck(entry);
+                _addEntryToDeck(toAdd);
               },
               onEditMemoryTechnique: () {
                 _closeWordPopup();

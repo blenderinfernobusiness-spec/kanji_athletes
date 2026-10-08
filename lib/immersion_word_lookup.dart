@@ -28,9 +28,9 @@ void showImmersionKnownWord(
         settings: settings,
         highlightIndex: highlightIndex,
         onClose: () => Navigator.pop(sheetContext),
-        onAddToDeck: () {
+        onAddToDeck: (toAdd) {
           Navigator.pop(sheetContext);
-          addImmersionEntryToDeck(context, entry: entry, isDarkMode: isDarkMode);
+          addImmersionEntryToDeck(context, entry: toAdd, isDarkMode: isDarkMode);
         },
         onEditMemoryTechnique: () {
           Navigator.pop(sheetContext);

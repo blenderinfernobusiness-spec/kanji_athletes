@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'study_data.dart';
+import 'grammar_data.dart';
 import 'sets_data.dart';
 import 'kanji_challenge_data.dart';
 import 'hiragana_challenge_data.dart';
@@ -251,6 +252,30 @@ class _StudyScreenState extends State<StudyScreen> {
                       },
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  Card(
+                    color: const Color(0xFF9A00FE).withValues(alpha: 0.12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(color: Color(0xFF9A00FE)),
+                    ),
+                    margin: EdgeInsets.zero,
+                    child: ListTile(
+                      leading: const Icon(Icons.translate, color: Color(0xFF9A00FE)),
+                      title: Text(
+                        kGrammarDeckName,
+                        style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+                      ),
+                      subtitle: Text(
+                        '${grammarPoints.length} grammar points · one new point each day, learned through lessons',
+                        style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _createGrammarDeck();
+                      },
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: searchController,
@@ -463,6 +488,28 @@ class _StudyScreenState extends State<StudyScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Started "$name" with ${cards.length} words')),
+    );
+  }
+
+  Future<void> _createGrammarDeck() async {
+    String name = kGrammarDeckName;
+    int copy = 1;
+    while (_decks.any((d) => d.name == name)) {
+      copy++;
+      name = '$kGrammarDeckName ($copy)';
+    }
+    setState(() {
+      _decks.add(StudyDeck(
+        name: name,
+        cards: buildGrammarCards(),
+        lessonSetId: kGrammarTrackId,
+        deckCreatedDate: todayStamp(),
+      ));
+    });
+    await _saveDecks();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Started "$name" - the first grammar lesson is ready')),
     );
   }
 
@@ -909,6 +956,8 @@ class _StudyScreenState extends State<StudyScreen> {
         return 'Essential Vocabulary Challenge';
       case kHiraganaTrackId:
         return 'Hiragana Challenge';
+      case kGrammarTrackId:
+        return kGrammarDeckName;
       default:
         return trackId;
     }
@@ -996,6 +1045,39 @@ class _StudyScreenState extends State<StudyScreen> {
     });
   }
 
+  List<Lesson> get _allLessons => [...lessons, ...grammarLessons];
+
+  // Lessons are grouped by course, in this order. Within a course they run in
+  // the order they happen - an end-of-day lesson sits after its day's cards.
+  List<Widget> _lessonSectionWidgets() {
+    const sections = [
+      MapEntry(kHiraganaTrackId, 'Kana course'),
+      MapEntry(kKanjiChallengeTrackId, '90 Day Kanji Challenge'),
+      MapEntry(kEssentialVocabTrackId, 'Vocabulary'),
+      MapEntry(kGrammarTrackId, 'Grammar'),
+    ];
+    double sortKey(Lesson l) => l.endOfDay != null ? l.endOfDay! + 0.5 : l.day.toDouble();
+    final widgets = <Widget>[];
+    for (final section in sections) {
+      final sectionLessons = _allLessons.where((l) => l.trackId == section.key).toList()
+        ..sort((a, b) => sortKey(a).compareTo(sortKey(b)));
+      if (sectionLessons.isEmpty) continue;
+      widgets.add(Padding(
+        padding: const EdgeInsets.only(top: 8, bottom: 8),
+        child: Text(
+          section.value,
+          style: TextStyle(
+            color: widget.isDarkMode ? Colors.white : Colors.black87,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ));
+      widgets.addAll(sectionLessons.map(_buildLessonCard));
+    }
+    return widgets;
+  }
+
   Widget _buildLessonCard(Lesson lesson) {
     final deck = _deckForTrack(lesson.trackId);
     final currentDay = deck == null ? 0 : lessonDayFor(deck);
@@ -1044,6 +1126,8 @@ class _StudyScreenState extends State<StudyScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => LessonViewerScreen(
+                        deck: _deckForTrack(lesson.trackId),
+                        onChanged: () => _saveDecks(),
                         lesson: lesson,
                         isDarkMode: widget.isDarkMode,
                       ),
@@ -1079,7 +1163,7 @@ class _StudyScreenState extends State<StudyScreen> {
             _buildSimilarKanjiCard(),
             const SizedBox(height: 4),
           ],
-          if (lessons.isEmpty)
+          if (_allLessons.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Text(
@@ -1089,7 +1173,7 @@ class _StudyScreenState extends State<StudyScreen> {
               ),
             )
           else
-            for (final lesson in lessons) _buildLessonCard(lesson),
+            ..._lessonSectionWidgets(),
         ],
       ),
     );

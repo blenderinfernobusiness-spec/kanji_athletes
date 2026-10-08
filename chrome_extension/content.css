@@ -109,6 +109,17 @@
   margin-bottom: 6px;
 }
 
+.ka-lookup-popup .ka-word-type {
+  display: inline-block;
+  background: #9a00fe;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+
 .ka-lookup-popup .ka-meaning {
   margin-bottom: 10px;
 }
@@ -158,6 +169,49 @@
   font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
   text-align: center;
+}
+
+/* The dictionary form of a conjugated match (食べる, for 食べなかった) - its
+   own deck status plus the default add-to-deck action. */
+.ka-lookup-popup .ka-dictionary-form {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+
+.ka-lookup-popup .ka-dictionary-form-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 2px;
+}
+
+.ka-lookup-popup .ka-dictionary-form-word {
+  font-size: 15px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.ka-lookup-popup .ka-already-in-deck {
+  display: inline-block;
+  background: rgba(154, 0, 254, 0.2);
+  color: #c58bff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+
+/* A plain-text secondary action ("Add ... instead"), unlike the full purple
+   buttons - it's the alternative, not the default. */
+.ka-lookup-popup .ka-link-btn {
+  background: none;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: left;
+  padding: 4px 0;
+  font-size: 12px;
+  text-decoration: underline;
 }
 
 .ka-settings-btn {

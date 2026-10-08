@@ -3,6 +3,7 @@ import 'sets_data.dart';
 import 'study_data.dart';
 import 'card_context_screen.dart';
 import 'card_edit_dialog.dart';
+import 'grammar_data.dart';
 
 class DeckDetailScreen extends StatefulWidget {
   final StudyDeck deck;
@@ -878,7 +879,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                 style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
               ),
             )
-          : widget.deck.challengeStartDate != null
+          : widget.deck.challengeStartDate != null || widget.deck.lessonSetId == kGrammarTrackId
               ? _buildGroupedByDayList()
               : ListView.builder(
                   padding: const EdgeInsets.all(20),
@@ -891,28 +892,46 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
   // Day-scheduled challenge decks (e.g. the 90 Day Kanji Challenge) group
   // their cards under a "Day N" header per the card's own challengeDay,
   // rather than one flat list - cards without a day (shouldn't normally
-  // happen for these decks) land under "Unassigned".
+  // happen for these decks) land under "Unassigned". The Grammar deck's days
+  // are further grouped under their curriculum section (see grammarSections)
+  // - a bold header shown once above the first day of each new section.
   Widget _buildGroupedByDayList() {
     final groups = <int, List<StudyCard>>{};
     for (final card in widget.deck.cards) {
       groups.putIfAbsent(card.challengeDay ?? 0, () => []).add(card);
     }
     final days = groups.keys.toList()..sort();
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        for (final day in days) ...[
-          Padding(
-            padding: const EdgeInsets.only(top: 12, bottom: 8),
+    final isGrammar = widget.deck.lessonSetId == kGrammarTrackId;
+    final children = <Widget>[];
+    String? lastSection;
+    for (final day in days) {
+      if (isGrammar) {
+        final section = grammarSectionForDay(day)?.title;
+        if (section != null && section != lastSection) {
+          children.add(Padding(
+            padding: EdgeInsets.only(top: lastSection == null ? 0 : 20, bottom: 4),
             child: Text(
-              day == 0 ? 'Unassigned' : 'Day $day',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF9A00FE)),
+              section,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: widget.isDarkMode ? Colors.white : Colors.black87,
+              ),
             ),
-          ),
-          for (final card in groups[day]!) _buildCardTile(card),
-        ],
-      ],
-    );
+          ));
+        }
+        lastSection = section;
+      }
+      children.add(Padding(
+        padding: const EdgeInsets.only(top: 12, bottom: 8),
+        child: Text(
+          day == 0 ? 'Unassigned' : 'Day $day',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF9A00FE)),
+        ),
+      ));
+      children.addAll(groups[day]!.map(_buildCardTile));
+    }
+    return ListView(padding: const EdgeInsets.all(20), children: children);
   }
 
   void _openCardContext(StudyCard card) {
