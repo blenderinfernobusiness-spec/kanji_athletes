@@ -1,7 +1,7 @@
 ; Inno Setup script to package Kanji Athletes Release folder
 [Setup]
 AppName=Kanji Athletes
-AppVersion=1.1.0
+AppVersion=1.1.1
 ; Installs into this user's own AppData instead of Program Files, and
 ; PrivilegesRequired=lowest stops Inno Setup asking Windows to elevate -
 ; no admin/UAC prompt on install, reinstall, or uninstall. The one

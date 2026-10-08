@@ -27,6 +27,13 @@ class CloudSyncPage extends StatefulWidget {
 class _CloudSyncPageState extends State<CloudSyncPage> {
   bool _busy = false;
 
+  // Set right after a successful sign-in (not account creation - a brand
+  // new account has no cloud backup to choose between yet) so the very next
+  // build of the signed-in view can prompt for upload vs download once, up
+  // front, rather than leaving a user to find Sync/Download themselves among
+  // the signed-in view's other buttons.
+  bool _pendingSyncPrompt = false;
+
   Color get _bg => widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
   Color get _fg => widget.isDarkMode ? Colors.white : Colors.black87;
   Color get _fgMuted => widget.isDarkMode ? Colors.white70 : Colors.black54;
@@ -52,10 +59,17 @@ class _CloudSyncPageState extends State<CloudSyncPage> {
       isDarkMode: widget.isDarkMode,
       busy: _busy,
       onBusyChanged: (v) => setState(() => _busy = v),
+      onSignedIn: () => _pendingSyncPrompt = true,
     );
   }
 
   Widget _buildSignedInView(User user) {
+    if (_pendingSyncPrompt) {
+      _pendingSyncPrompt = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showUploadOrDownloadPrompt();
+      });
+    }
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -170,6 +184,47 @@ class _CloudSyncPageState extends State<CloudSyncPage> {
     }
   }
 
+  // Shown once, right after signing in (not account creation). Upload
+  // reuses the same smart-merge Sync already below (never destructive -
+  // pulls in anything new from the cloud first); Download reuses the same
+  // "Download from cloud" action, including its own confirmation, since
+  // that one does overwrite this device's data.
+  Future<void> _showUploadOrDownloadPrompt() async {
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _bg,
+        title: Text('Upload or download?', style: TextStyle(color: _fg)),
+        content: Text(
+          "If this is a new device and you already have progress saved to this account, press Download to bring "
+          "it here. Otherwise, press Upload to sync what's on this device to the cloud.",
+          style: TextStyle(color: _fgMuted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(null),
+            child: Text('Maybe later', style: TextStyle(color: _fgMuted)),
+          ),
+          OutlinedButton(
+            onPressed: () => Navigator.of(ctx).pop('download'),
+            child: const Text('Download'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: _accent, foregroundColor: Colors.white),
+            onPressed: () => Navigator.of(ctx).pop('upload'),
+            child: const Text('Upload'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || choice == null) return;
+    if (choice == 'upload') {
+      await _backupNow();
+    } else {
+      await _restoreFromCloud();
+    }
+  }
+
   Future<void> _backupNow() async {
     setState(() => _busy = true);
     try {
@@ -281,7 +336,18 @@ class CloudSignInForm extends StatefulWidget {
   final bool isDarkMode;
   final bool busy;
   final void Function(bool) onBusyChanged;
-  const CloudSignInForm({super.key, required this.isDarkMode, required this.busy, required this.onBusyChanged});
+  // Called right after a successful sign-in (not account creation - a brand
+  // new account has nothing to choose between yet). Optional and unused by
+  // Kanji Athletes Mini, which already auto-syncs silently on sign-in by
+  // design (see main_mini.dart) rather than prompting.
+  final VoidCallback? onSignedIn;
+  const CloudSignInForm({
+    super.key,
+    required this.isDarkMode,
+    required this.busy,
+    required this.onBusyChanged,
+    this.onSignedIn,
+  });
 
   @override
   State<CloudSignInForm> createState() => CloudSignInFormState();
@@ -314,6 +380,7 @@ class CloudSignInFormState extends State<CloudSignInForm> {
         await CloudSyncService.signUp(email: email, password: password);
       } else {
         await CloudSyncService.signIn(email: email, password: password);
+        widget.onSignedIn?.call();
       }
     } on FirebaseAuthException catch (e) {
       setState(() => _error = e.message ?? e.code);
