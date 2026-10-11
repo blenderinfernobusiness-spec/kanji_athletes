@@ -1,0 +1,59 @@
+workflows:
+  ios-testflight:
+    name: iOS - TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      ios_signing:
+        # Codemagic handles certificates/provisioning profiles automatically
+        # once the App Store Connect API key below is set - no manual
+        # certificate exporting/importing needed, unlike a bare CI script.
+        distribution_type: app_store
+        bundle_identifier: com.kanjiathletes.app
+      vars:
+        # Set these in the Codemagic dashboard (Workflow editor > Environment
+        # variables), NOT here - they're secrets and should never be
+        # committed to the repo. Generate the API key at
+        # https://appstoreconnect.apple.com/access/api (Users and Access >
+        # Keys > App Store Connect API), after enrolling in the Apple
+        # Developer Program.
+        #   APP_STORE_CONNECT_ISSUER_ID
+        #   APP_STORE_CONNECT_KEY_IDENTIFIER
+        #   APP_STORE_CONNECT_PRIVATE_KEY
+        APP_ID: com.kanjiathletes.app
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    cache:
+      cache_paths:
+        - $HOME/Library/Caches/CocoaPods
+        - $FLUTTER_ROOT/.pub-cache
+    scripts:
+      - name: Set up code signing
+        script: |
+          app-store-connect fetch-signing-files "$APP_ID" \
+            --type IOS_APP_STORE \
+            --create
+          keychain initialize
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Get Flutter packages
+        script: flutter packages pub get
+      - name: Build iOS release (.ipa)
+        script: |
+          flutter build ipa --release \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
+        # Leave this off until the app is stable enough for a public
+        # release - flip to true (and fill in release notes) to submit
+        # straight to the App Store review queue instead of/as well as
+        # TestFlight.
+        submit_to_app_store: false
