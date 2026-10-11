@@ -1,0 +1,18 @@
+{
+  "name": "captions-service",
+  "description": "Fetches a YouTube video's Japanese captions using a real headless browser (so it behaves like a genuine viewer, not an automated scraper), caching each video's result in Firestore so the same video is only ever fetched from YouTube once, no matter how many people watch it on the web app.",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@sparticuz/chromium": "^123.0.1",
+    "express": "^4.19.2",
+    "firebase-admin": "^12.1.0",
+    "puppeteer-core": "^22.10.0"
+  },
+  "private": true
+}

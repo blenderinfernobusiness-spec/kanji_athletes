@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'beta_tag.dart';
 import 'video_subtitle_panel_screen.dart';
+import 'web_immersion_player.dart';
 
 const Color _accent = Color(0xFF9A00FE);
 
@@ -129,6 +130,19 @@ class _ImmersionTabViewState extends State<ImmersionTabView> {
       return;
     }
     setState(() => _error = null);
+    // Unlike Browse/channels (which need a real embedded browser - no web
+    // version possible), a single pasted video plays fine on web via
+    // YouTube's own official embeddable player, with captions fetched by
+    // captions_service. See web_immersion_player.dart.
+    if (kIsWeb) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => WebImmersionPlayerScreen(videoId: videoId, title: 'YouTube', isDarkMode: widget.isDarkMode),
+        ),
+      );
+      return;
+    }
     _openInApp('https://www.youtube.com/watch?v=$videoId', 'YouTube');
   }
 
