@@ -45,7 +45,10 @@ async function openTranscriptPanel(page) {
 }
 
 async function extractCues(page) {
-  await page.waitForFunction(() => document.querySelector('transcript-segment-view-model'), { timeout: 15000 });
+  // Generous on purpose - Cloud Run's CPU/network path to YouTube turned
+  // out to be noticeably slower than local testing, and this was timing
+  // out for real videos at 15s.
+  await page.waitForFunction(() => document.querySelector('transcript-segment-view-model'), { timeout: 30000 });
   await new Promise((r) => setTimeout(r, 500));
   const rows = await page.evaluate(() => {
     return Array.from(document.querySelectorAll('transcript-segment-view-model')).map((row) => {

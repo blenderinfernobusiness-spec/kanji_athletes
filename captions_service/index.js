@@ -80,7 +80,7 @@ app.get('/', async (req, res) => {
     // here). The explicit waits inside fetchCaptionsFromPage for the
     // consent dialog, transcript button, and transcript rows are the real
     // gate on correctness, not this initial navigation.
-    await page.goto(`https://www.youtube.com/watch?v=${videoId}`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    await page.goto(`https://www.youtube.com/watch?v=${videoId}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
     const { available, cues } = await fetchCaptionsFromPage(page);
     const result = { videoId, available, cues, cachedAt: Date.now() };

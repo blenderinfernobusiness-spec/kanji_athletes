@@ -93,7 +93,10 @@ class _WebImmersionPlayerScreenState extends State<WebImmersionPlayerScreen> {
   Future<void> _loadCaptions() async {
     try {
       final uri = Uri.parse(kCaptionsServiceUrl).replace(queryParameters: {'videoId': widget.videoId});
-      final response = await http.get(uri).timeout(const Duration(seconds: 30));
+      // Generous on purpose - an uncached video needs a real browser launch
+      // server-side (occasionally plus a Cloud Run cold start on top), and
+      // 30s turned out to not be enough headroom for that in practice.
+      final response = await http.get(uri).timeout(const Duration(seconds: 100));
       if (response.statusCode != 200) {
         setState(() {
           _loadingCaptions = false;
@@ -178,9 +181,17 @@ class _WebImmersionPlayerScreenState extends State<WebImmersionPlayerScreen> {
       appBar: AppBar(title: Text(widget.title)),
       body: Column(
         children: [
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: YoutubePlayer(controller: _controller),
+          // On a wide desktop window, an AspectRatio sized to the full
+          // available width becomes very tall at 16:9 - tall enough to
+          // push the caption list below it off-screen entirely. Capping
+          // its height keeps the player letterboxed (centered, with space
+          // on either side) instead, always leaving room for captions.
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: YoutubePlayer(controller: _controller),
+            ),
           ),
           Expanded(child: _buildCaptionArea()),
         ],
@@ -190,7 +201,23 @@ class _WebImmersionPlayerScreenState extends State<WebImmersionPlayerScreen> {
 
   Widget _buildCaptionArea() {
     if (_loadingCaptions) {
-      return const Center(child: CircularProgressIndicator(color: _accent));
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(color: _accent),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                'Loading captions… the first time anyone watches a video this can take up to a minute - after that it\'s instant for everyone.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: _fgMuted, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      );
     }
     if (_captionsError != null) {
       return Center(
