@@ -137723,7 +137723,7 @@ return A.r($async$AA,r)},
 GR(){var s=0,r=A.t(t.H),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e,d,c
 var $async$GR=A.o(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:p=4
-m=A.cf("https://CHANGE-ME.run.app",0,null).XR(0,A.as(["videoId",n.a.c],t.N,t.z))
+m=A.cf("https://captions-service-275785368511.us-central1.run.app",0,null).XR(0,A.as(["videoId",n.a.c],t.N,t.z))
 s=7
 return A.h(A.ak2(m).po(0,B.kP),$async$GR)
 case 7:l=b
