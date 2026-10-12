@@ -12,11 +12,9 @@ import 'study_settings.dart';
 
 const Color _accent = Color(0xFF9A00FE);
 
-// TODO: replace with the deployed captions_service Cloud Run URL once it's
-// live (see captions_service/README.md for the deploy command). Until then
-// every lookup fails closed - this screen still plays the video, it just
-// can't show captions.
-const String kCaptionsServiceUrl = 'https://CHANGE-ME.run.app';
+// Deployed via captions_service/ (see its README.md for how to redeploy
+// after a code change there).
+const String kCaptionsServiceUrl = 'https://captions-service-275785368511.us-central1.run.app';
 
 class _CaptionCue {
   final String text;

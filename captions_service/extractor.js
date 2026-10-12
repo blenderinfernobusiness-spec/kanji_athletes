@@ -70,7 +70,10 @@ async function extractCues(page) {
 // Runs the whole sequence against an already-navigated page (the caller
 // owns browser/page lifecycle) and returns { available, cues }.
 async function fetchCaptionsFromPage(page) {
-  await new Promise((r) => setTimeout(r, 1500));
+  // A bit more generous than before, now that navigation only waits for
+  // domcontentloaded (not networkidle2) - the page has less time to
+  // hydrate before this runs.
+  await new Promise((r) => setTimeout(r, 2500));
   await dismissConsentIfPresent(page);
   await new Promise((r) => setTimeout(r, 1000));
 

@@ -74,7 +74,13 @@ app.get('/', async (req, res) => {
     await page.setUserAgent(
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
     );
-    await page.goto(`https://www.youtube.com/watch?v=${videoId}`, { waitUntil: 'networkidle2', timeout: 30000 });
+    // domcontentloaded rather than networkidle2 - a live stream keeps
+    // making network requests indefinitely, so "network idle" may never
+    // actually happen for one (confirmed directly: a live video timed out
+    // here). The explicit waits inside fetchCaptionsFromPage for the
+    // consent dialog, transcript button, and transcript rows are the real
+    // gate on correctness, not this initial navigation.
+    await page.goto(`https://www.youtube.com/watch?v=${videoId}`, { waitUntil: 'domcontentloaded', timeout: 20000 });
 
     const { available, cues } = await fetchCaptionsFromPage(page);
     const result = { videoId, available, cues, cachedAt: Date.now() };
