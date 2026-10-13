@@ -64,14 +64,25 @@ class _WelcomeSlide extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Image.asset('assets/kanji_athletes.png', height: 160),
-                  const SizedBox(height: 20),
+                  // Same bold-kanji-over-a-purple-banner treatment as the
+                  // lesson category art (assets/lessonskanjiscreen.png etc)
+                  // - built as text/a Container rather than another baked
+                  // image, so it reflows for any string and still contrasts
+                  // in dark mode (where a baked-black-text image wouldn't).
                   Text(
-                    'Welcome to Kanji Athletes',
-                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: fg),
-                    textAlign: TextAlign.center,
+                    '漢字',
+                    style: TextStyle(fontSize: 72, fontWeight: FontWeight.w900, color: fg, height: 1),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                    color: _accent,
+                    child: const Text(
+                      'WELCOME TO JAPANESE',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.5),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   Text(
                     'Ready to start learning Japanese?',
                     style: TextStyle(fontSize: 16, color: fgMuted),
