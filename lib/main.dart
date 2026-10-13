@@ -1004,6 +1004,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: const Text("Credits & data sources"),
               ),
             ),
+            const SizedBox(height: 8),
+            // Testing-only re-entry into onboarding_flow.dart without needing
+            // a fresh install - remove once onboarding is finished being
+            // built out.
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => OnboardingFlow(
+                        isDarkMode: widget.isDarkMode,
+                        onFinished: () => Navigator.pop(context),
+                      ),
+                    ),
+                  );
+                },
+                child: const Text("Try tutorial"),
+              ),
+            ),
           ],
         ),
         actions: [
