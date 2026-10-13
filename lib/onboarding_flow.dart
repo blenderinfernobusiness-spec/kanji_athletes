@@ -2,12 +2,40 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'cloud_sync_page.dart';
 import 'hiragana_challenge_data.dart';
+import 'kanji_challenge_data.dart';
 import 'lesson_data.dart';
+import 'lesson_viewer_screen.dart';
 import 'study_data.dart';
 import 'study_mode.dart';
 import 'writing_practice_canvas.dart';
 
 const Color _accent = Color(0xFF9A00FE);
+
+// Cumulative kanji count once a given JLPT level (and everything below it)
+// is known - each level's own count comes from practice_sets_data.dart's
+// own JLPT kanji lists (N5 80, N4 170, N3 370, N2 380, N1 71), summed
+// because a learner who already knows N4 also knows N5.
+const Map<String, int> _jlptCumulativeKanjiCounts = {
+  'N5': 80,
+  'N4': 250,
+  'N3': 620,
+  'N2': 1000,
+  'N1': 1071,
+};
+
+// Walks the 90 Day Kanji Challenge's own day-by-day kanji counts (not a
+// fixed per-day number - see kanji_challenge_data.dart) to find which day
+// introduces the [targetCount]th kanji, so a learner who already knows that
+// many kanji can skip straight past the days that would just reteach them.
+int _challengeDayForKnownCount(int targetCount) {
+  if (targetCount <= 0) return 0;
+  var cumulative = 0;
+  for (var i = 0; i < kanjiChallengeDays.length; i++) {
+    cumulative += kanjiChallengeDays[i].length;
+    if (cumulative >= targetCount) return i + 1;
+  }
+  return kanjiChallengeDays.length;
+}
 
 // Shown once, before HomeScreen, to a brand new install that isn't signed
 // in yet (see main.dart's _StartupGate for when that is). Signing in just
@@ -36,6 +64,7 @@ class OnboardingFlow extends StatefulWidget {
 class _OnboardingFlowState extends State<OnboardingFlow> {
   int _step = 0;
   bool _startingKanaCourse = false;
+  bool _startingKanjiChallenge = false;
 
   // 'brand_new' continues into the kana slides below; 'knows_kana' finishes
   // onboarding immediately, same as signing in. Either way the choice is
@@ -46,6 +75,17 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     if (!mounted) return;
     if (level == 'brand_new') {
       setState(() => _step = 3);
+    } else {
+      setState(() => _step = 6);
+    }
+  }
+
+  // 'grammar'/'vocab' aren't built out yet - finish onboarding same as
+  // before this slide existed. 'kanji' continues to the kanji-knowledge
+  // question.
+  void _handleFocusChoice(String focus) {
+    if (focus == 'kanji') {
+      setState(() => _step = 7);
     } else {
       widget.onFinished();
     }
@@ -71,6 +111,60 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     }
     deck.name = name;
     deck.lessonSetId = kHiraganaTrackId;
+    decks.add(deck);
+    await saveStudyDecks(decks);
+    if (!mounted) return;
+    widget.onFinished();
+    await startSpacedRepetition(context, deck, widget.isDarkMode, () {});
+  }
+
+  // targetKanjiCount is cumulative, from _jlptCumulativeKanjiCounts (0 for
+  // "none yet"). Builds a fresh 90 Day Kanji Challenge deck and backdates
+  // its progress past the days that'd just reteach kanji the user already
+  // knows (study_data.dart's applyImportedChallengeProgress - the same
+  // mechanism the normal "Already done some of this challenge?" prompt
+  // uses). That backdating means the deck's own day-elapsed lesson check
+  // would never naturally land on day 1 or day 2 again (a deck only has one
+  // start date, with no persisted notion of a custom lesson schedule), so
+  // for anyone who isn't starting completely fresh, both intro lessons are
+  // shown here during onboarding instead, back to back, right before the
+  // deck opens, rather than the second being deferred to a real day later.
+  Future<void> _startKanjiChallenge(int targetKanjiCount) async {
+    if (_startingKanjiChallenge) return;
+    setState(() => _startingKanjiChallenge = true);
+    final completedDay = _challengeDayForKnownCount(targetKanjiCount);
+
+    final decks = await loadStudyDecks();
+    final deck = buildKanjiChallengeDeck();
+    String name = deck.name;
+    int copy = 1;
+    while (decks.any((d) => d.name == name)) {
+      copy++;
+      name = '${deck.name} ($copy)';
+    }
+    deck.name = name;
+    deck.lessonSetId = kKanjiChallengeTrackId;
+
+    if (completedDay > 0) {
+      for (final day in [1, 2]) {
+        final lesson = lessonForTrackAndDay(kKanjiChallengeTrackId, day);
+        if (lesson == null) continue;
+        if (!mounted) return;
+        final completed = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LessonViewerScreen(lesson: lesson, isDarkMode: widget.isDarkMode, deck: deck),
+          ),
+        );
+        if (completed != true) {
+          if (mounted) setState(() => _startingKanjiChallenge = false);
+          return;
+        }
+        deck.completedLessonDays.add(day);
+      }
+      applyImportedChallengeProgress(deck, completedDay);
+    }
+
     decks.add(deck);
     await saveStudyDecks(decks);
     if (!mounted) return;
@@ -104,11 +198,24 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         return _HiraganaIntroSlide(isDarkMode: widget.isDarkMode, onContinue: () => setState(() => _step = 4));
       case 4:
         return _DrawHiraganaSlide(isDarkMode: widget.isDarkMode, onContinue: () => setState(() => _step = 5));
-      default:
+      case 5:
         return _KanaCourseReadySlide(
           isDarkMode: widget.isDarkMode,
           busy: _startingKanaCourse,
           onStart: _startKanaCourse,
+        );
+      case 6:
+        return _FocusSlide(
+          isDarkMode: widget.isDarkMode,
+          onBack: () => setState(() => _step = 2),
+          onChoice: _handleFocusChoice,
+        );
+      default:
+        return _KanjiKnowledgeSlide(
+          isDarkMode: widget.isDarkMode,
+          busy: _startingKanjiChallenge,
+          onBack: () => setState(() => _step = 6),
+          onChoice: _startKanjiChallenge,
         );
     }
   }
@@ -271,7 +378,9 @@ class _ChoiceCard extends StatelessWidget {
   final String label;
   final bool isDarkMode;
   final VoidCallback onTap;
-  const _ChoiceCard({required this.label, required this.isDarkMode, required this.onTap});
+  // Small accent-colored tag shown above the label, e.g. "RECOMMENDED".
+  final String? badge;
+  const _ChoiceCard({required this.label, required this.isDarkMode, required this.onTap, this.badge});
 
   @override
   Widget build(BuildContext context) {
@@ -290,10 +399,22 @@ class _ChoiceCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: _accent.withValues(alpha: 0.4)),
           ),
-          child: Text(
-            label,
-            style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 15),
-            textAlign: TextAlign.center,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (badge != null) ...[
+                Text(
+                  badge!,
+                  style: const TextStyle(color: _accent, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5),
+                ),
+                const SizedBox(height: 4),
+              ],
+              Text(
+                label,
+                style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 15),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       ),
@@ -499,6 +620,160 @@ class _KanaCourseReadySlide extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FocusSlide extends StatelessWidget {
+  final bool isDarkMode;
+  final VoidCallback onBack;
+  final void Function(String focus) onChoice;
+  const _FocusSlide({required this.isDarkMode, required this.onBack, required this.onChoice});
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = isDarkMode ? Colors.white : Colors.black87;
+    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    return Scaffold(
+      backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "What would you like to focus on?",
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: fg),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 28),
+                      _ChoiceCard(
+                        label: "Let's learn some kanji",
+                        badge: 'RECOMMENDED',
+                        isDarkMode: isDarkMode,
+                        onTap: () => onChoice('kanji'),
+                      ),
+                      const SizedBox(height: 16),
+                      _ChoiceCard(
+                        label: "Let's learn some grammar",
+                        isDarkMode: isDarkMode,
+                        onTap: () => onChoice('grammar'),
+                      ),
+                      const SizedBox(height: 16),
+                      _ChoiceCard(
+                        label: "Let's learn some vocab",
+                        isDarkMode: isDarkMode,
+                        onTap: () => onChoice('vocab'),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'You can always study more than one later!',
+                        style: TextStyle(color: fgMuted, fontSize: 13),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 4,
+              left: 4,
+              child: IconButton(
+                icon: Icon(Icons.arrow_back, color: fgMuted),
+                onPressed: onBack,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _KanjiKnowledgeSlide extends StatelessWidget {
+  final bool isDarkMode;
+  final bool busy;
+  final VoidCallback onBack;
+  // Cumulative kanji count known (0 for "none yet") - see
+  // _jlptCumulativeKanjiCounts.
+  final void Function(int targetKanjiCount) onChoice;
+  const _KanjiKnowledgeSlide({
+    required this.isDarkMode,
+    required this.busy,
+    required this.onBack,
+    required this.onChoice,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = isDarkMode ? Colors.white : Colors.black87;
+    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    return Scaffold(
+      backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Center(
+              child: busy
+                  ? const CircularProgressIndicator(color: _accent)
+                  : ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Do you know any kanji already?',
+                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: fg),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              "We'll start the 90 Day Kanji Challenge past whatever you already know, "
+                              "so you're not reviewing kanji you've already learned.",
+                              style: TextStyle(fontSize: 13, color: fgMuted),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 24),
+                            _ChoiceCard(
+                              label: "None yet - I'm brand new to kanji",
+                              isDarkMode: isDarkMode,
+                              onTap: () => onChoice(0),
+                            ),
+                            const SizedBox(height: 12),
+                            for (final entry in _jlptCumulativeKanjiCounts.entries) ...[
+                              _ChoiceCard(
+                                label: 'JLPT ${entry.key} - ${entry.value} '
+                                    '${entry.key == 'N5' ? 'Beginner Kanji' : 'Kanji'}',
+                                isDarkMode: isDarkMode,
+                                onTap: () => onChoice(entry.value),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+            ),
+            Positioned(
+              top: 4,
+              left: 4,
+              child: IconButton(
+                icon: Icon(Icons.arrow_back, color: fgMuted),
+                onPressed: busy ? null : onBack,
+              ),
+            ),
+          ],
         ),
       ),
     );
