@@ -27,15 +27,25 @@ const app = express();
 
 app.use((req, res, next) => {
   res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, X-Submit-Key');
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
     return;
   }
   next();
 });
+app.use(express.json({ limit: '2mb' }));
 
 const VIDEO_ID_RE = /^[A-Za-z0-9_-]{11}$/;
+const MAX_CUES = 10000;
+const MAX_CUE_TEXT_LEN = 500;
+const MAX_CUE_MS = 24 * 60 * 60 * 1000; // sanity cap, not a real video length limit
+// Shared secret the Shortcut sends back - keeps this open endpoint from being
+// a free write target for anyone who finds the URL, without needing real
+// user accounts for a one-off community tool. Set via
+// `gcloud run deploy --set-env-vars SUBMIT_KEY=...`.
+const SUBMIT_KEY = process.env.SUBMIT_KEY || '';
 
 // Runs yt-dlp to fetch just the Japanese subtitle track (no video/audio
 // download at all) as a json3 file, in a fresh temp directory per request
@@ -115,6 +125,76 @@ app.get('/', async (req, res) => {
   } catch (e) {
     console.error('Subtitle fetch failed', e);
     res.status(502).json({ error: 'Could not fetch captions for this video' });
+  }
+});
+
+// Lets a user's own device submit captions it read directly out of YouTube's
+// page (e.g. via an iPhone Shortcut running JS in the user's own Safari tab),
+// for videos Cloud Run itself can no longer fetch - its IP is recognised by
+// YouTube as data-center infrastructure and bot-challenged on every request,
+// while a real device's own browser never has that problem. One successful
+// submission from anyone permanently benefits every later web viewer of that
+// video, same as any other populated cache entry.
+app.post('/submit', async (req, res) => {
+  if (!SUBMIT_KEY || req.get('X-Submit-Key') !== SUBMIT_KEY) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  const { videoId, cues } = req.body || {};
+  if (!VIDEO_ID_RE.test(videoId)) {
+    res.status(400).json({ error: 'Missing or invalid videoId' });
+    return;
+  }
+  if (!Array.isArray(cues) || cues.length === 0 || cues.length > MAX_CUES) {
+    res.status(400).json({ error: 'cues must be a non-empty array' });
+    return;
+  }
+
+  const cleanCues = [];
+  for (const c of cues) {
+    if (!c || typeof c.text !== 'string') {
+      res.status(400).json({ error: 'Each cue needs a text string' });
+      return;
+    }
+    const text = c.text.trim().slice(0, MAX_CUE_TEXT_LEN);
+    if (!text) continue;
+    const startMs = Number(c.startMs);
+    const durationMs = Number(c.durationMs);
+    if (!Number.isFinite(startMs) || startMs < 0 || startMs > MAX_CUE_MS) {
+      res.status(400).json({ error: 'Invalid cue startMs' });
+      return;
+    }
+    if (!Number.isFinite(durationMs) || durationMs < 0 || durationMs > MAX_CUE_MS) {
+      res.status(400).json({ error: 'Invalid cue durationMs' });
+      return;
+    }
+    cleanCues.push({ text, startMs, durationMs });
+  }
+  if (cleanCues.length === 0) {
+    res.status(400).json({ error: 'No usable cues after validation' });
+    return;
+  }
+
+  const docRef = db.collection('captionsCache').doc(videoId);
+  try {
+    const existing = await docRef.get();
+    const data = existing.data();
+    if (existing.exists && data?.available && Array.isArray(data.cues) && data.cues.length > 0) {
+      res.json({ status: 'already-cached', videoId });
+      return;
+    }
+  } catch (e) {
+    console.error('Cache read failed', e);
+  }
+
+  try {
+    const result = { videoId, available: true, cues: cleanCues, cachedAt: Date.now(), source: 'user-submitted' };
+    await docRef.set(result);
+    res.json({ status: 'saved', videoId, cueCount: cleanCues.length });
+  } catch (e) {
+    console.error('Submit write failed', e);
+    res.status(500).json({ error: 'Could not save captions' });
   }
 });
 
