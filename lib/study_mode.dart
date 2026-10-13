@@ -25,7 +25,9 @@ void showStudyModeMenu(BuildContext context, StudyDeck deck, bool isDarkMode, Vo
 // (if one exists and hasn't been completed yet) - the session only begins
 // once the user presses "Complete Lesson", landing them straight on day 1's
 // first card. Closing the lesson early backs out without starting a session.
-Future<void> _startSpacedRepetition(
+// Public so onboarding_flow.dart can reuse the exact same entry point when
+// auto-opening a freshly-added Kana Course deck, rather than duplicating it.
+Future<void> startSpacedRepetition(
   BuildContext context,
   StudyDeck deck,
   bool isDarkMode,
@@ -223,7 +225,7 @@ class _StudyModeMenu extends StatelessWidget {
             else
               _buildModeButton(context, "Spaced Repetition", () async {
                 Navigator.pop(context);
-                await _startSpacedRepetition(hostContext, deck, isDarkMode, onChanged);
+                await startSpacedRepetition(hostContext, deck, isDarkMode, onChanged);
               }),
             // No lesson recap, no new cards, no challenge-day gating, and
             // nothing ever offers to pull more new cards in - just today's

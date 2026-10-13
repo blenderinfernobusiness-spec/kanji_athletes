@@ -189,7 +189,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
   }
 
   // Pulling in a day early skips the normal Spaced Repetition entry point
-  // (study_mode.dart's _startSpacedRepetition), which is the only other
+  // (study_mode.dart's startSpacedRepetition), which is the only other
   // place that day's lesson recap would have been shown - so gate it here
   // too, the same way: show the lesson first (if it exists and hasn't been
   // completed yet), and only pull in the day's cards once it's done.

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'cloud_sync_page.dart';
+import 'hiragana_challenge_data.dart';
+import 'lesson_data.dart';
+import 'study_data.dart';
+import 'study_mode.dart';
+import 'writing_practice_canvas.dart';
 
 const Color _accent = Color(0xFF9A00FE);
 
@@ -8,8 +13,10 @@ const Color _accent = Color(0xFF9A00FE);
 // in yet (see main.dart's _StartupGate for when that is). Signing in just
 // finishes onboarding straight to the home screen, like a returning user;
 // creating a new account instead continues to a self-reported experience
-// level question, saved for later personalization (e.g. steering a brand
-// new learner towards the kana course first).
+// level question. Answering "brand new" leads into a short hiragana
+// explainer, a taste of writing practice, then auto-adds the Kana Course
+// deck and drops the user straight into studying it; "knows kana already"
+// finishes onboarding immediately, same as signing in.
 class OnboardingFlow extends StatefulWidget {
   final bool isDarkMode;
   final VoidCallback onFinished;
@@ -28,13 +35,47 @@ class OnboardingFlow extends StatefulWidget {
 
 class _OnboardingFlowState extends State<OnboardingFlow> {
   int _step = 0;
+  bool _startingKanaCourse = false;
 
-  // 'brand_new' or 'knows_kana' - not acted on anywhere yet, just saved for
-  // when something downstream wants to personalize off it.
-  Future<void> _finishWithLevel(String level) async {
+  // 'brand_new' continues into the kana slides below; 'knows_kana' finishes
+  // onboarding immediately, same as signing in. Either way the choice is
+  // saved (nothing else reads it yet - here purely to pick the next slide).
+  Future<void> _handleExperienceChoice(String level) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('onboarding_japanese_level', level);
+    if (!mounted) return;
+    if (level == 'brand_new') {
+      setState(() => _step = 3);
+    } else {
+      widget.onFinished();
+    }
+  }
+
+  // Adds a fresh Kana Course deck (same de-duped-name pattern as
+  // study.dart's _createHiraganaChallengeDeck, since a "brand new" learner
+  // could in principle already have one from a previous visit), finishes
+  // onboarding, then drops the user straight into studying it via the same
+  // entry point the Study screen itself uses (study_mode.dart's
+  // startSpacedRepetition) - so day 1's lesson recap shows first, same as
+  // it would from the normal UI.
+  Future<void> _startKanaCourse() async {
+    if (_startingKanaCourse) return;
+    setState(() => _startingKanaCourse = true);
+    final decks = await loadStudyDecks();
+    final deck = buildHiraganaChallengeDeck();
+    String name = deck.name;
+    int copy = 1;
+    while (decks.any((d) => d.name == name)) {
+      copy++;
+      name = '${deck.name} ($copy)';
+    }
+    deck.name = name;
+    deck.lessonSetId = kHiraganaTrackId;
+    decks.add(deck);
+    await saveStudyDecks(decks);
+    if (!mounted) return;
     widget.onFinished();
+    await startSpacedRepetition(context, deck, widget.isDarkMode, () {});
   }
 
   @override
@@ -53,11 +94,21 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           // can preview everything after auth without real credentials.
           onSkip: widget.testMode ? () => setState(() => _step = 2) : null,
         );
-      default:
+      case 2:
         return _ExperienceSlide(
           isDarkMode: widget.isDarkMode,
           onBack: () => setState(() => _step = 1),
-          onChoice: _finishWithLevel,
+          onChoice: _handleExperienceChoice,
+        );
+      case 3:
+        return _HiraganaIntroSlide(isDarkMode: widget.isDarkMode, onContinue: () => setState(() => _step = 4));
+      case 4:
+        return _DrawHiraganaSlide(isDarkMode: widget.isDarkMode, onContinue: () => setState(() => _step = 5));
+      default:
+        return _KanaCourseReadySlide(
+          isDarkMode: widget.isDarkMode,
+          busy: _startingKanaCourse,
+          onStart: _startKanaCourse,
         );
     }
   }
@@ -243,6 +294,210 @@ class _ChoiceCard extends StatelessWidget {
             label,
             style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 15),
             textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HiraganaIntroSlide extends StatelessWidget {
+  final bool isDarkMode;
+  final VoidCallback onContinue;
+  const _HiraganaIntroSlide({required this.isDarkMode, required this.onContinue});
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = isDarkMode ? Colors.white : Colors.black87;
+    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    return Scaffold(
+      backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('ひらがな', style: TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: fg, height: 1)),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                    color: _accent,
+                    child: const Text(
+                      'STEP ONE: HIRAGANA',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.5),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    "Hiragana is the first alphabet you'll learn in Japanese - every word, grammar "
+                    "point, and eventually kanji builds on it, so it's the natural place to start.",
+                    style: TextStyle(fontSize: 16, color: fgMuted, height: 1.4),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 40),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _accent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: onContinue,
+                      child: const Text('Continue', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawHiraganaSlide extends StatelessWidget {
+  final bool isDarkMode;
+  final VoidCallback onContinue;
+  const _DrawHiraganaSlide({required this.isDarkMode, required this.onContinue});
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = isDarkMode ? Colors.white : Colors.black87;
+    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    return Scaffold(
+      backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "Let's try writing your first one",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: fg),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'あ - "a"',
+                    style: TextStyle(fontSize: 14, color: fgMuted),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  // Codepoint 3042 (hex) is あ - KanjiVG's stroke data is
+                  // keyed by codepoint for kana just as much as kanji, see
+                  // hiragana_challenge_data.dart's _kanjiVGCodeFor, which
+                  // already uses this exact code for every drawing card in
+                  // the real Kana Course deck.
+                  WritingPracticeCanvas(
+                    kanjiVGCodes: const ['03042'],
+                    kanji: 'あ',
+                    translation: 'a',
+                    isDarkMode: isDarkMode,
+                    scale: 0.7,
+                    showHintByDefault: true,
+                    compactStrokeControls: true,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _accent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: onContinue,
+                      child: const Text('Continue', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _KanaCourseReadySlide extends StatelessWidget {
+  final bool isDarkMode;
+  final bool busy;
+  final VoidCallback onStart;
+  const _KanaCourseReadySlide({required this.isDarkMode, required this.busy, required this.onStart});
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = isDarkMode ? Colors.white : Colors.black87;
+    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    Widget bullet(String text) => Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('• ', style: TextStyle(color: _accent, fontWeight: FontWeight.bold, fontSize: 15)),
+          Expanded(child: Text(text, style: TextStyle(color: fgMuted, fontSize: 14, height: 1.4))),
+        ],
+      ),
+    );
+    return Scaffold(
+      backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "Let's get started with the Kana Course!",
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: fg),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  bullet('Beginner friendly'),
+                  bullet(
+                    "Study as much or as little as you like - even two minutes a day can be great, "
+                    "but the more you apply yourself, the faster you'll progress, of course.",
+                  ),
+                  bullet('All progress is saved when you exit, so you can come back to it later.'),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _accent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: busy ? null : onStart,
+                      child: busy
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text("Let's go!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
