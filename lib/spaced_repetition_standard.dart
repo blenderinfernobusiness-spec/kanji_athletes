@@ -20,6 +20,11 @@ import 'kanji_challenge_data.dart' show similarKanjiFor, SimilarKanji;
 import 'tatoeba_service.dart';
 import 'deck_videos.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'listening_player.dart';
+import 'match_game.dart';
+import 'balloon_game.dart';
+import 'jlpt_setup_screen.dart';
+import 'game_scope_dialog.dart';
 
 // XP awarded per correct answer, matching the arcade modes' per-item reward.
 const int _xpPerCorrectAnswer = 10;
@@ -1274,6 +1279,26 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
     );
   }
 
+  // Backing the summary screen's "More ways to study" section - every card
+  // in this deck (not just the ones graded this session), same scope
+  // showStudyModeMenu/showGamesMenu already use from the deck list itself.
+  void _tryListening() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            ListeningPlayerScreen(title: widget.deck.name, cards: widget.deck.cards, isDarkMode: widget.isDarkMode),
+      ),
+    );
+  }
+
+  Future<void> _tryGame(Widget Function(List<StudyCard> questions) buildScreen) async {
+    final questions = await showGameScopeDialog(context, cards: widget.deck.cards, isDarkMode: widget.isDarkMode);
+    if (questions == null || questions.isEmpty) return;
+    if (!mounted) return;
+    Navigator.push(context, MaterialPageRoute(builder: (context) => buildScreen(questions)));
+  }
+
   Widget _buildSummaryScreen(bool isDarkMode) {
     final total = _results.length;
     final profile = _userProfile;
@@ -1344,6 +1369,20 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
                 )),
           ],
           if (!_endedEarly) _buildContinuePrompt(isDarkMode),
+          const SizedBox(height: 20),
+          _MoreWaysToStudyCard(
+            isDarkMode: isDarkMode,
+            onListening: _tryListening,
+            onMatch: () => _tryGame(
+              (q) => MatchGameScreen(title: widget.deck.name, questions: q, isDarkMode: widget.isDarkMode),
+            ),
+            onBalloon: () => _tryGame(
+              (q) => BalloonGameScreen(title: widget.deck.name, questions: q, isDarkMode: widget.isDarkMode),
+            ),
+            onJlptTest: () => _tryGame(
+              (q) => JlptSetupScreen(title: widget.deck.name, questions: q, isDarkMode: widget.isDarkMode),
+            ),
+          ),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
@@ -1733,6 +1772,103 @@ class _LevelProgressAnimation extends StatelessWidget {
           style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
         ),
       ],
+    );
+  }
+}
+
+// Shown on the session-complete summary screen - four game modes that pull
+// from this whole deck (same scope showStudyModeMenu/showGamesMenu already
+// use from the deck list), for trying a different way to review it instead
+// of just closing out.
+class _MoreWaysToStudyCard extends StatelessWidget {
+  final bool isDarkMode;
+  final VoidCallback onListening;
+  final VoidCallback onMatch;
+  final VoidCallback onBalloon;
+  final VoidCallback onJlptTest;
+  const _MoreWaysToStudyCard({
+    required this.isDarkMode,
+    required this.onListening,
+    required this.onMatch,
+    required this.onBalloon,
+    required this.onJlptTest,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = isDarkMode ? Colors.white : Colors.black87;
+    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    return Card(
+      color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('More ways to study', style: TextStyle(color: fg, fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 2),
+            Text('Try this deck a different way.', style: TextStyle(color: fgMuted, fontSize: 12)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _MoreWaysButton(icon: Icons.headphones, label: 'Listening', onTap: onListening),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _MoreWaysButton(icon: Icons.extension, label: 'Match', onTap: onMatch),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _MoreWaysButton(icon: Icons.bubble_chart, label: 'Balloon', onTap: onBalloon),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _MoreWaysButton(icon: Icons.quiz, label: 'JLPT Test', onTap: onJlptTest),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MoreWaysButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _MoreWaysButton({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF9A00FE),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: Colors.white, size: 22),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
