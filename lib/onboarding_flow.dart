@@ -13,10 +13,12 @@ const Color _accent = Color(0xFF9A00FE);
 class OnboardingFlow extends StatefulWidget {
   final bool isDarkMode;
   final VoidCallback onFinished;
-  // Shows a "Skip" button on the sign-in/create-account slide, bypassing
-  // auth entirely - only set by main.dart's testing-only "Try tutorial"
-  // button, so real first-time users always go through sign-in/sign-up.
-  // Remove along with that button once onboarding is finished.
+  // Shows a "Skip" button on the sign-in/create-account slide that pretends
+  // account creation succeeded (continuing to the slides after it) without
+  // needing real credentials - only set by main.dart's testing-only "Try
+  // tutorial" button, so real first-time users always go through
+  // sign-in/sign-up. Remove along with that button once onboarding is
+  // finished.
   final bool testMode;
   const OnboardingFlow({super.key, required this.isDarkMode, required this.onFinished, this.testMode = false});
 
@@ -46,7 +48,10 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           onBack: () => setState(() => _step = 0),
           onSignedIn: widget.onFinished,
           onAccountCreated: () => setState(() => _step = 2),
-          onSkip: widget.testMode ? widget.onFinished : null,
+          // Pretends account creation succeeded (continues to the next
+          // slide) rather than ending the flow outright, so "Try tutorial"
+          // can preview everything after auth without real credentials.
+          onSkip: widget.testMode ? () => setState(() => _step = 2) : null,
         );
       default:
         return _ExperienceSlide(
