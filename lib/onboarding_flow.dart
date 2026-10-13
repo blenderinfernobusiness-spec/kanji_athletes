@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'cloud_sync_page.dart';
+import 'grammar_data.dart';
 import 'hiragana_challenge_data.dart';
 import 'kanji_challenge_data.dart';
 import 'lesson_data.dart';
@@ -79,6 +80,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   bool _startingKanaCourse = false;
   bool _startingKanjiChallenge = false;
   bool _startingVocab = false;
+  bool _startingGrammar = false;
 
   // 'brand_new' continues into the kana slides below; 'knows_kana' finishes
   // onboarding immediately, same as signing in. Either way the choice is
@@ -94,16 +96,16 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     }
   }
 
-  // 'grammar' isn't built out yet - finishes onboarding same as before this
-  // slide existed. 'kanji'/'vocab' each continue to their own knowledge
-  // question.
   void _handleFocusChoice(String focus) {
-    if (focus == 'kanji') {
-      setState(() => _step = 7);
-    } else if (focus == 'vocab') {
-      setState(() => _step = 8);
-    } else {
-      widget.onFinished();
+    switch (focus) {
+      case 'kanji':
+        setState(() => _step = 7);
+        break;
+      case 'vocab':
+        setState(() => _step = 8);
+        break;
+      default:
+        setState(() => _step = 9);
     }
   }
 
@@ -244,6 +246,27 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     await startSpacedRepetition(context, deck, widget.isDarkMode, () {});
   }
 
+  // Same de-duped-name pattern as study.dart's _createGrammarDeck - the
+  // only grammar course that exists yet is JLPT N5 level, so this is the
+  // sole option on the grammar-knowledge slide that isn't "Coming soon".
+  Future<void> _startGrammarDeck() async {
+    if (_startingGrammar) return;
+    setState(() => _startingGrammar = true);
+    final decks = await loadStudyDecks();
+    String name = kGrammarDeckName;
+    int copy = 1;
+    while (decks.any((d) => d.name == name)) {
+      copy++;
+      name = '$kGrammarDeckName ($copy)';
+    }
+    final deck = StudyDeck(name: name, cards: buildGrammarCards(), lessonSetId: kGrammarTrackId, deckCreatedDate: todayStamp());
+    decks.add(deck);
+    await saveStudyDecks(decks);
+    if (!mounted) return;
+    widget.onFinished();
+    await startSpacedRepetition(context, deck, widget.isDarkMode, () {});
+  }
+
   @override
   Widget build(BuildContext context) {
     switch (_step) {
@@ -289,13 +312,20 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           onBack: () => setState(() => _step = 6),
           onChoice: _startKanjiChallenge,
         );
-      default:
+      case 8:
         return _VocabKnowledgeSlide(
           isDarkMode: widget.isDarkMode,
           busy: _startingVocab,
           onBack: () => setState(() => _step = 6),
           onBrandNew: _startEssentialVocab,
           onPremadeSet: _startPremadeVocabSet,
+        );
+      default:
+        return _GrammarKnowledgeSlide(
+          isDarkMode: widget.isDarkMode,
+          busy: _startingGrammar,
+          onBack: () => setState(() => _step = 6),
+          onBrandNew: _startGrammarDeck,
         );
     }
   }
@@ -457,15 +487,20 @@ class _ExperienceSlideState extends State<_ExperienceSlide> {
 class _ChoiceCard extends StatelessWidget {
   final String label;
   final bool isDarkMode;
-  final VoidCallback onTap;
-  // Small accent-colored tag shown above the label, e.g. "RECOMMENDED".
+  // Null renders the card dimmed with no tap feedback, for an option that
+  // isn't built yet (paired with badge: 'COMING SOON').
+  final VoidCallback? onTap;
+  // Small tag shown above the label, e.g. "RECOMMENDED" or "COMING SOON".
   final String? badge;
   const _ChoiceCard({required this.label, required this.isDarkMode, required this.onTap, this.badge});
 
   @override
   Widget build(BuildContext context) {
-    final fg = isDarkMode ? Colors.white : Colors.black87;
+    final disabled = onTap == null;
+    final fgMuted = isDarkMode ? Colors.white54 : Colors.black45;
+    final fg = disabled ? fgMuted : (isDarkMode ? Colors.white : Colors.black87);
     final cardBg = isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
+    final badgeColor = disabled ? fgMuted : _accent;
     return Material(
       color: cardBg,
       borderRadius: BorderRadius.circular(12),
@@ -477,7 +512,7 @@ class _ChoiceCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: _accent.withValues(alpha: 0.4)),
+            border: Border.all(color: disabled ? fgMuted.withValues(alpha: 0.4) : _accent.withValues(alpha: 0.4)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -485,7 +520,7 @@ class _ChoiceCard extends StatelessWidget {
               if (badge != null) ...[
                 Text(
                   badge!,
-                  style: const TextStyle(color: _accent, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5),
+                  style: TextStyle(color: badgeColor, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5),
                 ),
                 const SizedBox(height: 4),
               ],
@@ -917,6 +952,84 @@ class _VocabKnowledgeSlide extends StatelessWidget {
                                 label: '$setName (${setsData[setName]?.items.length ?? 0} words)',
                                 isDarkMode: isDarkMode,
                                 onTap: () => onPremadeSet(setName),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+            ),
+            Positioned(
+              top: 4,
+              left: 4,
+              child: IconButton(
+                icon: Icon(Icons.arrow_back, color: fgMuted),
+                onPressed: busy ? null : onBack,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GrammarKnowledgeSlide extends StatelessWidget {
+  final bool isDarkMode;
+  final bool busy;
+  final VoidCallback onBack;
+  final VoidCallback onBrandNew;
+  const _GrammarKnowledgeSlide({
+    required this.isDarkMode,
+    required this.busy,
+    required this.onBack,
+    required this.onBrandNew,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = isDarkMode ? Colors.white : Colors.black87;
+    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    return Scaffold(
+      backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Center(
+              child: busy
+                  ? const CircularProgressIndicator(color: _accent)
+                  : ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Do you know any grammar already?',
+                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: fg),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'JLPT N4 and above are still being written - only N5 is ready to study for now.',
+                              style: TextStyle(fontSize: 13, color: fgMuted),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 24),
+                            _ChoiceCard(
+                              label: "None yet - I'm brand new to grammar",
+                              isDarkMode: isDarkMode,
+                              onTap: onBrandNew,
+                            ),
+                            const SizedBox(height: 12),
+                            for (final level in ['N4', 'N3', 'N2', 'N1']) ...[
+                              _ChoiceCard(
+                                label: 'JLPT $level Grammar',
+                                badge: 'COMING SOON',
+                                isDarkMode: isDarkMode,
+                                onTap: null,
                               ),
                               const SizedBox(height: 12),
                             ],
