@@ -13,7 +13,12 @@ const Color _accent = Color(0xFF9A00FE);
 class OnboardingFlow extends StatefulWidget {
   final bool isDarkMode;
   final VoidCallback onFinished;
-  const OnboardingFlow({super.key, required this.isDarkMode, required this.onFinished});
+  // Shows a "Skip" button on the sign-in/create-account slide, bypassing
+  // auth entirely - only set by main.dart's testing-only "Try tutorial"
+  // button, so real first-time users always go through sign-in/sign-up.
+  // Remove along with that button once onboarding is finished.
+  final bool testMode;
+  const OnboardingFlow({super.key, required this.isDarkMode, required this.onFinished, this.testMode = false});
 
   @override
   State<OnboardingFlow> createState() => _OnboardingFlowState();
@@ -33,6 +38,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           onBack: () => setState(() => _step = 0),
           onSignedIn: widget.onFinished,
           onAccountCreated: widget.onFinished,
+          onSkip: widget.testMode ? widget.onFinished : null,
         );
     }
   }
@@ -100,11 +106,14 @@ class _AuthSlide extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onSignedIn;
   final VoidCallback onAccountCreated;
+  // Non-null only in OnboardingFlow's testMode - see its doc comment.
+  final VoidCallback? onSkip;
   const _AuthSlide({
     required this.isDarkMode,
     required this.onBack,
     required this.onSignedIn,
     required this.onAccountCreated,
+    this.onSkip,
   });
 
   @override
@@ -143,6 +152,15 @@ class _AuthSlideState extends State<_AuthSlide> {
                 onPressed: _busy ? null : widget.onBack,
               ),
             ),
+            if (widget.onSkip != null)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: TextButton(
+                  onPressed: _busy ? null : widget.onSkip,
+                  child: Text('Skip', style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54)),
+                ),
+              ),
           ],
         ),
       ),

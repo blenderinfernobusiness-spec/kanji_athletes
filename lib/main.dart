@@ -1019,6 +1019,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       builder: (context) => OnboardingFlow(
                         isDarkMode: widget.isDarkMode,
                         onFinished: () => Navigator.pop(context),
+                        testMode: true,
                       ),
                     ),
                   );
