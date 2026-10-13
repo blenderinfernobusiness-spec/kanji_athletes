@@ -341,12 +341,19 @@ class CloudSignInForm extends StatefulWidget {
   // Kanji Athletes Mini, which already auto-syncs silently on sign-in by
   // design (see main_mini.dart) rather than prompting.
   final VoidCallback? onSignedIn;
+  // Called right after a successful account creation (sign-up), separately
+  // from onSignedIn - used by onboarding_flow.dart to move on to its next
+  // slide rather than treating a brand new account the same as a returning
+  // sign-in. Unused (and unneeded) by CloudSyncPage, which already rebuilds
+  // off authStateChanges for both cases.
+  final VoidCallback? onAccountCreated;
   const CloudSignInForm({
     super.key,
     required this.isDarkMode,
     required this.busy,
     required this.onBusyChanged,
     this.onSignedIn,
+    this.onAccountCreated,
   });
 
   @override
@@ -378,6 +385,7 @@ class CloudSignInFormState extends State<CloudSignInForm> {
     try {
       if (_isCreatingAccount) {
         await CloudSyncService.signUp(email: email, password: password);
+        widget.onAccountCreated?.call();
       } else {
         await CloudSyncService.signIn(email: email, password: password);
         widget.onSignedIn?.call();

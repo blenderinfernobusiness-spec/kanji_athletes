@@ -19,11 +19,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'src/export_helper.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'backup_data.dart';
 import 'cloud_sync_page.dart';
 import 'quick_sync_button.dart';
 import 'main_mini.dart';
+import 'onboarding_flow.dart';
 import 'update_check_service.dart';
 import 'update_dialog.dart';
 // Application entrypoint. A single build serves both the full app and
@@ -148,8 +150,73 @@ class _GemGridAppState extends State<GemGridApp> {
       // Android draws edge-to-edge, so keep every screen clear of the system
       // navigation bar. Top is left alone since each app bar already handles it.
       builder: (context, child) => SafeArea(top: false, child: child!),
-      home: HomeScreen(onThemeChanged: _setThemePreference, isDarkMode: _isDarkMode),
+      home: _StartupGate(onThemeChanged: _setThemePreference, isDarkMode: _isDarkMode),
     );
+  }
+}
+
+// Decides, once per app launch, whether to show onboarding_flow.dart's
+// welcome/sign-in slides before HomeScreen. Onboarding is skipped (and
+// never shown again - onboarding_complete is set immediately) for anyone
+// already signed in, or already using the app before this was added (any
+// saved study decks or XP), so only a genuinely brand new, signed-out
+// install ever sees it.
+class _StartupGate extends StatefulWidget {
+  final bool isDarkMode;
+  final Function(bool) onThemeChanged;
+  const _StartupGate({required this.isDarkMode, required this.onThemeChanged});
+
+  @override
+  State<_StartupGate> createState() => _StartupGateState();
+}
+
+class _StartupGateState extends State<_StartupGate> {
+  bool? _showOnboarding;
+
+  @override
+  void initState() {
+    super.initState();
+    _decide();
+  }
+
+  Future<void> _decide() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Guarded because widget tests pump this without Firebase.initializeApp()
+    // having run first - in a real app launch (see main()) this never throws.
+    bool signedIn = false;
+    try {
+      signedIn = FirebaseAuth.instance.currentUser != null;
+    } catch (_) {}
+    final alreadyOnboarded = prefs.getBool('onboarding_complete') == true ||
+        signedIn ||
+        prefs.containsKey('study_decks') ||
+        prefs.containsKey('user_xp');
+    if (alreadyOnboarded) {
+      await prefs.setBool('onboarding_complete', true);
+      if (mounted) setState(() => _showOnboarding = false);
+      return;
+    }
+    if (mounted) setState(() => _showOnboarding = true);
+  }
+
+  Future<void> _finishOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboarding_complete', true);
+    if (mounted) setState(() => _showOnboarding = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_showOnboarding == null) {
+      return Scaffold(
+        backgroundColor: widget.isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
+        body: const Center(child: CircularProgressIndicator(color: Color(0xFF9A00FE))),
+      );
+    }
+    if (_showOnboarding == true) {
+      return OnboardingFlow(isDarkMode: widget.isDarkMode, onFinished: _finishOnboarding);
+    }
+    return HomeScreen(onThemeChanged: widget.onThemeChanged, isDarkMode: widget.isDarkMode);
   }
 }
 
