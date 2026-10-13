@@ -347,6 +347,11 @@ class CloudSignInForm extends StatefulWidget {
   // sign-in. Unused (and unneeded) by CloudSyncPage, which already rebuilds
   // off authStateChanges for both cases.
   final VoidCallback? onAccountCreated;
+  // Starts the form on "Create an account" instead of "Sign in" - used by
+  // onboarding_flow.dart, since a first-time flow should default to signing
+  // up rather than assuming a returning user. CloudSyncPage leaves this
+  // false (sign-in first, as before).
+  final bool initiallyCreatingAccount;
   const CloudSignInForm({
     super.key,
     required this.isDarkMode,
@@ -354,6 +359,7 @@ class CloudSignInForm extends StatefulWidget {
     required this.onBusyChanged,
     this.onSignedIn,
     this.onAccountCreated,
+    this.initiallyCreatingAccount = false,
   });
 
   @override
@@ -363,7 +369,7 @@ class CloudSignInForm extends StatefulWidget {
 class CloudSignInFormState extends State<CloudSignInForm> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
-  bool _isCreatingAccount = false;
+  late bool _isCreatingAccount = widget.initiallyCreatingAccount;
   String? _error;
 
   @override

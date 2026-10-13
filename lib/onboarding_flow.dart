@@ -78,7 +78,7 @@ class _WelcomeSlide extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                     color: _accent,
                     child: const Text(
-                      'WELCOME TO JAPANESE',
+                      'WELCOME!',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.5),
                     ),
                   ),
@@ -151,6 +151,7 @@ class _AuthSlideState extends State<_AuthSlide> {
                     onBusyChanged: (v) => setState(() => _busy = v),
                     onSignedIn: widget.onSignedIn,
                     onAccountCreated: widget.onAccountCreated,
+                    initiallyCreatingAccount: true,
                   ),
                 ),
               ),
