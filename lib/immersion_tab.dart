@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'beta_tag.dart';
 import 'video_subtitle_panel_screen.dart';
-import 'web_immersion_player.dart';
 
 const Color _accent = Color(0xFF9A00FE);
 
@@ -130,19 +129,15 @@ class _ImmersionTabViewState extends State<ImmersionTabView> {
       return;
     }
     setState(() => _error = null);
-    // Unlike Browse/channels (which need a real embedded browser - no web
-    // version possible), a single pasted video plays fine on web via
-    // YouTube's own official embeddable player, with captions fetched by
-    // captions_service. See web_immersion_player.dart.
-    if (kIsWeb) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => WebImmersionPlayerScreen(videoId: videoId, title: 'YouTube', isDarkMode: widget.isDarkMode),
-        ),
-      );
-      return;
-    }
+    // web_immersion_player.dart + captions_service still exist and work for
+    // already-cached videos, but captions_service can no longer fetch a new
+    // (uncached) video's captions live - Cloud Run's IP is recognised by
+    // YouTube as a data-center address and gets a bot challenge on every
+    // attempt, unrelated to the video or the fetching technique used (see
+    // captions_service/README.md). Locked back to the same "not available
+    // on web" message as Browse/channels until that's resolved (cookie
+    // auth, a residential proxy, or user-submitted captions via the
+    // in-progress Shortcuts route - see captions_service/submit-shortcut/).
     _openInApp('https://www.youtube.com/watch?v=$videoId', 'YouTube');
   }
 

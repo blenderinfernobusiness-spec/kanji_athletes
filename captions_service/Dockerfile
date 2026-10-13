@@ -1,27 +1,12 @@
-# A plain Node buildpack doesn't let us install system packages, and
-# @sparticuz/chromium - despite being the minimal, serverless-oriented
-# Chromium build - still needs a handful of real OS shared libraries
-# present (confirmed directly: it failed to even launch without libnss3).
-# This installs exactly the set Chromium headless needs on Debian, no more.
+# Much lighter than the earlier Chromium-based version - yt-dlp just needs
+# Python, no browser or its system libraries at all.
 FROM node:24-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libnss3 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libxkbcommon0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libasound2 \
-    libpango-1.0-0 \
-    libcairo2 \
-    fonts-liberation \
-    && rm -rf /var/lib/apt/lists/*
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip3 install --break-system-packages --no-cache-dir yt-dlp
 
 WORKDIR /app
 COPY package*.json ./
