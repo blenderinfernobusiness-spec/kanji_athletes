@@ -108,6 +108,42 @@ List<String> findKanjiVGCodesForWord(String text) {
       .toList();
 }
 
+// Fills in a card's fields from a dictionary entry, matching the same
+// per-type mapping used when adding a card from the dictionary search
+// (see card_edit_dialog.dart) - kana entries store their romaji in
+// `translation`, so English is set to that too (rather than left blank)
+// since every game mode expects a meaning to show. Used whenever a premade
+// dictionary set becomes a study deck (study.dart's "Choose a Premade Set"
+// picker, and onboarding_flow.dart's JLPT vocabulary options).
+StudyCard studyCardFromItem(Item item) {
+  String hiragana;
+  String english;
+  String romaji = '';
+  String cardType;
+  if (item.itemType == 'Hiragana' || item.itemType == 'Katakana') {
+    hiragana = item.japanese;
+    romaji = item.translation;
+    english = item.translation;
+    cardType = 'Kana';
+  } else if (item.itemType == 'Vocab') {
+    hiragana = item.reading;
+    english = item.translation;
+    cardType = 'Vocab';
+  } else {
+    hiragana = item.kunYomi.isNotEmpty ? item.kunYomi : item.onYomi;
+    english = item.translation;
+    cardType = 'Kanji';
+  }
+  return StudyCard(
+    japanese: item.japanese,
+    hiragana: hiragana,
+    romaji: romaji,
+    english: english,
+    kanjiVGCodes: findKanjiVGCodesForWord(item.japanese),
+    cardType: cardType,
+  );
+}
+
 // Searches every dictionary set for items whose Japanese text, reading, or
 // translation matches the query, for autocompleting the Add Card fields.
 List<Item> searchDictionaryItems(String query) {

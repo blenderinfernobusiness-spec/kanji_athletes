@@ -314,42 +314,8 @@ class _StudyScreenState extends State<StudyScreen> {
     );
   }
 
-  // Fills in a card's fields from a dictionary entry, matching the same
-  // per-type mapping used when adding a card from the dictionary search
-  // (see card_edit_dialog.dart) - kana entries store their romaji in
-  // `translation`, so English is set to that too (rather than left blank)
-  // since every game mode expects a meaning to show.
-  StudyCard _studyCardFromItem(Item item) {
-    String hiragana;
-    String english;
-    String romaji = '';
-    String cardType;
-    if (item.itemType == 'Hiragana' || item.itemType == 'Katakana') {
-      hiragana = item.japanese;
-      romaji = item.translation;
-      english = item.translation;
-      cardType = 'Kana';
-    } else if (item.itemType == 'Vocab') {
-      hiragana = item.reading;
-      english = item.translation;
-      cardType = 'Vocab';
-    } else {
-      hiragana = item.kunYomi.isNotEmpty ? item.kunYomi : item.onYomi;
-      english = item.translation;
-      cardType = 'Kanji';
-    }
-    return StudyCard(
-      japanese: item.japanese,
-      hiragana: hiragana,
-      romaji: romaji,
-      english: english,
-      kanjiVGCodes: findKanjiVGCodesForWord(item.japanese),
-      cardType: cardType,
-    );
-  }
-
   Future<void> _createDeckFromSet(ItemSet set) async {
-    final cards = set.items.map(_studyCardFromItem).toList();
+    final cards = set.items.map(studyCardFromItem).toList();
     String name = set.name;
     int copy = 1;
     while (_decks.any((d) => d.name == name)) {
@@ -450,7 +416,7 @@ class _StudyScreenState extends State<StudyScreen> {
   Future<void> _createEssentialVocabDeck() async {
     final set = setsData['Essential Vocabulary'];
     if (set == null) return;
-    final cards = set.items.map(_studyCardFromItem).toList();
+    final cards = set.items.map(studyCardFromItem).toList();
     String name = 'Essential Vocabulary Challenge';
     int copy = 1;
     while (_decks.any((d) => d.name == name)) {

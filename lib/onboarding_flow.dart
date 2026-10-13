@@ -5,6 +5,7 @@ import 'hiragana_challenge_data.dart';
 import 'kanji_challenge_data.dart';
 import 'lesson_data.dart';
 import 'lesson_viewer_screen.dart';
+import 'sets_data.dart';
 import 'study_data.dart';
 import 'study_mode.dart';
 import 'writing_practice_canvas.dart';
@@ -37,6 +38,18 @@ int _challengeDayForKnownCount(int targetCount) {
   return kanjiChallengeDays.length;
 }
 
+// The premade dictionary sets (setsData, sets_data.dart) backing the
+// vocab-knowledge slide's JLPT options - each one just gets imported as a
+// flat deck of every word in it, same as picking it from Study's own
+// "Choose a Premade Set" picker, not a day-scheduled challenge.
+const List<String> _jlptVocabSetNames = [
+  'JLPT N5 Vocabulary',
+  'JLPT N4 Vocabulary',
+  'JLPT N3 Vocabulary',
+  'JLPT N2 Vocabulary',
+  'JLPT N1 Vocabulary',
+];
+
 // Shown once, before HomeScreen, to a brand new install that isn't signed
 // in yet (see main.dart's _StartupGate for when that is). Signing in just
 // finishes onboarding straight to the home screen, like a returning user;
@@ -65,6 +78,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   int _step = 0;
   bool _startingKanaCourse = false;
   bool _startingKanjiChallenge = false;
+  bool _startingVocab = false;
 
   // 'brand_new' continues into the kana slides below; 'knows_kana' finishes
   // onboarding immediately, same as signing in. Either way the choice is
@@ -80,12 +94,14 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     }
   }
 
-  // 'grammar'/'vocab' aren't built out yet - finish onboarding same as
-  // before this slide existed. 'kanji' continues to the kanji-knowledge
+  // 'grammar' isn't built out yet - finishes onboarding same as before this
+  // slide existed. 'kanji'/'vocab' each continue to their own knowledge
   // question.
   void _handleFocusChoice(String focus) {
     if (focus == 'kanji') {
       setState(() => _step = 7);
+    } else if (focus == 'vocab') {
+      setState(() => _step = 8);
     } else {
       widget.onFinished();
     }
@@ -172,6 +188,62 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     await startSpacedRepetition(context, deck, widget.isDarkMode, () {});
   }
 
+  // Reuses an existing Essential Vocabulary Challenge deck if one's already
+  // been started rather than creating a duplicate (same check
+  // lesson_data.dart's _StartVocabButton does before calling the same
+  // buildEssentialVocabDeck) - unlikely during onboarding specifically, but
+  // cheap to guard against.
+  Future<void> _startEssentialVocab() async {
+    if (_startingVocab) return;
+    setState(() => _startingVocab = true);
+    final decks = await loadStudyDecks();
+    StudyDeck? existing;
+    for (final d in decks) {
+      if (d.lessonSetId == kEssentialVocabTrackId) {
+        existing = d;
+        break;
+      }
+    }
+    final isNew = existing == null;
+    final deck = existing ?? buildEssentialVocabDeck(decks);
+    if (isNew) {
+      decks.add(deck);
+      await saveStudyDecks(decks);
+    }
+    if (!mounted) return;
+    widget.onFinished();
+    await startSpacedRepetition(context, deck, widget.isDarkMode, () {});
+  }
+
+  // Imports a premade JLPT vocabulary set as a flat, ungated deck - the
+  // same mapping and name-collision handling as study.dart's own "Choose a
+  // Premade Set" picker (studyCardFromItem, study_data.dart), just
+  // triggered from here instead of that screen's UI. No lessonSetId/lesson,
+  // same as picking any other premade set manually.
+  Future<void> _startPremadeVocabSet(String setName) async {
+    if (_startingVocab) return;
+    setState(() => _startingVocab = true);
+    final set = setsData[setName];
+    if (set == null) {
+      if (mounted) setState(() => _startingVocab = false);
+      return;
+    }
+    final decks = await loadStudyDecks();
+    final cards = set.items.map(studyCardFromItem).toList();
+    String name = set.name;
+    int copy = 1;
+    while (decks.any((d) => d.name == name)) {
+      copy++;
+      name = '${set.name} ($copy)';
+    }
+    final deck = StudyDeck(name: name, cards: cards);
+    decks.add(deck);
+    await saveStudyDecks(decks);
+    if (!mounted) return;
+    widget.onFinished();
+    await startSpacedRepetition(context, deck, widget.isDarkMode, () {});
+  }
+
   @override
   Widget build(BuildContext context) {
     switch (_step) {
@@ -210,12 +282,20 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           onBack: () => setState(() => _step = 2),
           onChoice: _handleFocusChoice,
         );
-      default:
+      case 7:
         return _KanjiKnowledgeSlide(
           isDarkMode: widget.isDarkMode,
           busy: _startingKanjiChallenge,
           onBack: () => setState(() => _step = 6),
           onChoice: _startKanjiChallenge,
+        );
+      default:
+        return _VocabKnowledgeSlide(
+          isDarkMode: widget.isDarkMode,
+          busy: _startingVocab,
+          onBack: () => setState(() => _step = 6),
+          onBrandNew: _startEssentialVocab,
+          onPremadeSet: _startPremadeVocabSet,
         );
     }
   }
@@ -757,6 +837,86 @@ class _KanjiKnowledgeSlide extends StatelessWidget {
                                     '${entry.key == 'N5' ? 'Beginner Kanji' : 'Kanji'}',
                                 isDarkMode: isDarkMode,
                                 onTap: () => onChoice(entry.value),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+            ),
+            Positioned(
+              top: 4,
+              left: 4,
+              child: IconButton(
+                icon: Icon(Icons.arrow_back, color: fgMuted),
+                onPressed: busy ? null : onBack,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _VocabKnowledgeSlide extends StatelessWidget {
+  final bool isDarkMode;
+  final bool busy;
+  final VoidCallback onBack;
+  final VoidCallback onBrandNew;
+  final void Function(String setName) onPremadeSet;
+  const _VocabKnowledgeSlide({
+    required this.isDarkMode,
+    required this.busy,
+    required this.onBack,
+    required this.onBrandNew,
+    required this.onPremadeSet,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = isDarkMode ? Colors.white : Colors.black87;
+    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    return Scaffold(
+      backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Center(
+              child: busy
+                  ? const CircularProgressIndicator(color: _accent)
+                  : ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Do you know any vocab already?',
+                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: fg),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              "Starting fresh begins the Essential Vocabulary Challenge; picking a JLPT "
+                              "level instead adds its full word list as a ready-to-study deck.",
+                              style: TextStyle(fontSize: 13, color: fgMuted),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 24),
+                            _ChoiceCard(
+                              label: "None yet - I'm brand new to vocab",
+                              isDarkMode: isDarkMode,
+                              onTap: onBrandNew,
+                            ),
+                            const SizedBox(height: 12),
+                            for (final setName in _jlptVocabSetNames) ...[
+                              _ChoiceCard(
+                                label: '$setName (${setsData[setName]?.items.length ?? 0} words)',
+                                isDarkMode: isDarkMode,
+                                onTap: () => onPremadeSet(setName),
                               ),
                               const SizedBox(height: 12),
                             ],
