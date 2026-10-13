@@ -64,7 +64,7 @@ class _WelcomeSlide extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('辞書', style: TextStyle(fontSize: 56, fontWeight: FontWeight.bold, color: _accent)),
+                  Image.asset('assets/kanji_athletes.png', height: 160),
                   const SizedBox(height: 20),
                   Text(
                     'Welcome to Kanji Athletes',
