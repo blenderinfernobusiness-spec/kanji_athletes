@@ -879,7 +879,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                 style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
               ),
             )
-          : widget.deck.challengeStartDate != null || widget.deck.lessonSetId == kGrammarTrackId
+          : widget.deck.challengeStartDate != null || isGrammarTrackId(widget.deck.lessonSetId)
               ? _buildGroupedByDayList()
               : ListView.builder(
                   padding: const EdgeInsets.all(20),
@@ -901,12 +901,12 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
       groups.putIfAbsent(card.challengeDay ?? 0, () => []).add(card);
     }
     final days = groups.keys.toList()..sort();
-    final isGrammar = widget.deck.lessonSetId == kGrammarTrackId;
+    final isGrammar = isGrammarTrackId(widget.deck.lessonSetId);
     final children = <Widget>[];
     String? lastSection;
     for (final day in days) {
       if (isGrammar) {
-        final section = grammarSectionForDay(day)?.title;
+        final section = grammarSectionForDay(day, widget.deck.lessonSetId ?? '')?.title;
         if (section != null && section != lastSection) {
           children.add(Padding(
             padding: EdgeInsets.only(top: lastSection == null ? 0 : 20, bottom: 4),

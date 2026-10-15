@@ -196,7 +196,7 @@ class _StudyModeMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isGrammar = deck.lessonSetId == kGrammarTrackId;
+    final isGrammar = isGrammarTrackId(deck.lessonSetId);
     return SafeArea(
       child: Container(
         margin: const EdgeInsets.all(12),

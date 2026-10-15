@@ -260,6 +260,16 @@ class _StudyScreenState extends State<StudyScreen> {
                       _createGrammarDeck();
                     },
                   ),
+                  const SizedBox(height: 8),
+                  _specialDeckCard(
+                    icon: Icons.translate,
+                    title: kGrammarN4DeckName,
+                    subtitle: '${grammarPointsN4.length} grammar points · one new point each day, learned through lessons',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _createGrammarN4Deck();
+                    },
+                  ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: searchController,
@@ -450,6 +460,28 @@ class _StudyScreenState extends State<StudyScreen> {
         name: name,
         cards: buildGrammarCards(),
         lessonSetId: kGrammarTrackId,
+        deckCreatedDate: todayStamp(),
+      ));
+    });
+    await _saveDecks();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Started "$name" - the first grammar lesson is ready')),
+    );
+  }
+
+  Future<void> _createGrammarN4Deck() async {
+    String name = kGrammarN4DeckName;
+    int copy = 1;
+    while (_decks.any((d) => d.name == name)) {
+      copy++;
+      name = '$kGrammarN4DeckName ($copy)';
+    }
+    setState(() {
+      _decks.add(StudyDeck(
+        name: name,
+        cards: buildGrammarCardsN4(),
+        lessonSetId: kGrammarN4TrackId,
         deckCreatedDate: todayStamp(),
       ));
     });
@@ -905,6 +937,8 @@ class _StudyScreenState extends State<StudyScreen> {
         return 'Kana Course';
       case kGrammarTrackId:
         return kGrammarDeckName;
+      case kGrammarN4TrackId:
+        return kGrammarN4DeckName;
       default:
         return trackId;
     }
@@ -1002,6 +1036,7 @@ class _StudyScreenState extends State<StudyScreen> {
       MapEntry(kKanjiChallengeTrackId, '90 Day Kanji Challenge'),
       MapEntry(kEssentialVocabTrackId, 'Vocabulary'),
       MapEntry(kGrammarTrackId, kGrammarDeckName),
+      MapEntry(kGrammarN4TrackId, kGrammarN4DeckName),
     ];
     double sortKey(Lesson l) => l.endOfDay != null ? l.endOfDay! + 0.5 : l.day.toDouble();
     final widgets = <Widget>[];

@@ -93,14 +93,21 @@ class Lesson {
   });
 }
 
-// The Grammar deck's lessons, one per grammar point (see grammar_data.dart).
-final List<Lesson> grammarLessons = [for (final point in grammarPoints) _grammarLesson(point)];
+// The Grammar deck's lessons, one per grammar point (see grammar_data.dart) -
+// N5 and N4 share this one list (each point carries its own trackId), so
+// every other place that reads grammarLessons (lessonForTrackAndDay, the
+// Lessons tab's "every authored lesson" list, ...) picks up both levels
+// automatically, with no separate list to keep in sync.
+final List<Lesson> grammarLessons = [
+  for (final point in grammarPoints) _grammarLesson(point, trackId: kGrammarTrackId),
+  for (final point in grammarPointsN4) _grammarLesson(point, trackId: kGrammarN4TrackId),
+];
 
-Lesson _grammarLesson(GrammarPoint point) {
+Lesson _grammarLesson(GrammarPoint point, {required String trackId}) {
   final activityKey = GlobalKey<GrammarLessonActivityState>();
   final progress = ValueNotifier<double>(0);
   return Lesson(
-    trackId: kGrammarTrackId,
+    trackId: trackId,
     day: point.day,
     title: point.title,
     introSubtitle: "Today's grammar point",

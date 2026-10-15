@@ -272,7 +272,7 @@ class _StudyProgressScreenState extends State<StudyProgressScreen> {
   ) {
     final count = trackLessons.length;
     final slot = _nodeHeight + _gap;
-    final showCards = deck.lessonSetId != kGrammarTrackId;
+    final showCards = !isGrammar;
 
     // The Grammar track is further broken into named sections (see
     // grammarSections) - a header shown above the first node of each new
@@ -282,7 +282,7 @@ class _StudyProgressScreenState extends State<StudyProgressScreen> {
     if (isGrammar) {
       String? prevSection;
       for (var i = 0; i < count; i++) {
-        final section = grammarSectionForDay(_slotDay(trackLessons[i]))?.title;
+        final section = grammarSectionForDay(_slotDay(trackLessons[i]), deck.lessonSetId ?? '')?.title;
         if (section != null && section != prevSection) headerBeforeIndex[i] = section;
         prevSection = section;
       }
@@ -391,7 +391,7 @@ class _StudyProgressScreenState extends State<StudyProgressScreen> {
     );
   }
 
-  bool get isGrammar => deck.lessonSetId == kGrammarTrackId;
+  bool get isGrammar => isGrammarTrackId(deck.lessonSetId);
 
   String _countLabel(int completed, int total) => total == 0 ? '–' : '$completed/$total';
 

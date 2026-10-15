@@ -548,7 +548,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                 // bookkeeping number (so it doesn't collide with another
                 // lesson sharing the same endOfDay), not the day that's
                 // actually about to start - that's endOfDay + 1.
-                widget.lesson.trackId == kGrammarTrackId
+                isGrammarTrackId(widget.lesson.trackId)
                     ? '${widget.lesson.title} complete'
                     : "You're ready for Day ${widget.lesson.endOfDay != null ? widget.lesson.endOfDay! + 1 : widget.lesson.day}!",
                 textAlign: TextAlign.center,

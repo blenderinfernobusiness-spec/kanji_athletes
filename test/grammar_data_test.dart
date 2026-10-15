@@ -47,4 +47,40 @@ void main() {
       }
     }
   });
+
+  // JLPT N4 Grammar Lessons - a separate deck/curriculum from grammarPoints
+  // (N5) above, so its own day numbering starts again at 1. Currently just
+  // Section 1 (11 points); sentence count isn't fixed at 4 like N5's since
+  // each one is a genuine sourced Tatoeba example rather than padded to a
+  // round number.
+  test('N4: one grammar point per day, 1 through 11', () {
+    expect(grammarPointsN4.map((g) => g.day).toList(), List.generate(11, (i) => i + 1));
+  });
+
+  test('N4: every point has at least two sentences, creative uses and inspiration words', () {
+    for (final g in grammarPointsN4) {
+      expect(g.sentences.length, greaterThanOrEqualTo(2), reason: g.form);
+      expect(g.creativeUses, isNotEmpty, reason: g.form);
+      expect(g.vocabInspiration, isNotEmpty, reason: g.form);
+    }
+  });
+
+  test('N4: each point has one or two related forms', () {
+    for (final g in grammarPointsN4) {
+      expect(g.related.length, inInclusiveRange(1, 2), reason: g.form);
+    }
+  });
+
+  test('N4: sentence chunks rebuild the full sentence, contain the target form, and the '
+      'target is both a form variant and an offered choice', () {
+    for (final g in grammarPointsN4) {
+      final variants = g.form.split(' / ').map((v) => v.trim()).toSet();
+      for (final s in g.sentences) {
+        expect(s.chunks.join(), s.japanese, reason: '${g.form}: ${s.japanese}');
+        expect(s.japanese.contains(s.target), isTrue, reason: '${g.form}: ${s.japanese}');
+        expect(variants.contains(s.target), isTrue, reason: '${g.form}: ${s.target} not a form variant');
+        expect(g.formChoices.contains(s.target), isTrue, reason: '${g.form}: ${s.target} not offered');
+      }
+    }
+  });
 }

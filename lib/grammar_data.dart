@@ -9,6 +9,14 @@ import 'tatoeba_service.dart';
 
 const String kGrammarTrackId = 'grammar';
 const String kGrammarDeckName = 'JLPT N5 Grammar Lessons';
+const String kGrammarN4TrackId = 'grammar_n4';
+const String kGrammarN4DeckName = 'JLPT N4 Grammar Lessons';
+
+// True for either grammar level's trackId - used wherever grammar decks get
+// treated differently from an ordinary day-scheduled deck (no flashcard
+// grid, day-grouped with section headers, a different lesson-complete
+// screen, ...) regardless of which JLPT level they're for.
+bool isGrammarTrackId(String? trackId) => trackId == kGrammarTrackId || trackId == kGrammarN4TrackId;
 
 // The grammar curriculum is broken into named sections, each starting on a
 // given day and running up to (but not including) the next section's start -
@@ -35,11 +43,20 @@ const List<GrammarSection> grammarSections = [
   GrammarSection(title: 'Section 10: Experiencing, Listing, and Nuance', startDay: 99),
 ];
 
+// The N4 Grammar deck's own section list, parallel to grammarSections above
+// but for grammarPointsN4 - a separate curriculum/deck, so its day numbers
+// start again at 1 rather than continuing N5's.
+const List<GrammarSection> grammarSectionsN4 = [
+  GrammarSection(title: 'Section 1: Conditionals and Connectors', startDay: 1),
+];
+
 // The section a given grammar day falls under, or null if it's before every
-// section's start (shouldn't happen once grammarSections starts at day 1).
-GrammarSection? grammarSectionForDay(int day) {
+// section's start (shouldn't happen once a level's sections start at day 1).
+// trackId picks which level's section list to use.
+GrammarSection? grammarSectionForDay(int day, String trackId) {
+  final sections = trackId == kGrammarN4TrackId ? grammarSectionsN4 : grammarSections;
   GrammarSection? match;
-  for (final section in grammarSections) {
+  for (final section in sections) {
     if (section.startDay <= day && (match == null || section.startDay > match.startDay)) {
       match = section;
     }
@@ -5161,11 +5178,543 @@ const List<GrammarPoint> grammarPoints = [
   ),
 ];
 
+// The N4 Grammar deck's curriculum - a separate list/deck from grammarPoints
+// (N5) above, so its own day numbering starts again at 1. See
+// grammarSectionsN4 for how its days are grouped into named sections.
+const List<GrammarPoint> grammarPointsN4 = [
+  GrammarPoint(
+    day: 1,
+    form: 'たら / だったら',
+    meaning: 'if / when / after',
+    title: 'たら - "if / when / after"',
+    explanation: [
+      "たら means 'if' or 'when/after' - add it to a verb's plain past (た) form: 食べたら (if/when you eat), 見たら (if/when you see/watch).",
+      "For a noun or な-adjective, add だったら instead: 雨だったら (if it rains). For an い-adjective, drop い and add かったら: 忙しかったら (if you're busy).",
+    ],
+    formChoices: ['たら', 'だったら', 'ば', 'のに'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 4629034,
+        japanese: 'そんなに食べたらお腹壊すよ。',
+        english: "If you eat that much, you'll have a stomachache.",
+        contributor: 'CK',
+        target: 'たら',
+        chunks: ['そんなに', '食べ', 'たら', 'お腹', '壊す', 'よ', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 11851961,
+        japanese: '映画を見たら、本も読んでみたくなった。',
+        english: 'After watching the movie, I wanted to read the book, too.',
+        contributor: 'CK',
+        target: 'たら',
+        chunks: ['映画', 'を', '見', 'たら', '、', '本', 'も', '読んで', 'みたく', 'なった', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 10771227,
+        japanese: '雨だったら電話してね。',
+        english: 'If it rains, call me.',
+        contributor: 'saeb',
+        target: 'だったら',
+        chunks: ['雨', 'だったら', '電話して', 'ね', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'ば',
+        meaning: 'if (more general)',
+        note: 'ば is a more general conditional - 行けば and 行ったら often swap freely, but たら is more common in casual speech.',
+      ),
+    ],
+    creativeUses: [
+      'Say what you will do if/when something happens',
+      'Give advice starting with "if..."',
+      'Describe a cause and its result',
+    ],
+    vocabInspiration: ['雨', '時間', 'お金', '宿題', '疲れる'],
+  ),
+  GrammarPoint(
+    day: 2,
+    form: 'ば',
+    meaning: 'if (conditional)',
+    title: 'ば - "if"',
+    explanation: [
+      'ば is another way to say "if": change a godan verb\'s final u-sound to an e-sound and add ば: 行く becomes 行けば (if you go).',
+      'For an ichidan verb, drop る and add れば: 見る becomes 見れば (if you see). The irregular verbs work the same way: する becomes すれば, 来る becomes くれば.',
+    ],
+    formChoices: ['ば', 'たら', 'なら', 'と'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 1063463,
+        japanese: '駅へはどう行けばいいですか？',
+        english: 'How can I get to the station?',
+        contributor: 'CK',
+        target: 'ば',
+        chunks: ['駅', 'へ', 'は', 'どう', '行け', 'ば', 'いい', 'です', 'か', '？'],
+      ),
+      GrammarSentence(
+        tatoebaId: 12135719,
+        japanese: '見ればわかるさ。',
+        english: "You'll know it when you see it.",
+        contributor: 'michu3453',
+        target: 'ば',
+        chunks: ['見れ', 'ば', 'わかる', 'さ', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 2950264,
+        japanese: '一日一個のりんごを食べれば、医者は要らない。',
+        english: 'An apple a day keeps the doctor away.',
+        contributor: 'fcbond',
+        target: 'ば',
+        chunks: ['一日', '一個', 'の', 'りんご', 'を', '食べれ', 'ば', '、', '医者', 'は', '要らない', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'たら',
+        meaning: 'if / when (more casual)',
+        note: 'たら is the more casual, more common everyday version - ば can sound a little more formal or bookish in plain conversation.',
+      ),
+    ],
+    creativeUses: [
+      'Give directions ("if you go...")',
+      'State a general rule or fact',
+      'Say what always happens under a condition',
+    ],
+    vocabInspiration: ['駅', '急ぐ', '勉強する', '安い', '早く起きる'],
+  ),
+  GrammarPoint(
+    day: 3,
+    form: 'なら',
+    meaning: 'if; as for',
+    title: 'なら - "if; as for"',
+    explanation: [
+      'なら means "if" or "as for" - it reacts to what the other person just said. Add it straight after a noun or な-adjective: 日本人なら (if you\'re Japanese / as for a Japanese person).',
+      'It also follows a verb or い-adjective in their plain form with no change: 欲しいなら (if you want it), 行くなら (if you\'re going).',
+    ],
+    formChoices: ['なら', 'たら', 'ば', 'のに'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 10101505,
+        japanese: 'これが欲しいなら上げるよ。',
+        english: "I'll give you this if you want it.",
+        contributor: 'CK',
+        target: 'なら',
+        chunks: ['これ', 'が', '欲しい', 'なら', '上げる', 'よ', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 1874078,
+        japanese: '私を好きなら、私の犬も好きになりなさい。',
+        english: 'If you love me, love my dog, too.',
+        contributor: 'shekitten',
+        target: 'なら',
+        chunks: ['私', 'を', '好き', 'なら', '、', '私', 'の', '犬', 'も', '好き', 'に', 'なり', 'なさい', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 4940,
+        japanese: '日本人ならそんなことはけっしてしないでしょう。',
+        english: 'A Japanese person would never do such a thing.',
+        contributor: 'blay_paul',
+        target: 'なら',
+        chunks: ['日本人', 'なら', 'そんな', 'こと', 'は', 'けっして', 'しない', 'でしょう', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'だったら',
+        meaning: 'if (casual, reacting)',
+        note: 'だったら works the same way and is extremely common in casual speech - the two are often interchangeable.',
+      ),
+    ],
+    creativeUses: [
+      'React to what someone just told you ("if that\'s the case...")',
+      'Give a recommendation ("if you want X, then...")',
+      'Say "as for [topic], ..."',
+    ],
+    vocabInspiration: ['日本', '好き', '時間', '学生', '旅行'],
+  ),
+  GrammarPoint(
+    day: 4,
+    form: 'くても / でも',
+    meaning: 'even if',
+    title: 'ても - "even if"',
+    explanation: [
+      'ても means "even if" - the result stays the same no matter what. For an い-adjective, drop い and add くても: 高い becomes 高くても (even if it\'s expensive).',
+      'For a noun or な-adjective, add でも instead: 雨でも (even if it rains). A verb uses its て-form plus も: 頑張っても (even if you try hard).',
+    ],
+    formChoices: ['くても', 'でも', 'のに', 'から'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 10511763,
+        japanese: '高くてもいいのよ。気持ちの問題。',
+        english: "Even if it's expensive it's fine. It's all about how you feel about it.",
+        contributor: 'DJ_Saidez',
+        target: 'くても',
+        chunks: ['高', 'くても', 'いい', 'の', 'よ', '。', '気持ち', 'の', '問題', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 11394860,
+        japanese: '雨でもそこまで行きます。',
+        english: 'I will go there even if it rains.',
+        contributor: 'CK',
+        target: 'でも',
+        chunks: ['雨', 'でも', 'そこ', 'まで', '行きます', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'のに',
+        meaning: 'although (surprised/frustrated)',
+        note: 'のに also contrasts two things, but it carries surprise or frustration about a real result - ても talks about a hypothetical "even if" instead.',
+      ),
+    ],
+    creativeUses: [
+      "Say something won't change your plans (\"even if it rains, I'll go\")",
+      'Make a concession ("even if it\'s expensive, it\'s worth it")',
+    ],
+    vocabInspiration: ['高い', '忙しい', '雨', '疲れる', 'お金がない'],
+  ),
+  GrammarPoint(
+    day: 5,
+    form: 'のに / なのに',
+    meaning: 'although; despite',
+    title: 'のに - "although; despite"',
+    explanation: [
+      'のに means "although" or "despite" - it shows surprise or frustration that the result doesn\'t match what you\'d expect. Add it after a verb or い-adjective in plain form: 勉強したのに (even though I studied).',
+      'For a noun or な-adjective, add なのに instead: 好きなのに (even though I like it).',
+    ],
+    formChoices: ['のに', 'なのに', 'ても', 'から'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 820872,
+        japanese: '私は六年間学校で英語を勉強したのに、英語で話すのは上手じゃありませんよ。',
+        english: "Even though I studied English for 6 years in school, I'm not good at speaking it.",
+        contributor: 'Scott',
+        target: 'のに',
+        chunks: ['私', 'は', '六年間', '学校', 'で', '英語', 'を', '勉強した', 'のに', '、', '英語', 'で', '話す', 'の', 'は', '上手', 'じゃ', 'ありません', 'よ', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 3193632,
+        japanese: '仕事忙しいのに話聞いてくれてありがとう。',
+        english: 'Thanks for hearing me out despite being so busy with work.',
+        contributor: 'Tappity',
+        target: 'のに',
+        chunks: ['仕事', '忙しい', 'のに', '話', '聞いて', 'くれて', 'ありがとう', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 1180858,
+        japanese: '君はトマト好きなのに、トマトジュースは嫌いなんだね。',
+        english: 'Even though you like tomatoes, you dislike tomato juice, right?',
+        contributor: 'brymck',
+        target: 'なのに',
+        chunks: ['君', 'は', 'トマト', '好き', 'なのに', '、', 'トマトジュース', 'は', '嫌い', 'なんだ', 'ね', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'けど',
+        meaning: 'but',
+        note: 'けど also contrasts two ideas, but without のに\'s sense of surprise or complaint - it\'s a plain, neutral "but".',
+      ),
+    ],
+    creativeUses: [
+      'Complain gently about an unexpected result',
+      "Show surprise that something didn't go as expected",
+    ],
+    vocabInspiration: ['勉強する', '忙しい', '好き', '頑張る', '若い'],
+  ),
+  GrammarPoint(
+    day: 6,
+    form: 'と',
+    meaning: 'whenever; when',
+    title: 'と - "whenever; when"',
+    explanation: [
+      'This と means "whenever" or "when" for something that always happens the same way - add it straight after a verb\'s plain dictionary form: 押すと (when/if you press it).',
+      'It\'s used for natural laws, habits, and directions, where B always follows A: このボタンを押すとドアが開きます (if you push this button, the door opens).',
+    ],
+    formChoices: ['と', 'たら', 'ば', 'なら'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 223172,
+        japanese: 'このボタンを押すとドアが開きます。',
+        english: 'If you push this button, the door will open.',
+        contributor: 'CK',
+        target: 'と',
+        chunks: ['この', 'ボタン', 'を', '押す', 'と', 'ドア', 'が', '開きます', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 10908925,
+        japanese: '僕が家に帰ると、姉はギターを弾いているところだった。',
+        english: 'When I came home, my sister was playing the guitar.',
+        contributor: 'CK',
+        target: 'と',
+        chunks: ['僕', 'が', '家', 'に', '帰る', 'と', '、', '姉', 'は', 'ギター', 'を', '弾いている', 'ところ', 'だった', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 10171350,
+        japanese: '夜になると、たくさんのホタルが見れるよ。',
+        english: 'At night you can see lots of fireflies.',
+        contributor: 'tsp_2',
+        target: 'と',
+        chunks: ['夜', 'に', 'なる', 'と', '、', 'たくさん', 'の', 'ホタル', 'が', '見れる', 'よ', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'たら',
+        meaning: 'if / when (one-time)',
+        note: 'たら works for a one-time event too, while と is really only for things that always happen the same way - you can\'t use と for a one-off invitation or request.',
+      ),
+    ],
+    creativeUses: [
+      'Describe a natural or automatic result ("when A, B always happens")',
+      'Give simple directions',
+    ],
+    vocabInspiration: ['春', '夜', '押す', '曲がる', 'まっすぐ行く'],
+  ),
+  GrammarPoint(
+    day: 7,
+    form: 'とき / なとき / のとき',
+    meaning: 'when',
+    title: 'とき - "when" (recap)',
+    explanation: [
+      'とき means "when" - a quick recap of a pattern you\'ve likely already seen. A verb in its plain form or an い-adjective attaches directly: 出かけるとき (when you go out), 忙しいとき (when you\'re busy).',
+      'A noun needs の first: 子供のとき (when I was a child). A な-adjective needs な first: 暇なとき (when you\'re free).',
+    ],
+    formChoices: ['とき', 'なとき', 'のとき', 'のに'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 168633,
+        japanese: '子供のとき彼はパリへ３回行った。',
+        english: 'When he was a child, he went to Paris three times.',
+        contributor: 'human600',
+        target: 'のとき',
+        chunks: ['子供', 'のとき', '彼', 'は', 'パリ', 'へ', '３', '回', '行った', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 84627,
+        japanese: '父は暇なときにはよく推理小説を読んでいました。',
+        english: 'Father would often read detective stories in his spare time.',
+        contributor: 'CM',
+        target: 'なとき',
+        chunks: ['父', 'は', '暇', 'なとき', 'に', 'は', 'よく', '推理小説', 'を', '読んで', 'いました', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 147815,
+        japanese: '出かけるときは、ドアに鍵をかけて下さい。',
+        english: 'Please lock the door when you leave.',
+        contributor: 'CK',
+        target: 'とき',
+        chunks: ['出かける', 'とき', 'は', '、', 'ドア', 'に', '鍵', 'を', 'かけて', '下さい', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'と',
+        meaning: 'whenever (always true)',
+        note: 'とき just marks a point in time ("when X"); と adds the extra meaning that B always, automatically follows A.',
+      ),
+    ],
+    creativeUses: [
+      'Say when you usually do something',
+      'Describe a memory from a specific time',
+    ],
+    vocabInspiration: ['子供', '学生', '暇', '出かける', '寝る'],
+  ),
+  GrammarPoint(
+    day: 8,
+    form: 'から作る / から作られる',
+    meaning: 'made from',
+    title: 'から作る - "made from"',
+    explanation: [
+      'から作る means "made from" - add it after the raw material: 米から作る (made from rice). It shows what something is built out of, not just what\'s inside it.',
+      'A fact about how something is always made is usually said in the passive voice instead: バターは牛乳から作られる (butter is made from milk).',
+    ],
+    formChoices: ['から作られる', 'とき', 'かどうか', '場合は'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 198011,
+        japanese: 'バターは牛乳から作られる。',
+        english: 'Butter is made from milk.',
+        contributor: 'CK',
+        target: 'から作られる',
+        chunks: ['バター', 'は', '牛乳', 'から作られる', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 192063,
+        japanese: 'ワインは葡萄から作られる。',
+        english: 'Wine is made from grapes.',
+        contributor: 'CK',
+        target: 'から作られる',
+        chunks: ['ワイン', 'は', '葡萄', 'から作られる', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 151205,
+        japanese: '紙は木から作られる。',
+        english: 'Paper is made from wood.',
+        contributor: 'CK',
+        target: 'から作られる',
+        chunks: ['紙', 'は', '木', 'から作られる', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'でできている',
+        meaning: 'made of',
+        note: 'でできている is for a material you can still see in the finished thing (木でできている - made of wood); から作られる is for an ingredient that\'s been transformed, like milk into butter.',
+      ),
+    ],
+    creativeUses: [
+      'Explain what a food or object is made from',
+      'Ask what something is made of',
+    ],
+    vocabInspiration: ['米', '豆', '小麦', '革', '鉄'],
+  ),
+  GrammarPoint(
+    day: 9,
+    form: 'て / で / って',
+    meaning: 'because of; and then',
+    title: 'て / で - "because of; and then"',
+    explanation: [
+      'て and で link two ideas together, either showing a reason or just "did this, then that". A noun or な-adjective uses で: 病気で学校を休んだ (he was absent from school because he was sick).',
+      'A verb uses its て-form, and an い-adjective drops い and adds くて: 具合が悪くて来られなかった (she was sick, so she couldn\'t come).',
+    ],
+    formChoices: ['で', 'て', 'って', 'のに'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 1050411,
+        japanese: '彼は病気で学校を休んだ。',
+        english: 'He was absent from school because he was sick.',
+        contributor: 'CK',
+        target: 'で',
+        chunks: ['彼', 'は', '病気', 'で', '学校', 'を', '休んだ', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 10193331,
+        japanese: '彼女は具合が悪くて来ることができなかった。',
+        english: "She was sick, so she couldn't come.",
+        contributor: 'CK',
+        target: 'て',
+        chunks: ['彼女', 'は', '具合', 'が', '悪く', 'て', '来る', 'こと', 'が', 'できなかった', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 13885213,
+        japanese: '家に帰って、ジーパンが破けてるのに気づいた。',
+        english: 'When I got home, I realized the jeans were damaged.',
+        contributor: 'ddnktr',
+        target: 'て',
+        chunks: ['家', 'に', '帰っ', 'て', '、', 'ジーパン', 'が', '破けてる', 'のに', '気づいた', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'から',
+        meaning: 'because (direct reason)',
+        note: 'から states a reason head-on and can stand alone as an answer to "why?"; て/で is softer and always needs to connect to the rest of the sentence.',
+      ),
+    ],
+    creativeUses: [
+      'Explain why something happened',
+      'Describe one thing happening, then another',
+    ],
+    vocabInspiration: ['病気', '忙しい', '疲れる', '雨', '渋滞'],
+  ),
+  GrammarPoint(
+    day: 10,
+    form: 'かどうか',
+    meaning: 'whether or not',
+    title: 'かどうか - "whether or not"',
+    explanation: [
+      'かどうか means "whether or not" - it turns a yes/no question into a noun-like phrase you can plug into a bigger sentence. Add it after a verb, noun, or adjective in plain form: 来るかどうか (whether or not they\'ll come).',
+      'It often follows わからない (I don\'t know) or 聞く (to ask): 本当かどうかわからない (I don\'t know whether it\'s true or not).',
+    ],
+    formChoices: ['かどうか', 'とき', 'のに', '場合は'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 161809,
+        japanese: '本当のことを言っているのかどうかわからない。',
+        english: "I don't know whether you are telling the truth or not.",
+        contributor: 'CK',
+        target: 'かどうか',
+        chunks: ['本当', 'の', 'こと', 'を', '言っている', 'の', 'かどうか', 'わからない', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 642375,
+        japanese: '私は彼が来るかどうかわからない。',
+        english: "I don't know whether he'll come or not.",
+        contributor: 'CK',
+        target: 'かどうか',
+        chunks: ['私', 'は', '彼', 'が', '来る', 'かどうか', 'わからない', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'か',
+        meaning: 'the plain question marker',
+        note: 'か alone makes a simple question; かどうか is specifically for a yes/no question folded into a bigger sentence.',
+      ),
+    ],
+    creativeUses: [
+      "Say you're not sure whether something is true",
+      "Ask someone to find out whether something will happen",
+    ],
+    vocabInspiration: ['本当', '来る', '大丈夫', '間に合う', '合格する'],
+  ),
+  GrammarPoint(
+    day: 11,
+    form: '場合は / の場合は',
+    meaning: 'in the case of',
+    title: '場合は - "in the case of"',
+    explanation: [
+      '場合は means "in the case of" or "if" - it\'s common in instructions, rules, and formal writing. A verb in its plain form or an い-adjective attaches directly: ある場合は (in the case that there is one).',
+      'A noun needs の first, and a な-adjective needs な first: 火事の場合は (in case of fire), 必要な場合は (if it\'s necessary).',
+    ],
+    formChoices: ['場合は', 'の場合は', 'とき', 'のに'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 186679,
+        japanese: '火事の場合は１１９に電話しなさい。',
+        english: 'In case of fire, dial 119.',
+        contributor: 'xtofu80',
+        target: 'の場合は',
+        chunks: ['火事', 'の場合は', '１１９', 'に', '電話しなさい', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 4798178,
+        japanese: '明日、雨降る場合は車で行きます。',
+        english: "If it's raining tomorrow, we'll go by car.",
+        contributor: 'CK',
+        target: '場合は',
+        chunks: ['明日', '、', '雨', '降る', '場合は', '車', 'で', '行きます', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 9149395,
+        japanese: '問題がある場合はお知らせください。',
+        english: 'If there is a problem, please let me know.',
+        contributor: 'CC',
+        target: '場合は',
+        chunks: ['問題', 'が', 'ある', '場合は', 'お知らせ', 'ください', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'とき',
+        meaning: 'when',
+        note: '場合は leans towards a specific situation or exception (especially in rules/instructions); とき is more neutral, just marking a point in time.',
+      ),
+    ],
+    creativeUses: [
+      'Explain what to do in a specific situation (instructions, rules)',
+      'Describe an exception to the usual plan',
+    ],
+    vocabInspiration: ['火事', '地震', '雨', '問題', '必要'],
+  ),
+];
+
 // The grammar point that teaches [form] as its main subject (か -> the か
 // lesson), for showing that lesson's own explanation when the form turns up
 // as a word with no dictionary entry of its own, inside some other sentence.
 GrammarPoint? grammarPointForForm(String form) {
-  for (final point in grammarPoints) {
+  for (final point in [...grammarPoints, ...grammarPointsN4]) {
     if (point.form == form) return point;
   }
   return null;
@@ -5177,7 +5726,7 @@ GrammarPoint? grammarPointForForm(String form) {
 // sense of belonging. Only consulted when the caller has already decided the
 // context fits (see _showTokenPopup's isQuestionContext).
 RelatedForm? grammarQuestionUseOf(String form) {
-  for (final point in grammarPoints) {
+  for (final point in [...grammarPoints, ...grammarPointsN4]) {
     for (final related in point.related) {
       if (related.form == form && related.meaning.toLowerCase().contains('question')) return related;
     }
@@ -5245,11 +5794,31 @@ List<StudyCard> buildGrammarCards() {
   return cards;
 }
 
+// Same as buildGrammarCards, for the separate N4 Grammar deck - no verb
+// group examples (grammarPointsN4 doesn't have any yet).
+List<StudyCard> buildGrammarCardsN4() {
+  final seen = <String>{};
+  final cards = <StudyCard>[];
+  for (final point in grammarPointsN4) {
+    for (final sentence in point.sentences) {
+      if (!seen.add(sentence.target)) continue;
+      cards.add(StudyCard(
+        japanese: sentence.target,
+        hiragana: '',
+        english: point.title.split('. ').last.replaceAll('"', ''),
+        cardType: 'Vocab',
+        challengeDay: point.day,
+      ));
+    }
+  }
+  return cards;
+}
+
 // Listening plays each card's own sentences, so grammar cards get the hard-coded
 // sentences whose target form matches the card.
 Map<String, List<TatoebaSentence>> grammarSentencesByForm() {
   final result = <String, List<TatoebaSentence>>{};
-  for (final point in grammarPoints) {
+  for (final point in [...grammarPoints, ...grammarPointsN4]) {
     for (final sentence in point.sentences) {
       result.putIfAbsent(sentence.target, () => []).add(TatoebaSentence(
             id: sentence.tatoebaId,
