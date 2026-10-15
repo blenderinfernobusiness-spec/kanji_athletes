@@ -53,8 +53,8 @@ void main() {
   // Section 1 (11 points); sentence count isn't fixed at 4 like N5's since
   // each one is a genuine sourced Tatoeba example rather than padded to a
   // round number.
-  test('N4: one grammar point per day, 1 through 28', () {
-    expect(grammarPointsN4.map((g) => g.day).toList(), List.generate(28, (i) => i + 1));
+  test('N4: one grammar point per day, 1 through 41', () {
+    expect(grammarPointsN4.map((g) => g.day).toList(), List.generate(41, (i) => i + 1));
   });
 
   test('N4: every point has at least two sentences, creative uses and inspiration words', () {
