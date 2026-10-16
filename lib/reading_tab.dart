@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'study_data.dart';
 import 'reading_text_screen.dart';
 import 'beta_tag.dart';
 import 'immersion_tab.dart';
+import 'trial_gate.dart';
 import 'trial_service.dart';
-import 'unlock_dialog.dart';
 
 // The Study screen's "Reading & Immersion" tab: a sub-tab for the existing
 // Reading list (unchanged, see ReadingTabView below) and a sub-tab for
@@ -26,76 +25,6 @@ class ReadingAndImmersionTabView extends StatefulWidget {
 }
 
 class _ReadingAndImmersionTabViewState extends State<ReadingAndImmersionTabView> {
-  Future<void> _unlock() async {
-    final unlocked = await showUnlockDialog(context, widget.isDarkMode, featureName: 'Reading & Immersion');
-    if (unlocked && mounted) setState(() {});
-  }
-
-  Widget _statusBanner() {
-    final unlocked = TrialService.isUnlockedSync;
-    final daysLeft = TrialService.daysRemainingSync;
-    final color = unlocked ? Colors.green : const Color(0xFFCCA300);
-    final label = unlocked
-        ? 'PREMIUM USAGE ENABLED'
-        : daysLeft > 0
-            ? '$daysLeft day${daysLeft == 1 ? '' : 's'} left in your free trial'
-            : 'Your free trial has ended';
-    return Container(
-      width: double.infinity,
-      color: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 8,
-        children: [
-          Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13)),
-          if (!unlocked)
-            InkWell(
-              onTap: _unlock,
-              child: const Text(
-                'Unlock full access here',
-                style: TextStyle(color: Color(0xFF9A00FE), fontWeight: FontWeight.w600, fontSize: 13, decoration: TextDecoration.underline),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _lockedBody() {
-    final fg = widget.isDarkMode ? Colors.white : Colors.black87;
-    final fgMuted = widget.isDarkMode ? Colors.white70 : Colors.black54;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.lock, size: 48, color: fgMuted),
-            const SizedBox(height: 16),
-            Text(
-              'Your 7-day free trial of Reading & Immersion has ended',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: fg, fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
-              onPressed: _unlock,
-              child: const Text('Unlock full access'),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () => launchUrl(Uri.parse(kUpgradeUrl), mode: LaunchMode.externalApplication),
-              child: const Text('Upgrade on Skool'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final locked = !TrialService.hasTrialAccessSync;
@@ -123,10 +52,14 @@ class _ReadingAndImmersionTabViewState extends State<ReadingAndImmersionTabView>
               ],
             ),
           ),
-          _statusBanner(),
+          TrialStatusBanner(isDarkMode: widget.isDarkMode, onChanged: () => setState(() {})),
           Expanded(
             child: locked
-                ? _lockedBody()
+                ? TrialLockedBody(
+                    isDarkMode: widget.isDarkMode,
+                    featureName: 'Reading & Immersion',
+                    onChanged: () => setState(() {}),
+                  )
                 : TabBarView(
                     children: [
                       ReadingTabView(isDarkMode: widget.isDarkMode),
