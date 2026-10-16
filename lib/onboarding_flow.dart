@@ -265,26 +265,6 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     await startSpacedRepetition(context, deck, widget.isDarkMode, () {});
   }
 
-  // Same as _startGrammarDeck, for the separate N4 Grammar deck - the only
-  // other level built out yet (N3 through N1 are still "Coming soon").
-  Future<void> _startGrammarN4Deck() async {
-    if (_startingGrammar) return;
-    setState(() => _startingGrammar = true);
-    final decks = await loadStudyDecks();
-    String name = kGrammarN4DeckName;
-    int copy = 1;
-    while (decks.any((d) => d.name == name)) {
-      copy++;
-      name = '$kGrammarN4DeckName ($copy)';
-    }
-    final deck = StudyDeck(name: name, cards: buildGrammarCardsN4(), lessonSetId: kGrammarN4TrackId, deckCreatedDate: todayStamp());
-    decks.add(deck);
-    await saveStudyDecks(decks);
-    if (!mounted) return;
-    widget.onFinished();
-    await startSpacedRepetition(context, deck, widget.isDarkMode, () {});
-  }
-
   @override
   Widget build(BuildContext context) {
     switch (_step) {
@@ -344,7 +324,6 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           busy: _startingGrammar,
           onBack: () => setState(() => _step = 6),
           onBrandNew: _startGrammarDeck,
-          onN4: _startGrammarN4Deck,
         );
     }
   }
@@ -999,13 +978,11 @@ class _GrammarKnowledgeSlide extends StatelessWidget {
   final bool busy;
   final VoidCallback onBack;
   final VoidCallback onBrandNew;
-  final VoidCallback onN4;
   const _GrammarKnowledgeSlide({
     required this.isDarkMode,
     required this.busy,
     required this.onBack,
     required this.onBrandNew,
-    required this.onN4,
   });
 
   @override
@@ -1034,7 +1011,7 @@ class _GrammarKnowledgeSlide extends StatelessWidget {
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              'JLPT N3 and above are still being written - N5 and N4 are ready to study for now.',
+                              'JLPT N4 and above are still being written - only N5 is ready to study for now.',
                               style: TextStyle(fontSize: 13, color: fgMuted),
                               textAlign: TextAlign.center,
                             ),
@@ -1045,13 +1022,7 @@ class _GrammarKnowledgeSlide extends StatelessWidget {
                               onTap: onBrandNew,
                             ),
                             const SizedBox(height: 12),
-                            _ChoiceCard(
-                              label: 'JLPT N4 Grammar',
-                              isDarkMode: isDarkMode,
-                              onTap: onN4,
-                            ),
-                            const SizedBox(height: 12),
-                            for (final level in ['N3', 'N2', 'N1']) ...[
+                            for (final level in ['N4', 'N3', 'N2', 'N1']) ...[
                               _ChoiceCard(
                                 label: 'JLPT $level Grammar',
                                 badge: 'COMING SOON',

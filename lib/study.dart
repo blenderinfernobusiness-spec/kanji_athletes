@@ -31,10 +31,19 @@ class StudyScreen extends StatefulWidget {
 class _StudyScreenState extends State<StudyScreen> {
   final List<StudyDeck> _decks = [];
   bool _isLoading = true;
-  // Admin-only preview toggle for the Lessons tab (see _showAdminUnlockDialog)
-  // - bypasses every lesson's day-gating so every lesson can be viewed
-  // regardless of challenge progress. Session-only by design, not persisted.
+  // Admin-only preview toggle (see _showAdminUnlockDialog) - bypasses every
+  // lesson's day-gating in the Lessons tab so any lesson can be viewed
+  // regardless of challenge progress, and also reveals the still-unreleased
+  // JLPT N4 Grammar Lessons deck (see _visibleDecks and _lessonSectionWidgets)
+  // everywhere it would otherwise show up. Session-only by design, not persisted.
   bool _adminUnlockAllLessons = false;
+
+  // The deck list filters out JLPT N4 Grammar Lessons (not yet released)
+  // unless admin-unlocked - hides the deck itself, not just its lessons, so
+  // it doesn't appear half-finished to ordinary users. The underlying deck
+  // (if one somehow exists, e.g. from testing) isn't deleted, just hidden.
+  List<StudyDeck> get _visibleDecks =>
+      _adminUnlockAllLessons ? _decks : _decks.where((d) => d.lessonSetId != kGrammarN4TrackId).toList();
 
   @override
   void initState() {
@@ -260,16 +269,20 @@ class _StudyScreenState extends State<StudyScreen> {
                       _createGrammarDeck();
                     },
                   ),
-                  const SizedBox(height: 8),
-                  _specialDeckCard(
-                    icon: Icons.translate,
-                    title: kGrammarN4DeckName,
-                    subtitle: '${grammarPointsN4.length} grammar points · one new point each day, learned through lessons',
-                    onTap: () {
-                      Navigator.pop(context);
-                      _createGrammarN4Deck();
-                    },
-                  ),
+                  // Not yet released - only visible once admin-unlocked (see
+                  // _adminUnlockAllLessons/_visibleDecks).
+                  if (_adminUnlockAllLessons) ...[
+                    const SizedBox(height: 8),
+                    _specialDeckCard(
+                      icon: Icons.translate,
+                      title: kGrammarN4DeckName,
+                      subtitle: '${grammarPointsN4.length} grammar points · one new point each day, learned through lessons',
+                      onTap: () {
+                        Navigator.pop(context);
+                        _createGrammarN4Deck();
+                      },
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   TextField(
                     controller: searchController,
@@ -858,9 +871,9 @@ class _StudyScreenState extends State<StudyScreen> {
             Expanded(
               child: ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: _decks.length + 1,
+                      itemCount: _visibleDecks.length + 1,
                       itemBuilder: (context, index) {
-                        if (index == _decks.length) {
+                        if (index == _visibleDecks.length) {
                           return Card(
                             color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
                             margin: const EdgeInsets.only(bottom: 12),
@@ -878,7 +891,7 @@ class _StudyScreenState extends State<StudyScreen> {
                             ),
                           );
                         }
-                        final deck = _decks[index];
+                        final deck = _visibleDecks[index];
                         return Card(
                           color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
                           child: ListTile(
@@ -1031,12 +1044,13 @@ class _StudyScreenState extends State<StudyScreen> {
   // Lessons are grouped by course, in this order. Within a course they run in
   // the order they happen - an end-of-day lesson sits after its day's cards.
   List<Widget> _lessonSectionWidgets() {
-    const sections = [
-      MapEntry(kHiraganaTrackId, 'Kana Course'),
-      MapEntry(kKanjiChallengeTrackId, '90 Day Kanji Challenge'),
-      MapEntry(kEssentialVocabTrackId, 'Vocabulary'),
-      MapEntry(kGrammarTrackId, kGrammarDeckName),
-      MapEntry(kGrammarN4TrackId, kGrammarN4DeckName),
+    final sections = [
+      const MapEntry(kHiraganaTrackId, 'Kana Course'),
+      const MapEntry(kKanjiChallengeTrackId, '90 Day Kanji Challenge'),
+      const MapEntry(kEssentialVocabTrackId, 'Vocabulary'),
+      const MapEntry(kGrammarTrackId, kGrammarDeckName),
+      // Not yet released - only listed once admin-unlocked.
+      if (_adminUnlockAllLessons) const MapEntry(kGrammarN4TrackId, kGrammarN4DeckName),
     ];
     double sortKey(Lesson l) => l.endOfDay != null ? l.endOfDay! + 0.5 : l.day.toDouble();
     final widgets = <Widget>[];
