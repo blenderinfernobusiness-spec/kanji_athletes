@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'study_data.dart';
 import 'reading_text_screen.dart';
@@ -6,16 +7,20 @@ import 'immersion_tab.dart';
 import 'trial_gate.dart';
 import 'trial_service.dart';
 
-// The Study screen's "Reading & Immersion" tab: a sub-tab for the existing
-// Reading list (unchanged, see ReadingTabView below) and a sub-tab for
-// Immersion (recommended channels + the "watch a video" box, see
-// immersion_tab.dart). Nested inside its own DefaultTabController since the
-// outer Study screen's TabController already has 3 tabs of its own.
+// The Study screen's "Reading & Immersion" tab. On every platform but web,
+// a sub-tab for the existing Reading list (unchanged, see ReadingTabView
+// below) and a sub-tab for Immersion (recommended channels + the "watch a
+// video" box, see immersion_tab.dart), nested inside its own
+// DefaultTabController since the outer Study screen's TabController already
+// has 3 tabs of its own. Immersion needs a real embedded browser that a web
+// page can't open inside itself (see immersion_tab.dart's own web-unavailable
+// dialog for channels/browsing), so on web this is just Reading on its own,
+// no tab bar needed for a single tab.
 //
-// Both sub-tabs are free for the first 7 days (see trial_service.dart) -
-// a status banner shows the days left (or, once unlocked, a permanent
-// confirmation), and once the trial runs out their content is replaced by a
-// locked placeholder until the code is entered.
+// Free for the first 7 days (see trial_service.dart) - a status banner shows
+// the days left (or, once unlocked, a permanent confirmation), and once the
+// trial runs out the content is replaced by a locked placeholder until the
+// code is entered.
 class ReadingAndImmersionTabView extends StatefulWidget {
   final bool isDarkMode;
   const ReadingAndImmersionTabView({super.key, required this.isDarkMode});
@@ -28,6 +33,21 @@ class _ReadingAndImmersionTabViewState extends State<ReadingAndImmersionTabView>
   @override
   Widget build(BuildContext context) {
     final locked = !TrialService.hasTrialAccessSync;
+    final lockedBody = TrialLockedBody(
+      isDarkMode: widget.isDarkMode,
+      featureName: kIsWeb ? 'Reading' : 'Reading & Immersion',
+      onChanged: () => setState(() {}),
+    );
+
+    if (kIsWeb) {
+      return Column(
+        children: [
+          TrialStatusBanner(isDarkMode: widget.isDarkMode, onChanged: () => setState(() {})),
+          Expanded(child: locked ? lockedBody : ReadingTabView(isDarkMode: widget.isDarkMode)),
+        ],
+      );
+    }
+
     return DefaultTabController(
       length: 2,
       child: Column(
@@ -55,11 +75,7 @@ class _ReadingAndImmersionTabViewState extends State<ReadingAndImmersionTabView>
           TrialStatusBanner(isDarkMode: widget.isDarkMode, onChanged: () => setState(() {})),
           Expanded(
             child: locked
-                ? TrialLockedBody(
-                    isDarkMode: widget.isDarkMode,
-                    featureName: 'Reading & Immersion',
-                    onChanged: () => setState(() {}),
-                  )
+                ? lockedBody
                 : TabBarView(
                     children: [
                       ReadingTabView(isDarkMode: widget.isDarkMode),
