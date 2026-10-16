@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'sets_data.dart';
+import 'trial_service.dart';
 import 'verb_conjugation.dart';
 import 'word_types.dart';
 
@@ -775,7 +776,15 @@ List<StudyCard> buildSpacedRepetitionQueue(StudyDeck deck, {bool revisionOnly = 
   List<StudyCard> newCardsForSession;
   if (deck.challengeStartDate != null) {
     final start = DateTime.parse(deck.challengeStartDate!);
-    final currentDay = DateTime.now().difference(start).inDays + 1;
+    // For the two free-trial-gated decks (Kana Course, 90 Day Kanji
+    // Challenge), once the trial's run out without the deck being unlocked,
+    // freeze new-card introduction at whatever day it had reached right when
+    // the trial ended - substituting that moment for "now" here is enough;
+    // everything else (existing due reviews, already-introduced cards) is
+    // untouched, so progress already made stays fully visible and reviewable.
+    final frozen = isTrialGatedTrackId(deck.lessonSetId) && !TrialService.hasTrialAccessSync;
+    final effectiveNow = frozen ? TrialService.trialEndDate : DateTime.now();
+    final currentDay = effectiveNow.difference(start).inDays + 1;
     newCardsForSession = newCards.where((c) => (c.challengeDay ?? 1) <= currentDay).toList();
   } else {
     final today = todayStamp();

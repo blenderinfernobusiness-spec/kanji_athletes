@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +11,7 @@ import 'cloud_sync_service.dart';
 import 'firebase_options.dart';
 import 'listening_player.dart';
 import 'study_data.dart';
+import 'trial_service.dart';
 import 'writing_practice_canvas.dart';
 
 const Color _accent = Color(0xFF9A00FE);
@@ -24,6 +27,12 @@ const Color _panel = Color(0xFF2A2A2A);
 Future<void> runMiniApp() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Mini studies decks the full app already created, so the trial clock
+  // (see trial_service.dart) needs to be loaded here too - otherwise
+  // buildSpacedRepetitionQueue's trial-gating check would fall back to its
+  // "cache never loaded" default.
+  await TrialService.ensureTrialStarted();
+  unawaited(TrialService.syncFromCloud());
   await windowManager.ensureInitialized();
 
   const options = WindowOptions(

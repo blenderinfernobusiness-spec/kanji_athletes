@@ -13,6 +13,8 @@ import 'lesson_data.dart';
 import 'lesson_viewer_screen.dart';
 import 'similar_kanji_screen.dart';
 import 'quick_sync_button.dart';
+import 'trial_service.dart';
+import 'unlock_dialog.dart';
 
 class StudyScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -173,11 +175,16 @@ class _StudyScreenState extends State<StudyScreen> {
   // cheap rather than "featured". Light mode instead gets only a hint of
   // tint, leaning on the solid purple border (kept in both modes) to carry
   // the "special" look instead of the fill.
+  // locked shows a lock icon in place of [icon] and routes the tap to the
+  // unlock dialog instead of [onTap] - used for every premade deck/set
+  // during the free trial except Kana Course and 90 Day Kanji Challenge
+  // (see trial_service.dart).
   Widget _specialDeckCard({
     required IconData icon,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    bool locked = false,
   }) {
     return Card(
       color: const Color(0xFF9A00FE).withValues(alpha: widget.isDarkMode ? 0.12 : 0.05),
@@ -187,7 +194,7 @@ class _StudyScreenState extends State<StudyScreen> {
       ),
       margin: EdgeInsets.zero,
       child: ListTile(
-        leading: Icon(icon, color: const Color(0xFF9A00FE)),
+        leading: Icon(locked ? Icons.lock : icon, color: const Color(0xFF9A00FE)),
         title: Text(
           title,
           style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
@@ -196,7 +203,12 @@ class _StudyScreenState extends State<StudyScreen> {
           subtitle,
           style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
         ),
-        onTap: onTap,
+        onTap: locked
+            ? () async {
+                final unlocked = await showUnlockDialog(context, widget.isDarkMode, featureName: title);
+                if (unlocked) onTap();
+              }
+            : onTap,
       ),
     );
   }
@@ -233,6 +245,7 @@ class _StudyScreenState extends State<StudyScreen> {
                     title: hiraganaChallengeDeckName,
                     subtitle:
                         '${hiraganaChallengeDays.fold<int>(0, (sum, day) => sum + day.length)} hiragana so far · new to Japanese? start here',
+                    locked: !TrialService.hasTrialAccessSync,
                     onTap: () {
                       Navigator.pop(context);
                       _createHiraganaChallengeDeck();
@@ -244,6 +257,7 @@ class _StudyScreenState extends State<StudyScreen> {
                     title: kanjiChallengeDeckName,
                     subtitle:
                         '${kanjiChallengeDays.fold<int>(0, (sum, day) => sum + day.length)} kanji so far · new kanji unlock automatically each day',
+                    locked: !TrialService.hasTrialAccessSync,
                     onTap: () {
                       Navigator.pop(context);
                       _createKanjiChallengeDeck();
@@ -254,6 +268,7 @@ class _StudyScreenState extends State<StudyScreen> {
                     icon: Icons.menu_book,
                     title: "Essential Vocabulary Challenge",
                     subtitle: '${setsData['Essential Vocabulary']?.items.length ?? 0} words · you set how many new words per day',
+                    locked: !TrialService.isUnlockedSync,
                     onTap: () {
                       Navigator.pop(context);
                       _createEssentialVocabDeck();
@@ -264,6 +279,7 @@ class _StudyScreenState extends State<StudyScreen> {
                     icon: Icons.translate,
                     title: kGrammarDeckName,
                     subtitle: '${grammarPoints.length} grammar points · one new point each day, learned through lessons',
+                    locked: !TrialService.isUnlockedSync,
                     onTap: () {
                       Navigator.pop(context);
                       _createGrammarDeck();
@@ -312,15 +328,24 @@ class _StudyScreenState extends State<StudyScreen> {
                   else
                     for (final entry in entries)
                       ListTile(
+                        leading: TrialService.isUnlockedSync ? null : Icon(Icons.lock, color: widget.isDarkMode ? Colors.white38 : Colors.black38),
                         title: Text(entry.value.name, style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black)),
                         subtitle: Text(
                           '${entry.value.items.length} item${entry.value.items.length == 1 ? '' : 's'} · ${entry.value.setType}',
                           style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
                         ),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _createDeckFromSet(entry.value);
-                        },
+                        onTap: TrialService.isUnlockedSync
+                            ? () {
+                                Navigator.pop(context);
+                                _createDeckFromSet(entry.value);
+                              }
+                            : () async {
+                                final unlocked = await showUnlockDialog(context, widget.isDarkMode, featureName: entry.value.name);
+                                if (!unlocked) return;
+                                if (!context.mounted) return;
+                                Navigator.pop(context);
+                                _createDeckFromSet(entry.value);
+                              },
                       ),
                 ],
               ),

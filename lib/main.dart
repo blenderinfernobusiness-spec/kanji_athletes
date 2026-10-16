@@ -4,6 +4,7 @@ import 'sets_data.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -26,6 +27,7 @@ import 'cloud_sync_page.dart';
 import 'quick_sync_button.dart';
 import 'main_mini.dart';
 import 'onboarding_flow.dart';
+import 'trial_service.dart';
 import 'update_check_service.dart';
 import 'update_dialog.dart';
 // Application entrypoint. A single build serves both the full app and
@@ -45,6 +47,12 @@ Future<void> main(List<String> args) async {
   // Ensure any migrations and saved sets are loaded before the app starts
   await SetPreferences.checkMigration();
   await SetPreferences.loadAllSets();
+  // Starts (or resumes) the free-trial clock, and loads it into memory so
+  // the rest of the app can check it synchronously. If already signed in
+  // from a previous session, also pulls down this account's unlock status
+  // in case it was unlocked on another device.
+  await TrialService.ensureTrialStarted();
+  unawaited(TrialService.syncFromCloud());
 
   runApp(const MaterialApp(
     debugShowCheckedModeBanner: false,
