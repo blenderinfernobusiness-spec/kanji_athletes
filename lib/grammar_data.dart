@@ -50,6 +50,7 @@ const List<GrammarSection> grammarSectionsN4 = [
   GrammarSection(title: 'Section 1: Conditionals and Connectors', startDay: 1),
   GrammarSection(title: 'Section 2: Thinking, Hearing, Seeming', startDay: 12),
   GrammarSection(title: 'Section 3: Essential Verb Extensions', startDay: 29),
+  GrammarSection(title: 'Section 4: Ability and Difficulty', startDay: 42),
 ];
 
 // The section a given grammar day falls under, or null if it's before every
@@ -7147,6 +7148,300 @@ const List<GrammarPoint> grammarPointsN4 = [
       'Describe persistence or endurance',
     ],
     vocabInspiration: ['走る', '働く', '読む', '頑張る', '練習する'],
+  ),
+  GrammarPoint(
+    day: 42,
+    form: 'ことができる',
+    meaning: 'can do',
+    title: 'ことができる - "can do"',
+    explanation: [
+      'ことができる means "can do" - add it straight after a verb\'s plain dictionary form: 話すことができる (can speak).',
+      'It works the exact same way for every verb, with no conjugation to memorise - useful before you\'ve learned a verb\'s own potential form.',
+    ],
+    formChoices: ['ことができる', 'られる', 'やすい', 'にくい'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 101447,
+        japanese: '彼は日本語を話すことができる。',
+        english: 'He can speak Japanese.',
+        contributor: 'CK',
+        target: 'ことができる',
+        chunks: ['彼', 'は', '日本語', 'を', '話す', 'ことができる', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 198304,
+        japanese: 'ハエは天井を歩くことができる。',
+        english: 'A fly can walk on the ceiling.',
+        contributor: 'CK',
+        target: 'ことができる',
+        chunks: ['ハエ', 'は', '天井', 'を', '歩く', 'ことができる', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 236028,
+        japanese: '１０人も泊まることができる。',
+        english: 'It can accommodate as many as ten people.',
+        contributor: 'Miktsoanit',
+        target: 'ことができる',
+        chunks: ['１０人', 'も', '泊まる', 'ことができる', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'られる',
+        meaning: 'can do (conjugated potential)',
+        note: 'ことができる and the conjugated られる potential mean the same thing - ことができる is a bit more formal/explicit, while られる is shorter and used more often in everyday speech.',
+      ),
+    ],
+    creativeUses: [
+      "Say what you're able to do",
+      'Describe a capability of a person, animal, or thing',
+    ],
+    vocabInspiration: ['話す', '泳ぐ', '運転する', '料理する', '弾く'],
+  ),
+  GrammarPoint(
+    day: 43,
+    form: '書ける / 食べられる / できる',
+    meaning: 'can do (potential form)',
+    title: 'られる - "potential form"',
+    explanation: [
+      'られる is how a verb itself conjugates to mean "can do it". For a godan verb, change the final u-sound to an e-sound and add る: 書く becomes 書ける (can write).',
+      'For an ichidan verb, drop る and add られる: 食べる becomes 食べられる (can eat). The irregular verbs are their own special case: する becomes できる, 来る becomes 来られる (きられる).',
+    ],
+    formChoices: ['書ける', '食べられる', 'できる', 'ことができる'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 9661115,
+        japanese: '自分の名前、中国語で書けるよ。',
+        english: 'I can write my name in Chinese.',
+        contributor: 'Amastan',
+        target: '書ける',
+        chunks: ['自分', 'の', '名前', '、', '中国語', 'で', '書ける', 'よ', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 188098,
+        japanese: '何かすぐ食べられるものある？',
+        english: 'Do you have anything I can eat right away?',
+        contributor: 'CK',
+        target: '食べられる',
+        chunks: ['何か', 'すぐ', '食べられる', 'もの', 'ある', '？'],
+      ),
+      GrammarSentence(
+        tatoebaId: 104658,
+        japanese: '彼は車の運転ができる。',
+        english: 'He can drive a car.',
+        contributor: 'CK',
+        target: 'できる',
+        chunks: ['彼', 'は', '車', 'の', '運転', 'が', 'できる', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'ことができる',
+        meaning: 'can do (same meaning)',
+        note: "ことができる means exactly the same thing and works for every verb the same simple way (dictionary form + ことができる) - useful if you haven't learned a verb's potential conjugation yet.",
+      ),
+    ],
+    creativeUses: [
+      "Say what you personally are or aren't able to do",
+      'Ask whether something is possible',
+    ],
+    vocabInspiration: ['書く', '食べる', '泳ぐ', '運転する', '見る'],
+  ),
+  GrammarPoint(
+    day: 44,
+    form: 'やすい',
+    meaning: 'easy to do',
+    title: 'やすい - "easy to do"',
+    explanation: [
+      'やすい means "easy to do" - add it after a verb\'s ます-stem (drop ます first): わかりやすい (easy to understand).',
+      'It works with any verb this way: 使いやすい (easy to use), 読みやすい (easy to read).',
+    ],
+    formChoices: ['やすい', 'にくい', 'づらい', 'ことができる'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 221529,
+        japanese: 'この辞書の用例はわかりやすい。',
+        english: 'The examples in this dictionary are easy to understand.',
+        contributor: 'CK',
+        target: 'やすい',
+        chunks: ['この', '辞書', 'の', '用例', 'は', 'わかり', 'やすい', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 11005103,
+        japanese: 'このブラウザは速くて使いやすい。',
+        english: 'This browser is fast and easy to use.',
+        contributor: 'CK',
+        target: 'やすい',
+        chunks: ['この', 'ブラウザ', 'は', '速くて', '使い', 'やすい', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 192036,
+        japanese: 'わかりやすい本からはじめなさい。',
+        english: 'Begin with books that are easy to understand.',
+        contributor: 'CK',
+        target: 'やすい',
+        chunks: ['わかり', 'やすい', '本', 'から', 'はじめなさい', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'にくい',
+        meaning: 'difficult to do (opposite)',
+        note: 'にくい is the direct opposite of やすい, built the exact same way (ます-stem + にくい) - 使いやすい (easy to use) vs 使いにくい (hard to use).',
+      ),
+    ],
+    creativeUses: [
+      'Review a product, tool, or book as easy to use/understand',
+      "Give advice on what's simple to do",
+    ],
+    vocabInspiration: ['わかる', '使う', '読む', '覚える', '作る'],
+  ),
+  GrammarPoint(
+    day: 45,
+    form: 'にくい',
+    meaning: 'difficult to do',
+    title: 'にくい - "difficult to do"',
+    explanation: [
+      'にくい means "difficult to do" - add it after a verb\'s ます-stem (drop ます first): 読みにくい (hard to read).',
+      'It works with any verb this way: わかりにくい (hard to understand), 取りにくい (hard to reach/get).',
+    ],
+    formChoices: ['にくい', 'やすい', 'づらい', 'ことができる'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 8650986,
+        japanese: 'トムの書く字は読みにくい。',
+        english: "Tom's handwriting is hard to read.",
+        contributor: 'CK',
+        target: 'にくい',
+        chunks: ['トム', 'の', '書く', '字', 'は', '読み', 'にくい', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 13238248,
+        japanese: 'アラビア語の文法は、分かりにくい。',
+        english: 'Arabic grammar is hard to understand.',
+        contributor: 'Aghanim',
+        target: 'にくい',
+        chunks: ['アラビア語', 'の', '文法', 'は', '、', '分かり', 'にくい', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 1110657,
+        japanese: 'なんですぐ使うってわかってるのに鶏肉こんな取りにくいところに入れるの？',
+        english: 'Why did you put the chicken in such a difficult place to get when you knew that I wanted to use it right away?',
+        contributor: 'CK',
+        target: 'にくい',
+        chunks: ['なんで', 'すぐ', '使う', 'って', 'わかってる', 'のに', '鶏肉', 'こんな', '取り', 'にくい', 'ところ', 'に', '入れる', 'の', '？'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'づらい',
+        meaning: 'difficult to do (discomfort)',
+        note: 'にくい is about objective difficulty; づらい leans toward physical or emotional discomfort in doing the action - 言いにくい (hard to say, objectively) vs 言いづらい (awkward/uncomfortable to say).',
+      ),
+    ],
+    creativeUses: [
+      'Say something is objectively hard to do',
+      'Explain why a design or process is inconvenient',
+    ],
+    vocabInspiration: ['読む', 'わかる', '取る', '開ける', '覚える'],
+  ),
+  GrammarPoint(
+    day: 46,
+    form: 'づらい / づらかった',
+    meaning: 'difficult to do',
+    title: 'づらい - "difficult to do"',
+    explanation: [
+      'づらい means "difficult to do", leaning toward physical or emotional discomfort rather than plain objective difficulty. Add it after a verb\'s ます-stem (drop ます first): 言いづらい (awkward/hard to say).',
+      'It works with any verb this way: 歩きづらい (uncomfortable to walk in), 分かりづらい (hard to understand).',
+    ],
+    formChoices: ['づらい', 'づらかった', 'にくい', 'やすい'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 200476,
+        japanese: 'とにかく、言いづらい事を打ち明けてくれてうれしいよ。',
+        english: "Anyway, I'm glad you were able to broach this difficult subject.",
+        contributor: 'CM',
+        target: 'づらい',
+        chunks: ['とにかく', '、', '言い', 'づらい', '事', 'を', '打ち明けてくれて', 'うれしい', 'よ', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 10465653,
+        japanese: '雪深いところは歩きづらかったよ。',
+        english: 'I found it difficult to walk in the deep snow.',
+        contributor: 'CK',
+        target: 'づらかった',
+        chunks: ['雪深い', 'ところ', 'は', '歩き', 'づらかった', 'よ', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 10668557,
+        japanese: 'あいつが言うことって、分かりづらいよなぁ。',
+        english: "It's hard to understand what he's saying.",
+        contributor: 'AlanF_US',
+        target: 'づらい',
+        chunks: ['あいつ', 'が', '言う', 'こと', 'って', '、', '分かり', 'づらい', 'よ', 'なぁ', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'にくい',
+        meaning: 'difficult to do (objective)',
+        note: 'づらい leans toward physical or emotional discomfort; にくい is more about objective difficulty - the two often overlap and are sometimes interchangeable.',
+      ),
+    ],
+    creativeUses: [
+      'Say something is awkward or uncomfortable to do',
+      'Describe a physically difficult action',
+    ],
+    vocabInspiration: ['言う', '歩く', '座る', '頼む', '話す'],
+  ),
+  GrammarPoint(
+    day: 47,
+    form: 'なかなか',
+    meaning: 'not easy to; just won\'t',
+    title: 'なかなか～ない - "not easy to"',
+    explanation: [
+      'なかなか paired with a negative verb means something is "not easy to" happen or "just won\'t" happen: なかなか直らない (just won\'t get fixed/heal).',
+      'It usually sits right before the negative verb it\'s emphasising: なかなか眠れない (can\'t easily fall asleep), なかなか来ない (just won\'t come).',
+    ],
+    formChoices: ['なかなか', 'やすい', 'にくい', 'づらい'],
+    sentences: [
+      GrammarSentence(
+        tatoebaId: 13624419,
+        japanese: '悪癖はなかなか直らない。',
+        english: 'Bad habits are hard to break.',
+        contributor: 'CK',
+        target: 'なかなか',
+        chunks: ['悪癖', 'は', 'なかなか', '直らない', '。'],
+      ),
+      GrammarSentence(
+        tatoebaId: 8836578,
+        japanese: 'なかなか眠れないんですか？',
+        english: 'Are you having trouble sleeping?',
+        contributor: 'CK',
+        target: 'なかなか',
+        chunks: ['なかなか', '眠れない', 'んです', 'か', '？'],
+      ),
+      GrammarSentence(
+        tatoebaId: 9767348,
+        japanese: '今日日、いい仕事はなかなか来ないってことを忘れるなよ。',
+        english: "Don't forget that good jobs are very hard to come by these days.",
+        contributor: 'CK',
+        target: 'なかなか',
+        chunks: ['今日日', '、', 'いい', '仕事', 'は', 'なかなか', '来ない', 'って', 'こと', 'を', '忘れるな', 'よ', '。'],
+      ),
+    ],
+    related: [
+      RelatedForm(
+        form: 'なかなか (positive)',
+        meaning: 'quite; considerably',
+        note: 'Without a negative verb, なかなか means something totally different - "quite" or "considerably" (なかなかいい - pretty good). The negative pairing is what gives it the "not easy to" meaning here.',
+      ),
+    ],
+    creativeUses: [
+      "Complain that something is taking a long time or not happening",
+      "Describe a stubborn problem that won't resolve",
+    ],
+    vocabInspiration: ['直る', '眠る', '来る', '終わる', '見つかる'],
   ),
 ];
 
