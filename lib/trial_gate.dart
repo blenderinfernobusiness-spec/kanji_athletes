@@ -5,6 +5,17 @@ import 'unlock_dialog.dart';
 
 const Color _accent = Color(0xFF9A00FE);
 
+// Gates a one-off action (opening a game, the listening player, or viewing a
+// previously-completed lesson) behind the free trial - if the trial's run
+// out and the code hasn't been entered, shows the unlock dialog and reports
+// back whether it was unlocked right then and there, so the caller can bail
+// out before navigating. Returns true immediately when access is already
+// available (still in the trial, or already unlocked).
+Future<bool> requireTrialAccess(BuildContext context, bool isDarkMode, {required String featureName}) async {
+  if (TrialService.hasTrialAccessSync) return true;
+  return showUnlockDialog(context, isDarkMode, featureName: featureName);
+}
+
 // The shared "days left / unlocked" status row shown above a trial-gated
 // feature's content (Reading & Immersion, the Dictionary, ...) - yellow
 // "X days left" with an unlock link while the trial's active or just

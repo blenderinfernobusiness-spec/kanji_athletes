@@ -773,17 +773,21 @@ List<StudyCard> buildSpacedRepetitionQueue(StudyDeck deck, {bool revisionOnly = 
   if (revisionOnly) return reviews;
   final newCards = due.where((c) => c.nextReviewDate == null).toList();
 
+  // Once the free trial has run out without the code being entered, every
+  // deck (premade or custom) stops introducing new cards - revising what's
+  // already been learned keeps working with no cap, since `reviews` above is
+  // untouched either way.
+  final trialExpired = !TrialService.hasTrialAccessSync;
+
   List<StudyCard> newCardsForSession;
   if (deck.challengeStartDate != null) {
     final start = DateTime.parse(deck.challengeStartDate!);
-    // For the two free-trial-gated decks (Kana Course, 90 Day Kanji
-    // Challenge), once the trial's run out without the deck being unlocked,
-    // freeze new-card introduction at whatever day it had reached right when
-    // the trial ended - substituting that moment for "now" here is enough;
-    // everything else (existing due reviews, already-introduced cards) is
-    // untouched, so progress already made stays fully visible and reviewable.
-    final frozen = isTrialGatedTrackId(deck.lessonSetId) && !TrialService.hasTrialAccessSync;
-    final effectiveNow = frozen ? TrialService.trialEndDate : DateTime.now();
+    // Freeze day-scheduled decks (Kana Course, 90 Day Kanji Challenge, the
+    // grammar decks) at whatever day they'd reached right when the trial
+    // ended - substituting that moment for "now" here is enough; everything
+    // else (existing due reviews, already-introduced cards) is untouched, so
+    // progress already made stays fully visible and reviewable.
+    final effectiveNow = trialExpired ? TrialService.trialEndDate : DateTime.now();
     final currentDay = effectiveNow.difference(start).inDays + 1;
     newCardsForSession = newCards.where((c) => (c.challengeDay ?? 1) <= currentDay).toList();
   } else {
@@ -792,7 +796,7 @@ List<StudyCard> buildSpacedRepetitionQueue(StudyDeck deck, {bool revisionOnly = 
       deck.newCardsIntroducedDate = today;
       deck.newCardsIntroducedToday = 0;
     }
-    final newAllowed = (deck.newCardsPerDay - deck.newCardsIntroducedToday).clamp(0, newCards.length);
+    final newAllowed = trialExpired ? 0 : (deck.newCardsPerDay - deck.newCardsIntroducedToday).clamp(0, newCards.length);
     newCardsForSession = newCards.take(newAllowed).toList();
   }
   return [...newCardsForSession, ...reviews];

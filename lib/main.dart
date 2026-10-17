@@ -28,6 +28,7 @@ import 'quick_sync_button.dart';
 import 'main_mini.dart';
 import 'onboarding_flow.dart';
 import 'trial_service.dart';
+import 'trial_gate.dart';
 import 'update_check_service.dart';
 import 'update_dialog.dart';
 // Application entrypoint. A single build serves both the full app and
@@ -1326,6 +1327,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+
+                TrialStatusBanner(isDarkMode: widget.isDarkMode, onChanged: () => setState(() {})),
 
                 // XP/Level/Progress bar at the top
                   if (_userProfile != null) ...[

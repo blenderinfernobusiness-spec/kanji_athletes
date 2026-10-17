@@ -11,6 +11,7 @@ import 'cloud_sync_service.dart';
 import 'firebase_options.dart';
 import 'listening_player.dart';
 import 'study_data.dart';
+import 'trial_gate.dart';
 import 'trial_service.dart';
 import 'writing_practice_canvas.dart';
 
@@ -245,6 +246,10 @@ class MiniModePicker extends StatelessWidget {
             Text(statusMessage!, style: const TextStyle(color: Colors.white38, fontSize: 12)),
             const SizedBox(height: 16),
           ],
+          StatefulBuilder(
+            builder: (context, setState) => TrialStatusBanner(isDarkMode: true, onChanged: () => setState(() {})),
+          ),
+          const SizedBox(height: 16),
           _ModeButton(
             icon: Icons.style_outlined,
             label: 'Flashcards',
@@ -358,7 +363,7 @@ class _MiniDeckPickerState extends State<MiniDeckPicker> {
                               style: const TextStyle(color: Colors.white54, fontSize: 12),
                             ),
                             trailing: const Icon(Icons.chevron_right, color: Colors.white38),
-                            onTap: () {
+                            onTap: () async {
                               if (widget.mode == MiniMode.flashcards) {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
@@ -366,6 +371,8 @@ class _MiniDeckPickerState extends State<MiniDeckPicker> {
                                   ),
                                 );
                               } else {
+                                final ok = await requireTrialAccess(context, true, featureName: 'Reading & Listening');
+                                if (!ok || !context.mounted) return;
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) => ListeningPlayerScreen(

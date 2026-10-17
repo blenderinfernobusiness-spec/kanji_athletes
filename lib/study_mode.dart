@@ -7,6 +7,7 @@ import 'lesson_data.dart';
 import 'lesson_viewer_screen.dart';
 import 'grammar_data.dart';
 import 'study_progress_screen.dart';
+import 'trial_gate.dart';
 
 // Shows a pop-up menu of study modes for a deck. "Spaced Repetition" and
 // "Reading & Listening" work; "Games and more" just dismisses the menu.
@@ -246,10 +247,12 @@ class _StudyModeMenu extends StatelessWidget {
                 ),
               );
             }),
-            _buildModeButton(context, "Reading & Listening", () {
+            _buildModeButton(context, "Reading & Listening", () async {
               Navigator.pop(context);
+              final ok = await requireTrialAccess(hostContext, isDarkMode, featureName: 'Reading & Listening');
+              if (!ok || !hostContext.mounted) return;
               Navigator.push(
-                context,
+                hostContext,
                 MaterialPageRoute(
                   builder: (context) => ListeningPlayerScreen(
                     title: deck.name,
@@ -260,13 +263,17 @@ class _StudyModeMenu extends StatelessWidget {
                 ),
               );
             }),
-            _buildModeButton(context, "Games and more", () {
+            _buildModeButton(context, "Games and more", () async {
               Navigator.pop(context);
-              showGamesMenu(context, deck.name, deck.cards, isDarkMode);
+              final ok = await requireTrialAccess(hostContext, isDarkMode, featureName: 'Games');
+              if (!ok || !hostContext.mounted) return;
+              showGamesMenu(hostContext, deck.name, deck.cards, isDarkMode);
             }),
             if (deck.lessonSetId != null)
-              _buildModeButton(context, "Study progress", () {
+              _buildModeButton(context, "Study progress", () async {
                 Navigator.pop(context);
+                final ok = await requireTrialAccess(hostContext, isDarkMode, featureName: 'Lessons');
+                if (!ok || !hostContext.mounted) return;
                 Navigator.push(
                   hostContext,
                   MaterialPageRoute(

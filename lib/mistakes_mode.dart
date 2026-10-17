@@ -3,6 +3,7 @@ import 'study_data.dart';
 import 'isolated_flashcard_study.dart';
 import 'listening_player.dart';
 import 'games_mode.dart';
+import 'trial_gate.dart';
 
 // Pop-up menu of study modes for a Mistakes selection. "Isolated Flashcard
 // Study" and "Reading & Listening" work; "Games and more" just dismisses the menu,
@@ -80,10 +81,13 @@ class _MistakesModeMenu extends StatelessWidget {
                 ),
               );
             }),
-            _buildModeButton(context, "Reading & Listening", () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
+            _buildModeButton(context, "Reading & Listening", () async {
+              final navigator = Navigator.of(context);
+              navigator.pop();
+              final hostContext = navigator.context;
+              final ok = await requireTrialAccess(hostContext, isDarkMode, featureName: 'Reading & Listening');
+              if (!ok || !hostContext.mounted) return;
+              navigator.push(
                 MaterialPageRoute(
                   builder: (context) => ListeningPlayerScreen(
                     title: title,
@@ -93,9 +97,13 @@ class _MistakesModeMenu extends StatelessWidget {
                 ),
               );
             }),
-            _buildModeButton(context, "Games and more", () {
-              Navigator.pop(context);
-              showGamesMenu(context, title, cards, isDarkMode);
+            _buildModeButton(context, "Games and more", () async {
+              final navigator = Navigator.of(context);
+              navigator.pop();
+              final hostContext = navigator.context;
+              final ok = await requireTrialAccess(hostContext, isDarkMode, featureName: 'Games');
+              if (!ok || !hostContext.mounted) return;
+              showGamesMenu(hostContext, title, cards, isDarkMode);
             }),
           ],
         ),

@@ -7,13 +7,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // Free-trial gating - a single code (kUnlockCode) unlocks everything
 // permanently; until then, a 7-day clock starting from the very first time
-// the app was ever opened on this install gives full access to the
-// "getting started" path (Kana Course, 90 Day Kanji Challenge, Reading,
-// Immersion). Everything else premade (Essential Vocabulary, JLPT N5
-// Grammar Lessons, every browsable dictionary set) needs the code from day
-// one - no trial grace for those. This is a separate lock from
-// study.dart's _adminUnlockAllLessons (that one's for previewing
-// not-yet-released content; this one's the free-trial paywall).
+// the app was ever opened on this install gives full access to everything,
+// premade decks included. Once the trial runs out without the code being
+// entered, every deck (premade or custom) stops introducing new cards -
+// existing progress stays fully revisable - and Games, viewing previous
+// Lessons, Reading, Immersion, Listening, and the Dictionary lock outright.
+// This is a separate lock from study.dart's _adminUnlockAllLessons (that
+// one's for previewing not-yet-released content; this one's the free-trial
+// paywall).
 const String kUnlockCode = '11118KANJI';
 const String kUpgradeUrl =
     'https://www.skool.com/kanji-athletes-5541/classroom/4bc7f780?md=6b0c57bde79046d78e36ae77eb39b8ea';
@@ -63,11 +64,10 @@ class TrialService {
   // this - unlocked by either the code or still being inside the 7-day trial.
   static bool get hasTrialAccessSync => isUnlockedSync || isTrialActiveSync;
 
-  // The moment the trial ends (or ended) - used to freeze a trial-gated
-  // deck's own day-based new-card schedule at whatever day it had reached
-  // right when the trial ran out, rather than it continuing to silently
-  // introduce new days' cards for free. See study_data.dart's
-  // buildSpacedRepetitionQueue and isTrialGatedTrackId below.
+  // The moment the trial ends (or ended) - used to freeze a day-scheduled
+  // deck's new-card schedule at whatever day it had reached right when the
+  // trial ran out, rather than it continuing to silently introduce new days'
+  // cards for free. See study_data.dart's buildSpacedRepetitionQueue.
   static DateTime get trialEndDate => (_cachedTrialStart ?? DateTime.now()).add(const Duration(days: kTrialDays));
 
   // Checks the exact code (case-insensitive, trimmed) and, if it matches,
@@ -129,12 +129,3 @@ class TrialService {
     }
   }
 }
-
-// True for the two trial-gated day-scheduled decks (Kana Course, 90 Day
-// Kanji Challenge) - everything else premade either isn't day-scheduled or
-// is locked outright regardless of the trial (see this file's own doc
-// comment). The literal strings match kHiraganaTrackId/kKanjiChallengeTrackId
-// (lesson_data.dart) exactly - duplicated rather than imported so this
-// low-level file (study_data.dart depends on it) doesn't pull in
-// lesson_data.dart's much larger import graph.
-bool isTrialGatedTrackId(String? trackId) => trackId == 'hiragana_challenge' || trackId == 'kanji_challenge';

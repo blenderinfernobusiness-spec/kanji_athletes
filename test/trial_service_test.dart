@@ -48,12 +48,4 @@ void main() {
     expect(TrialService.isUnlockedSync, isTrue);
     expect(TrialService.hasTrialAccessSync, isTrue, reason: 'unlocked should grant access even with the trial expired');
   });
-
-  test('isTrialGatedTrackId only matches the Kana Course and 90 Day Challenge', () {
-    expect(isTrialGatedTrackId('hiragana_challenge'), isTrue);
-    expect(isTrialGatedTrackId('kanji_challenge'), isTrue);
-    expect(isTrialGatedTrackId('grammar'), isFalse);
-    expect(isTrialGatedTrackId('essential_vocab'), isFalse);
-    expect(isTrialGatedTrackId(null), isFalse);
-  });
 }
