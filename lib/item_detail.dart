@@ -10,6 +10,8 @@ import 'writing_practice_canvas.dart';
 import 'view_set.dart';
 import 'ruby_text.dart';
 import 'verb_conjugation.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final Item item;
@@ -329,7 +331,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
           curve: Curves.easeInOut,
           child: AlertDialog(
             backgroundColor: localDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               style: TextStyle(
@@ -349,16 +351,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                 ),
                 Switch(
                   value: localDarkMode,
-                  onChanged: (value) {
-                    widget.onThemeChanged(value);
-                    Future.delayed(const Duration(milliseconds: 50), () {
-                      if (mounted) {
-                        setState(() {
-                          localDarkMode = value;
-                        });
-                      }
-                    });
-                  },
+                  onChanged: AppTheme.instance.pixelTheme?.forcedDarkMode != null
+                      ? null
+                      : (value) {
+                          widget.onThemeChanged(value);
+                          Future.delayed(const Duration(milliseconds: 50), () {
+                            if (mounted) {
+                              setState(() {
+                                localDarkMode = value;
+                              });
+                            }
+                          });
+                        },
                 ),
               ],
             ),
@@ -412,8 +416,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
               print('DEBUG: statefulBuilder called');
               return AlertDialog(
               scrollable: true,
-              backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              backgroundColor: AppColors.cardBg(widget.isDarkMode),
+              shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: Text(
                 'Edit Item',
                 style: TextStyle(
@@ -433,16 +437,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                     // Item Type dropdown
                     DropdownButtonFormField<String>(
                       value: selectedType,
-                      dropdownColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+                      dropdownColor: AppColors.cardBg(widget.isDarkMode),
                       style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                       decoration: InputDecoration(
                         labelText: 'Item Type',
-                        labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                        labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                         ),
-                        focusedBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: AppColors.accent),
                         ),
                       ),
                       items: ['Kanji', 'Hiragana', 'Katakana', 'Vocab'].map((String type) {
@@ -460,16 +464,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                     if (setsData.isNotEmpty)
                       DropdownButtonFormField<String>(
                         value: setsData.containsKey(selectedSet) ? selectedSet : setsData.keys.first,
-                        dropdownColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+                        dropdownColor: AppColors.cardBg(widget.isDarkMode),
                         style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                         decoration: InputDecoration(
                           labelText: 'Set',
-                          labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                          labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                           enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                           ),
-                          focusedBorder: const UnderlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.accent),
                           ),
                         ),
                         items: setsData.keys.map((String setName) {
@@ -487,7 +491,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Text(
                           'No sets available',
-                          style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                          style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                         ),
                       ),
                     const SizedBox(height: 16),
@@ -524,12 +528,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                       style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                       decoration: InputDecoration(
                         labelText: selectedType == 'Vocab' ? 'Word' : (selectedType == 'Hiragana' ? 'Hiragana' : (selectedType == 'Katakana' ? 'Katakana' : 'Kanji')),
-                        labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                        labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                         ),
-                        focusedBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: AppColors.accent),
                         ),
                       ),
                     ),
@@ -541,12 +545,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                         style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                         decoration: InputDecoration(
                           labelText: 'Reading',
-                          labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                          labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                           enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                           ),
-                          focusedBorder: const UnderlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.accent),
                           ),
                         ),
                       ),
@@ -557,12 +561,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                       style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                       decoration: InputDecoration(
                         labelText: 'Translation',
-                        labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                        labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                         ),
-                        focusedBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: AppColors.accent),
                         ),
                       ),
                     ),
@@ -574,12 +578,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                         style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                         decoration: InputDecoration(
                           labelText: "On'yomi (音読み)",
-                          labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                          labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                           enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                           ),
-                          focusedBorder: const UnderlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.accent),
                           ),
                         ),
                       ),
@@ -590,12 +594,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                         style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                         decoration: InputDecoration(
                           labelText: "Kun'yomi (訓読み)",
-                          labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                          labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                           enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                           ),
-                          focusedBorder: const UnderlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.accent),
                           ),
                         ),
                       ),
@@ -606,12 +610,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                         style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                         decoration: InputDecoration(
                           labelText: "Nanori (名乗り)",
-                          labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                          labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                           enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                           ),
-                          focusedBorder: const UnderlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.accent),
                           ),
                         ),
                       ),
@@ -646,7 +650,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                               .map((tag) => Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF9A00FE).withOpacity(0.7),
+                                      color: AppColors.accent.withOpacity(0.7),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
@@ -686,12 +690,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                       style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                       decoration: InputDecoration(
                         labelText: 'Notes',
-                        labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                        labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                         ),
-                        focusedBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: AppColors.accent),
                         ),
                       ),
                     ),
@@ -704,8 +708,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                           final confirmed = await showDialog<bool>(
                             context: context,
                             builder: (dialogContext) => AlertDialog(
-                              backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              backgroundColor: AppColors.cardBg(widget.isDarkMode),
+                              shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                               title: Text(
                                 'Delete Item?',
                                 style: TextStyle(
@@ -724,7 +728,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                                   onPressed: () => Navigator.pop(dialogContext, false),
                                   child: Text(
                                     'Cancel',
-                                    style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                                    style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                                   ),
                                 ),
                                 ElevatedButton(
@@ -798,7 +802,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     'Cancel',
-                    style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                    style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                   ),
                 ),
                 ElevatedButton(
@@ -900,7 +904,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF9A00FE),
+                    backgroundColor: AppColors.accent,
                     foregroundColor: Colors.white,
                   ),
                   child: const Text('Save'),
@@ -942,8 +946,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Edit Notes',
           style: TextStyle(
@@ -972,7 +976,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancel',
-              style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+              style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
             ),
           ),
           ElevatedButton(
@@ -994,7 +998,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF9A00FE),
+              backgroundColor: AppColors.accent,
               foregroundColor: Colors.white,
             ),
             child: const Text('Save'),
@@ -1034,7 +1038,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
         }
         
         return Dialog(
-          backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+          backgroundColor: AppColors.pageBg(widget.isDarkMode),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -1103,7 +1107,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
     }
     
     return Scaffold(
-      backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(widget.isDarkMode),
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: widget.isDarkMode ? Colors.white : Colors.black),
@@ -1115,7 +1119,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
           titleText,
           style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
         ),
-        backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+        backgroundColor: AppColors.pageBg(widget.isDarkMode),
         actions: [
           IconButton(
             icon: Icon(Icons.edit, color: widget.isDarkMode ? Colors.white : Colors.black),
@@ -1177,7 +1181,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                     height: 200,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF9A00FE),
+                      color: AppColors.accent,
                       borderRadius: BorderRadius.circular(isVocab ? 12 : 16),
                     ),
                     child: Text(
@@ -1227,7 +1231,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                 height: 200,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF9A00FE),
+                  color: AppColors.accent,
                   borderRadius: BorderRadius.circular(isVocab ? 12 : 16),
                 ),
                 child: Text(
@@ -1246,7 +1250,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
             Text(
               'Translation',
               style: TextStyle(
-                color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                color: AppColors.textMuted(widget.isDarkMode),
                 fontSize: isVocab ? 14 : 16,
                 fontWeight: isVocab ? FontWeight.bold : FontWeight.normal,
               ),
@@ -1275,7 +1279,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                     Text(
                       'Reading',
                       style: TextStyle(
-                        color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                        color: AppColors.textMuted(widget.isDarkMode),
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1297,7 +1301,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF9A00FE),
+                    color: AppColors.accent,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -1330,7 +1334,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                                 Text(
                                   "On'yomi (音読み)",
                                   style: TextStyle(
-                                    color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                                    color: AppColors.textMuted(widget.isDarkMode),
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -1350,7 +1354,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                                 Text(
                                   "Kun'yomi (訓読み)",
                                   style: TextStyle(
-                                    color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                                    color: AppColors.textMuted(widget.isDarkMode),
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -1370,7 +1374,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                                 Text(
                                   "Nanori (名乗り)",
                                   style: TextStyle(
-                                    color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                                    color: AppColors.textMuted(widget.isDarkMode),
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -1398,7 +1402,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                               onPressed: () => _showEditReadingsDialog(),
                             ),
                             IconButton(
-                              icon: Icon(Icons.info_outline, color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                              icon: Icon(Icons.info_outline, color: AppColors.textMuted(widget.isDarkMode)),
                               tooltip: 'Reading Types Info',
                               onPressed: () {
                                 showDialog(
@@ -1442,7 +1446,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
             Text(
               'Stroke Order (Kakijun)',
               style: TextStyle(
-                color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                color: AppColors.textMuted(widget.isDarkMode),
                 fontSize: 16,
               ),
             ),
@@ -1469,7 +1473,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                         child: Text(
                           'No kanji characters in this word',
                           style: TextStyle(
-                            color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                            color: AppColors.textMuted(widget.isDarkMode),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -1489,7 +1493,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                             controller: _tabController,
                             indicatorSize: TabBarIndicatorSize.tab,
                             indicator: BoxDecoration(
-                              color: const Color(0xFF9A00FE),
+                              color: AppColors.accent,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             labelColor: Colors.white,
@@ -1533,7 +1537,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                                         child: Text(
                                           'Stroke order not available',
                                           style: TextStyle(
-                                            color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                                            color: AppColors.textMuted(widget.isDarkMode),
                                           ),
                                         ),
                                       );
@@ -1561,8 +1565,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                                       width: 300,
                                       height: 300,
                                       alignment: Alignment.center,
-                                      child: const CircularProgressIndicator(
-                                        color: Color(0xFF9A00FE),
+                                      child: CircularProgressIndicator(
+                                        color: AppColors.accent,
                                       ),
                                     );
                                   },
@@ -1583,8 +1587,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                     return Container(
                       height: 450,
                       alignment: Alignment.center,
-                      child: const CircularProgressIndicator(
-                        color: Color(0xFF9A00FE),
+                      child: CircularProgressIndicator(
+                        color: AppColors.accent,
                       ),
                     );
                   }
@@ -1602,7 +1606,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                             controller: _tabController,
                             indicatorSize: TabBarIndicatorSize.tab,
                             indicator: BoxDecoration(
-                              color: const Color(0xFF9A00FE),
+                              color: AppColors.accent,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             labelColor: Colors.white,
@@ -1646,7 +1650,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                                         child: Text(
                                           'Stroke order not available',
                                           style: TextStyle(
-                                            color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                                            color: AppColors.textMuted(widget.isDarkMode),
                                           ),
                                         ),
                                       );
@@ -1674,8 +1678,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                                       width: 300,
                                       height: 300,
                                       alignment: Alignment.center,
-                                      child: const CircularProgressIndicator(
-                                        color: Color(0xFF9A00FE),
+                                      child: CircularProgressIndicator(
+                                        color: AppColors.accent,
                                       ),
                                     );
                                   },
@@ -1696,7 +1700,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                       child: Text(
                         'Stroke order not available for this character',
                         style: TextStyle(
-                          color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                          color: AppColors.textMuted(widget.isDarkMode),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -1710,7 +1714,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                 RichText(
                   text: TextSpan(
                     style: TextStyle(
-                      color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                      color: AppColors.textMuted(widget.isDarkMode),
                       fontSize: 16,
                     ),
                     children: [
@@ -1749,7 +1753,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
               RichText(
                 text: TextSpan(
                   style: TextStyle(
-                    color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                    color: AppColors.textMuted(widget.isDarkMode),
                     fontSize: 16,
                   ),
                   children: [
@@ -1776,7 +1780,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
               icon: const Icon(Icons.edit, size: 20),
               label: const Text('Practice Writing'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9A00FE),
+                backgroundColor: AppColors.accent,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                 textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -1835,7 +1839,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                   onPressed: () {
                     _showNotesEditDialog();
                   },
-                  color: const Color(0xFF9A00FE),
+                  color: AppColors.accent,
                   tooltip: 'Edit Notes',
                 ),
               ],
@@ -1949,7 +1953,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                       icon: const Icon(Icons.open_in_new, size: 18),
                       label: const Text('Kanshudo'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF9A00FE),
+                        backgroundColor: AppColors.accent,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       ),
@@ -1967,7 +1971,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                       icon: const Icon(Icons.open_in_new, size: 18),
                       label: const Text('Jisho.org'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF9A00FE),
+                        backgroundColor: AppColors.accent,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       ),
@@ -1987,7 +1991,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                   icon: const Icon(Icons.open_in_new, size: 18),
                   label: const Text('Tangorin'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF9A00FE),
+                    backgroundColor: AppColors.accent,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
@@ -2108,7 +2112,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
         height: 60,
         decoration: BoxDecoration(
           color: kanjiItem != null
-              ? const Color(0xFF9A00FE)
+              ? AppColors.accent
               : (widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[300]),
           borderRadius: BorderRadius.circular(8),
         ),

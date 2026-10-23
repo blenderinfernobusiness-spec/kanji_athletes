@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'study_data.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 // Lets the user pick which cards a Writing/Reading game session should play
 // through: the whole set, or a chosen number picked randomly, by newest
@@ -69,13 +71,13 @@ class _GameScopeDialogState extends State<_GameScopeDialog> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = widget.isDarkMode;
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
-    final subColor = isDarkMode ? Colors.white70 : Colors.black54;
+    final textColor = AppColors.text(isDarkMode);
+    final subColor = AppColors.textMuted(isDarkMode);
     final isEmpty = widget.cards.isEmpty;
 
     return AlertDialog(
-      backgroundColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: AppColors.cardBg(isDarkMode),
+      shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text("Choose Cards", style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
       content: SizedBox(
         width: 300,
@@ -91,7 +93,7 @@ class _GameScopeDialogState extends State<_GameScopeDialog> {
                       title: Text('Whole deck (${widget.cards.length} cards)', style: TextStyle(color: textColor)),
                       value: true,
                       groupValue: _wholeDeck,
-                      activeColor: const Color(0xFF9A00FE),
+                      activeColor: AppColors.accent,
                       onChanged: (v) => setState(() => _wholeDeck = true),
                     ),
                     RadioListTile<bool>(
@@ -99,7 +101,7 @@ class _GameScopeDialogState extends State<_GameScopeDialog> {
                       title: Text('Set number of cards', style: TextStyle(color: textColor)),
                       value: false,
                       groupValue: _wholeDeck,
-                      activeColor: const Color(0xFF9A00FE),
+                      activeColor: AppColors.accent,
                       onChanged: (v) => setState(() => _wholeDeck = false),
                     ),
                     if (!_wholeDeck) ...[
@@ -123,7 +125,7 @@ class _GameScopeDialogState extends State<_GameScopeDialog> {
                         title: Text('Random', style: TextStyle(color: textColor)),
                         value: _PickStrategy.random,
                         groupValue: _strategy,
-                        activeColor: const Color(0xFF9A00FE),
+                        activeColor: AppColors.accent,
                         onChanged: (v) => setState(() => _strategy = v!),
                       ),
                       RadioListTile<_PickStrategy>(
@@ -131,7 +133,7 @@ class _GameScopeDialogState extends State<_GameScopeDialog> {
                         title: Text('Newest added', style: TextStyle(color: textColor)),
                         value: _PickStrategy.newest,
                         groupValue: _strategy,
-                        activeColor: const Color(0xFF9A00FE),
+                        activeColor: AppColors.accent,
                         onChanged: (v) => setState(() => _strategy = v!),
                       ),
                       RadioListTile<_PickStrategy>(
@@ -140,7 +142,7 @@ class _GameScopeDialogState extends State<_GameScopeDialog> {
                         subtitle: Text('Cards you get wrong often', style: TextStyle(color: subColor, fontSize: 12)),
                         value: _PickStrategy.lowestProgress,
                         groupValue: _strategy,
-                        activeColor: const Color(0xFF9A00FE),
+                        activeColor: AppColors.accent,
                         onChanged: (v) => setState(() => _strategy = v!),
                       ),
                     ],
@@ -154,7 +156,7 @@ class _GameScopeDialogState extends State<_GameScopeDialog> {
           child: Text("Cancel", style: TextStyle(color: subColor)),
         ),
         ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
           onPressed: isEmpty ? null : () => Navigator.pop(context, _resolve()),
           child: const Text("Start"),
         ),

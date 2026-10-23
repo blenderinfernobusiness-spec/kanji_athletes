@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'trial_service.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
-const Color _accent = Color(0xFF9A00FE);
+Color get _accent => AppColors.accent;
 
 // The one dialog every locked feature funnels into - explains why it's
 // locked, links out to Skool to upgrade, and has a field to enter the code
@@ -60,12 +62,12 @@ class _UnlockDialogState extends State<_UnlockDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final fg = widget.isDarkMode ? Colors.white : Colors.black87;
-    final fgMuted = widget.isDarkMode ? Colors.white70 : Colors.black54;
+    final fg = AppColors.text(widget.isDarkMode);
+    final fgMuted = AppColors.textMuted(widget.isDarkMode);
     final fieldFill = widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.grey[200];
     return AlertDialog(
-      backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: AppColors.cardBg(widget.isDarkMode),
+      shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text('Unlock full access', style: TextStyle(fontWeight: FontWeight.bold, color: fg)),
       content: SizedBox(
         width: 320,
@@ -82,7 +84,7 @@ class _UnlockDialogState extends State<_UnlockDialog> {
             const SizedBox(height: 12),
             InkWell(
               onTap: () => launchUrl(Uri.parse(kUpgradeUrl), mode: LaunchMode.externalApplication),
-              child: const Text(
+              child: Text(
                 'Upgrade on Skool to get the code',
                 style: TextStyle(color: _accent, fontWeight: FontWeight.w600, decoration: TextDecoration.underline),
               ),

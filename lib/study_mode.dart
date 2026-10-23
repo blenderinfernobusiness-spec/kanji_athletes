@@ -8,6 +8,8 @@ import 'lesson_viewer_screen.dart';
 import 'grammar_data.dart';
 import 'study_progress_screen.dart';
 import 'trial_gate.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 // Shows a pop-up menu of study modes for a deck. "Spaced Repetition" and
 // "Reading & Listening" work; "Games and more" just dismisses the menu.
@@ -121,14 +123,14 @@ Future<void> _showNextGrammarPrompt(
   final today = lessonDayFor(deck);
   final next = _nextUncompletedGrammarDay(deck, today);
   final nextLesson = next == null ? null : lessonForTrackAndDay(kGrammarTrackId, next);
-  final fg = isDarkMode ? Colors.white : Colors.black87;
-  final muted = isDarkMode ? Colors.white70 : Colors.black54;
+  final fg = AppColors.text(isDarkMode);
+  final muted = AppColors.textMuted(isDarkMode);
 
   final learnNow = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      backgroundColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: AppColors.cardBg(isDarkMode),
+      shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(
         nextLesson == null ? 'All caught up' : 'Lesson complete',
         style: TextStyle(color: fg, fontWeight: FontWeight.bold),
@@ -146,7 +148,7 @@ Future<void> _showNextGrammarPrompt(
         ),
         if (nextLesson != null)
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(dialogContext, true),
             child: Text('Learn Day $next now'),
           ),
@@ -172,23 +174,32 @@ class _StudyModeMenu extends StatelessWidget {
     required this.hostContext,
   });
 
-  Widget _buildModeButton(BuildContext context, String label, VoidCallback onPressed) {
+  Widget _buildModeButton(BuildContext context, String label, VoidCallback onPressed, {String? iconId}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: SizedBox(
         width: double.infinity,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF9A00FE),
+            backgroundColor: AppColors.accent,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 18),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
           onPressed: onPressed,
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (iconId != null) ...[
+                ThemedIcon(iconId: iconId, size: 22, fallback: const SizedBox.shrink()),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
         ),
       ),
@@ -202,10 +213,11 @@ class _StudyModeMenu extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-        ),
+        decoration: pixelPanelDecoration(fill: AppColors.cardBg(isDarkMode)) ??
+            BoxDecoration(
+              color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -214,7 +226,7 @@ class _StudyModeMenu extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: isDarkMode ? Colors.white : Colors.black87,
+                color: AppColors.text(isDarkMode),
               ),
             ),
             const SizedBox(height: 16),
@@ -222,12 +234,12 @@ class _StudyModeMenu extends StatelessWidget {
               _buildModeButton(context, "Lessons", () async {
                 Navigator.pop(context);
                 await _startGrammarLesson(hostContext, deck, isDarkMode, onChanged);
-              })
+              }, iconId: 'tabLessons')
             else
               _buildModeButton(context, "Spaced Repetition", () async {
                 Navigator.pop(context);
                 await startSpacedRepetition(hostContext, deck, isDarkMode, onChanged);
-              }),
+              }, iconId: 'tabCards'),
             // No lesson recap, no new cards, no challenge-day gating, and
             // nothing ever offers to pull more new cards in - just today's
             // due reviews, for every deck including the Grammar deck and the
@@ -246,7 +258,7 @@ class _StudyModeMenu extends StatelessWidget {
                   ),
                 ),
               );
-            }),
+            }, iconId: 'tabCards'),
             _buildModeButton(context, "Reading & Listening", () async {
               Navigator.pop(context);
               final ok = await requireTrialAccess(hostContext, isDarkMode, featureName: 'Reading & Listening');
@@ -262,13 +274,13 @@ class _StudyModeMenu extends StatelessWidget {
                   ),
                 ),
               );
-            }),
+            }, iconId: 'tabReading'),
             _buildModeButton(context, "Games and more", () async {
               Navigator.pop(context);
               final ok = await requireTrialAccess(hostContext, isDarkMode, featureName: 'Games');
               if (!ok || !hostContext.mounted) return;
               showGamesMenu(hostContext, deck.name, deck.cards, isDarkMode);
-            }),
+            }, iconId: 'sword'),
             if (deck.lessonSetId != null)
               _buildModeButton(context, "Study progress", () async {
                 Navigator.pop(context);
@@ -280,7 +292,7 @@ class _StudyModeMenu extends StatelessWidget {
                     builder: (context) => StudyProgressScreen(deck: deck, isDarkMode: isDarkMode, onChanged: onChanged),
                   ),
                 );
-              }),
+              }, iconId: 'stats'),
           ],
         ),
       ),

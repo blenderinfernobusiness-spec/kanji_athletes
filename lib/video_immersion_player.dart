@@ -8,13 +8,14 @@ import 'beta_tag.dart';
 import 'immersion_word_lookup.dart';
 import 'study_data.dart';
 import 'study_settings.dart';
+import 'app_colors.dart';
 
-const Color _accent = Color(0xFF9A00FE);
+Color get _accent => AppColors.accent;
 const double _defaultCaptionTextSize = 24;
 const String _captionTextSizePrefsKey = 'video_caption_text_size';
 const Color _defaultCaptionTextColor = Colors.white;
 const String _captionTextColorPrefsKey = 'video_caption_text_color';
-const Color _defaultHighlightColor = _accent;
+Color get _defaultHighlightColor => _accent;
 const String _highlightColorPrefsKey = 'video_caption_highlight_color';
 const bool _defaultBackgroundEnabled = false;
 const String _backgroundEnabledPrefsKey = 'video_caption_background_enabled';
@@ -31,12 +32,12 @@ const List<Color> _captionColorPresets = [
   Color(0xFFFFAB40), // orange
 ];
 
-const List<Color> _highlightColorPresets = [
+List<Color> get _highlightColorPresets => [
   _accent,
-  Color(0xFFFFEB3B), // yellow
-  Color(0xFF00E5FF), // cyan
-  Color(0xFF69F0AE), // light green
-  Color(0xFFFF4081), // pink
+  const Color(0xFFFFEB3B), // yellow
+  const Color(0xFF00E5FF), // cyan
+  const Color(0xFF69F0AE), // light green
+  const Color(0xFFFF4081), // pink
   Colors.white,
 ];
 
@@ -184,7 +185,7 @@ class _VideoImmersionPlayerScreenState extends State<VideoImmersionPlayerScreen>
 
   Widget _sheetHeading(String text) => Text(
     text,
-    style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87, fontWeight: FontWeight.bold),
+    style: TextStyle(color: AppColors.text(widget.isDarkMode), fontWeight: FontWeight.bold),
   );
 
   Widget _colorSwatchRow({
@@ -222,7 +223,7 @@ class _VideoImmersionPlayerScreenState extends State<VideoImmersionPlayerScreen>
   void _showTextSizeSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+      backgroundColor: AppColors.cardBg(widget.isDarkMode),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (context) {
         return StatefulBuilder(
@@ -283,7 +284,7 @@ class _VideoImmersionPlayerScreenState extends State<VideoImmersionPlayerScreen>
                     activeThumbColor: _accent,
                     title: Text(
                       'Dark background behind subtitles',
-                      style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                      style: TextStyle(color: AppColors.text(widget.isDarkMode)),
                     ),
                     subtitle: Text(
                       'Helps readability on bright or busy video.',
@@ -629,8 +630,8 @@ class _VideoImmersionPlayerScreenState extends State<VideoImmersionPlayerScreen>
                     if (isImmersionBeta) ...[const SizedBox(width: 8), const BetaTag()],
                   ],
                 ),
-                backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-                foregroundColor: widget.isDarkMode ? Colors.white : Colors.black87,
+                backgroundColor: AppColors.pageBg(widget.isDarkMode),
+                foregroundColor: AppColors.text(widget.isDarkMode),
                 actions: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back_ios_new, size: 18),
@@ -659,7 +660,7 @@ class _VideoImmersionPlayerScreenState extends State<VideoImmersionPlayerScreen>
                 ],
               ),
         body: _loading
-            ? const Center(child: CircularProgressIndicator(color: _accent))
+            ? Center(child: CircularProgressIndicator(color: _accent))
             // Always the same Stack shape (just with/without the overlay
             // exit button) rather than switching between a bare WebView and
             // a Stack-wrapped one, so the WebView's position in the tree

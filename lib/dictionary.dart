@@ -12,6 +12,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'quick_sync_button.dart';
 import 'trial_gate.dart';
 import 'trial_service.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 class DictionaryScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -158,7 +160,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
               });
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: isActive ? const Color(0xFF9A00FE) : Colors.grey,
+              backgroundColor: isActive ? AppColors.accent : Colors.grey,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 10),
               shape: RoundedRectangleBorder(
@@ -191,8 +193,8 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: AppColors.cardBg(widget.isDarkMode),
+          shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             'Filter by Tags',
             style: TextStyle(
@@ -217,7 +219,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                           style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                         ),
                         value: isSelected,
-                        activeColor: const Color(0xFF9A00FE),
+                        activeColor: AppColors.accent,
                         onChanged: (value) {
                           setDialogState(() {
                             if (value == true) {
@@ -241,14 +243,14 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                 },
                 child: Text(
                   'Clear All',
-                  style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                  style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                 ),
               ),
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'Cancel',
-                style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
               ),
             ),
             ElevatedButton(
@@ -259,7 +261,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9A00FE),
+                backgroundColor: AppColors.accent,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Apply'),
@@ -350,7 +352,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
           curve: Curves.easeInOut,
           child: AlertDialog(
             backgroundColor: localDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               style: TextStyle(
@@ -370,12 +372,14 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                 ),
                 Switch(
                   value: localDarkMode,
-                  onChanged: (value) {
-                    setState(() {
-                      localDarkMode = value;
-                    });
-                    widget.onThemeChanged(value);
-                  },
+                  onChanged: AppTheme.instance.pixelTheme?.forcedDarkMode != null
+                      ? null
+                      : (value) {
+                          setState(() {
+                            localDarkMode = value;
+                          });
+                          widget.onThemeChanged(value);
+                        },
                 ),
               ],
             ),
@@ -441,7 +445,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(widget.isDarkMode),
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: widget.isDarkMode ? Colors.white : Colors.black),
@@ -451,7 +455,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
           'Dictionary',
           style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
         ),
-        backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+        backgroundColor: AppColors.pageBg(widget.isDarkMode),
         actions: [
                   syncAppBarAction(context, widget.isDarkMode),
                   if (_showHidden)
@@ -511,7 +515,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                                       child: Text(
                                         'Download link if download fails',
                                         textAlign: TextAlign.center,
-                                        style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                                        style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                                       ),
                                     ),
                                   ],
@@ -554,7 +558,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                       _filterItems();
                     });
                   },
-                  activeColor: const Color(0xFF9A00FE),
+                  activeColor: AppColors.accent,
                 ),
                 Text(
                   'Show hidden items',
@@ -587,7 +591,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
               icon: const Icon(Icons.folder_open, size: 20),
               label: const Text('View Sets'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9A00FE),
+                backgroundColor: AppColors.accent,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -639,7 +643,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
               icon: Icon(_selectedTags.isEmpty ? Icons.filter_list : Icons.filter_alt, size: 20),
               label: Text(_selectedTags.isEmpty ? 'Filter by Tags' : 'Filter by Tags (${_selectedTags.length})'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _selectedTags.isEmpty ? const Color(0xFF9A00FE) : const Color(0xFF7700CC),
+                backgroundColor: _selectedTags.isEmpty ? AppColors.accent : const Color(0xFF7700CC),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
@@ -812,7 +816,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                                 height: 40,
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF9A00FE),
+                                  color: AppColors.accent,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -944,7 +948,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                                         }
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF9A00FE),
+                                        backgroundColor: AppColors.accent,
                                         foregroundColor: Colors.white,
                                         padding: const EdgeInsets.symmetric(vertical: 12),
                                       ),
@@ -962,7 +966,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                                         }
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF9A00FE),
+                                        backgroundColor: AppColors.accent,
                                         foregroundColor: Colors.white,
                                         padding: const EdgeInsets.symmetric(vertical: 12),
                                       ),
@@ -980,7 +984,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                                         }
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF9A00FE),
+                                        backgroundColor: AppColors.accent,
                                         foregroundColor: Colors.white,
                                         padding: const EdgeInsets.symmetric(vertical: 12),
                                       ),

@@ -10,6 +10,8 @@ import 'screenshot_saver.dart' as saver;
 import 'study_data.dart';
 import 'study_settings.dart';
 import 'user_profile.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 // The three JLPT vocabulary-section styles this app's card data can support:
 // kanji reading, orthography (choosing the right kanji for a reading), and
@@ -152,9 +154,9 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) => AlertDialog(
-          backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text("Test Settings", style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87)),
+          backgroundColor: AppColors.cardBg(widget.isDarkMode),
+          shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text("Test Settings", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode))),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,14 +165,14 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                 contentPadding: EdgeInsets.zero,
                 title: Text(
                   "Japanese instructions",
-                  style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                  style: TextStyle(color: AppColors.text(widget.isDarkMode)),
                 ),
                 subtitle: Text(
                   "Standard for a real test. Turn off to show section titles and instructions in English instead.",
                   style: TextStyle(fontSize: 12, color: widget.isDarkMode ? Colors.white54 : Colors.black45),
                 ),
                 value: _settings.jlptInstructionsInJapanese,
-                activeColor: const Color(0xFF9A00FE),
+                activeColor: AppColors.accent,
                 onChanged: (v) {
                   setDialogState(() => _settings.jlptInstructionsInJapanese = v);
                   setState(() {});
@@ -182,14 +184,14 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                 contentPadding: EdgeInsets.zero,
                 title: Text(
                   "Instant feedback",
-                  style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                  style: TextStyle(color: AppColors.text(widget.isDarkMode)),
                 ),
                 subtitle: Text(
                   "Off by default, like a real test. Turn on to see right/wrong as you answer.",
                   style: TextStyle(fontSize: 12, color: widget.isDarkMode ? Colors.white54 : Colors.black45),
                 ),
                 value: _settings.jlptInstantFeedback,
-                activeColor: const Color(0xFF9A00FE),
+                activeColor: AppColors.accent,
                 onChanged: (v) {
                   setDialogState(() => _settings.jlptInstantFeedback = v);
                   setState(() {});
@@ -201,14 +203,14 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                 contentPadding: EdgeInsets.zero,
                 title: Text(
                   "Timer",
-                  style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                  style: TextStyle(color: AppColors.text(widget.isDarkMode)),
                 ),
                 subtitle: Text(
                   "Counts down and auto-submits when it runs out. Turn off to take as long as you like.",
                   style: TextStyle(fontSize: 12, color: widget.isDarkMode ? Colors.white54 : Colors.black45),
                 ),
                 value: _settings.jlptTimerEnabled,
-                activeColor: const Color(0xFF9A00FE),
+                activeColor: AppColors.accent,
                 onChanged: (v) {
                   setDialogState(() => _settings.jlptTimerEnabled = v);
                   setState(() {
@@ -224,7 +226,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
               const Divider(),
               Text(
                 "Text size",
-                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                style: TextStyle(color: AppColors.text(widget.isDarkMode)),
               ),
               Row(
                 children: [
@@ -235,7 +237,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                       min: 0.8,
                       max: 1.6,
                       divisions: 8,
-                      activeColor: const Color(0xFF9A00FE),
+                      activeColor: AppColors.accent,
                       label: '${(_settings.jlptTextScale * 100).round()}%',
                       onChanged: (v) {
                         setDialogState(() => _settings.jlptTextScale = v);
@@ -251,7 +253,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
           ),
           actions: [
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
               onPressed: () => Navigator.pop(dialogContext),
               child: const Text("Done"),
             ),
@@ -377,9 +379,9 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Submit Test?", style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text("Submit Test?", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode))),
         content: Text(
           "You have $unanswered unanswered question${unanswered == 1 ? '' : 's'}. Submit anyway?",
           style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87),
@@ -390,7 +392,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
             child: Text("Keep Going", style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
             onPressed: () {
               Navigator.pop(dialogContext);
               _submitTest();
@@ -420,9 +422,9 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
   Widget build(BuildContext context) {
     final isDarkMode = widget.isDarkMode;
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       appBar: AppBar(
-        backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+        backgroundColor: AppColors.pageBg(isDarkMode),
         title: Text('JLPT Test: ${widget.title}', style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: isDarkMode ? Colors.white : Colors.black),
@@ -439,7 +441,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: _secondsRemaining <= 30 ? Colors.redAccent : (isDarkMode ? Colors.white : Colors.black87),
+                      color: _secondsRemaining <= 30 ? Colors.redAccent : (AppColors.text(isDarkMode)),
                     ),
                   ),
                 ),
@@ -466,7 +468,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                   ? Center(
                       child: Text(
                         "Not enough card data to build a test.",
-                        style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
+                        style: TextStyle(color: AppColors.textMuted(isDarkMode)),
                       ),
                     )
                   : _buildQuestion(isDarkMode),
@@ -491,7 +493,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                   child: LinearProgressIndicator(
                     value: (_index + 1) / _questions.length,
                     backgroundColor: isDarkMode ? Colors.white12 : Colors.black12,
-                    color: const Color(0xFF9A00FE),
+                    color: AppColors.accent,
                     minHeight: 6,
                   ),
                 ),
@@ -499,14 +501,14 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
               const SizedBox(width: 10),
               Text(
                 '${_index + 1} / ${_questions.length}',
-                style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54, fontSize: 12),
+                style: TextStyle(color: AppColors.textMuted(isDarkMode), fontSize: 12),
               ),
             ],
           ),
           const SizedBox(height: 20),
           Text(
             _sectionTitle(question.section, _settings.jlptInstructionsInJapanese),
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF9A00FE)),
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.accent),
           ),
           const SizedBox(height: 4),
           Text(
@@ -517,7 +519,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
           Text(
             question.prompt,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+            style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
           ),
           const SizedBox(height: 32),
           ...question.options.map((option) {
@@ -533,10 +535,10 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
               backgroundColor = Colors.redAccent.withValues(alpha: 0.2);
               borderColor = Colors.redAccent;
             } else if (isSelected) {
-              backgroundColor = const Color(0xFF9A00FE).withValues(alpha: 0.2);
-              borderColor = const Color(0xFF9A00FE);
+              backgroundColor = AppColors.accent.withValues(alpha: 0.2);
+              borderColor = AppColors.accent;
             } else {
-              backgroundColor = isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100];
+              backgroundColor = AppColors.cardBg(isDarkMode);
             }
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -547,7 +549,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                     backgroundColor: backgroundColor,
                     side: BorderSide(color: borderColor, width: 2),
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () => _selectAnswer(option),
                   child: Text(
@@ -555,7 +557,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: isDarkMode ? Colors.white : Colors.black87,
+                      color: AppColors.text(isDarkMode),
                     ),
                   ),
                 ),
@@ -576,10 +578,10 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
               Expanded(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF9A00FE),
+                    backgroundColor: AppColors.accent,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: _index + 1 >= _questions.length ? _confirmSubmit : _goNext,
                   child: Text(_index + 1 >= _questions.length ? "Submit Test" : "Next"),
@@ -598,7 +600,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
       builder: (dialogContext) {
         final maxH = MediaQuery.of(dialogContext).size.height * 0.8;
         return Dialog(
-          backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+          backgroundColor: AppColors.cardBg(widget.isDarkMode),
           child: ConstrainedBox(
             constraints: BoxConstraints(maxHeight: maxH, maxWidth: 500),
             child: Padding(
@@ -608,7 +610,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                 children: [
                   Text(
                     "Answer Review",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
                   ),
                   const SizedBox(height: 12),
                   Flexible(
@@ -625,7 +627,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                           ),
                           title: Text(
                             q.prompt,
-                            style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+                            style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
                           ),
                           subtitle: Text(
                             q.selected == null
@@ -633,7 +635,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                                 : correct
                                     ? 'Correct: ${q.correctAnswer}'
                                     : 'You answered: ${q.selected} · Correct: ${q.correctAnswer}',
-                            style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54, fontSize: 12),
+                            style: TextStyle(color: AppColors.textMuted(widget.isDarkMode), fontSize: 12),
                           ),
                         );
                       },
@@ -694,12 +696,12 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                       value: progress,
                       minHeight: 12,
                       backgroundColor: widget.isDarkMode ? Colors.white12 : Colors.black12,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF9A00FE)),
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
                     ),
                   ),
                   const SizedBox(height: 16),
                 ],
-                const Icon(Icons.emoji_events, color: Color(0xFF9A00FE), size: 64),
+                Icon(Icons.emoji_events, color: AppColors.accent, size: 64),
                 const SizedBox(height: 16),
                 Text(
                   'Test Complete!',
@@ -729,7 +731,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                     padding: const EdgeInsets.all(16),
                     margin: const EdgeInsets.symmetric(horizontal: 8),
                     decoration: BoxDecoration(
-                      color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+                      color: AppColors.cardBg(widget.isDarkMode),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
@@ -737,7 +739,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                       children: [
                         Text(
                           "Section Breakdown",
-                          style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
                         ),
                         const SizedBox(height: 8),
                         for (final section in _Section.values)
@@ -747,10 +749,10 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(_sectionTitle(section, _settings.jlptInstructionsInJapanese), style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54)),
+                                  Text(_sectionTitle(section, _settings.jlptInstructionsInJapanese), style: TextStyle(color: AppColors.textMuted(widget.isDarkMode))),
                                   Text(
                                     '${bySection[section]!.where((q) => q.selected == q.correctAnswer).length} / ${bySection[section]!.length}',
-                                    style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+                                    style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
                                   ),
                                 ],
                               ),
@@ -761,7 +763,7 @@ class _JlptTestGameScreenState extends State<JlptTestGameScreen> {
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () => _showAnswerReview(context),
-                    child: const Text("View Answer Review", style: TextStyle(color: Color(0xFF9A00FE))),
+                    child: Text("View Answer Review", style: TextStyle(color: AppColors.accent)),
                   ),
                 ],
                 const SizedBox(height: 12),

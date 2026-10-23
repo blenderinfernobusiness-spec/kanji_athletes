@@ -4,6 +4,8 @@ import 'audio_service.dart';
 import 'user_profile.dart';
 import 'card_edit_dialog.dart';
 import 'writing_practice_canvas.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 // XP awarded per correct answer, matching the arcade modes and the regular
 // spaced repetition screen's per-item reward.
@@ -118,7 +120,7 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
   Widget _audioButton(String text, String language) {
     return IconButton(
       icon: const Icon(Icons.volume_up),
-      color: const Color(0xFF9A00FE),
+      color: AppColors.accent,
       tooltip: 'Play audio',
       onPressed: () async {
         final ok = await AudioService().speak(text, language);
@@ -133,11 +135,11 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
   Widget build(BuildContext context) {
     final isDarkMode = widget.isDarkMode;
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       appBar: AppBar(
         title: Text(widget.title),
-        backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-        foregroundColor: isDarkMode ? Colors.white : Colors.black87,
+        backgroundColor: AppColors.pageBg(isDarkMode),
+        foregroundColor: AppColors.text(isDarkMode),
         elevation: 0,
       ),
       body: SafeArea(
@@ -163,12 +165,12 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, color: isDarkMode ? Colors.white70 : Colors.black54),
+              style: TextStyle(fontSize: 18, color: AppColors.textMuted(isDarkMode)),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9A00FE),
+                backgroundColor: AppColors.accent,
                 foregroundColor: Colors.white,
               ),
               onPressed: () => Navigator.pop(context),
@@ -191,7 +193,7 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
                 backgroundColor: Colors.redAccent,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: () => _answer(false),
               child: const Text("Incorrect", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
@@ -206,7 +208,7 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: () => _answer(true),
               child: const Text("Correct", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
@@ -224,8 +226,8 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
         padding: const EdgeInsets.only(top: 8),
         child: TextButton.icon(
           onPressed: () => setState(() => _memoryTechniqueRevealed = true),
-          icon: const Icon(Icons.psychology, color: Color(0xFF9A00FE)),
-          label: const Text("Memory Technique", style: TextStyle(color: Color(0xFF9A00FE))),
+          icon: Icon(Icons.psychology, color: AppColors.accent),
+          label: Text("Memory Technique", style: TextStyle(color: AppColors.accent)),
         ),
       );
     }
@@ -256,7 +258,7 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
             style: TextStyle(
               fontSize: 40,
               fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : Colors.black87,
+              color: AppColors.text(isDarkMode),
             ),
           ),
         Text(
@@ -278,7 +280,7 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: isDarkMode ? Colors.white : Colors.black87,
+              color: AppColors.text(isDarkMode),
             ),
           ),
         ],
@@ -302,7 +304,7 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
         children: [
           Text(
             'Card ${_index + 1} of ${widget.cards.length}',
-            style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
+            style: TextStyle(color: AppColors.textMuted(isDarkMode)),
           ),
           const SizedBox(height: 24),
           Text(
@@ -311,7 +313,7 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
             style: TextStyle(
               fontSize: frontIsEnglish ? 32 : 48,
               fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : Colors.black87,
+              color: AppColors.text(isDarkMode),
             ),
           ),
           _audioButton(
@@ -343,10 +345,10 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF9A00FE),
+                    backgroundColor: AppColors.accent,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   onPressed: () => _revealDrawAnswer(card, isDarkMode),
                   child: const Text("Show Answer", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
@@ -355,8 +357,8 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
             else
               TextButton.icon(
                 onPressed: () => showStrokeOrderDialogFor(context, card, isDarkMode),
-                icon: const Icon(Icons.gesture, color: Color(0xFF9A00FE)),
-                label: const Text("View stroke order again", style: TextStyle(color: Color(0xFF9A00FE))),
+                icon: Icon(Icons.gesture, color: AppColors.accent),
+                label: Text("View stroke order again", style: TextStyle(color: AppColors.accent)),
               ),
             if (_drawAnswerRevealed) _memoryTechniqueSection(card, isDarkMode),
             const SizedBox(height: 16),
@@ -384,10 +386,10 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF9A00FE),
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 onPressed: _submitTypedAnswer,
                 child: const Text("Submit", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -406,10 +408,10 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF9A00FE),
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 onPressed: _showAnswerNow,
                 child: const Text("Show Answer", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),

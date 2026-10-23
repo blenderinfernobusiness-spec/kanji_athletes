@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'beta_tag.dart';
 import 'video_subtitle_panel_screen.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
-const Color _accent = Color(0xFF9A00FE);
+Color get _accent => AppColors.accent;
 
 // Immersion needs a real embedded browser to read YouTube's caption track
 // live (see video_subtitle_panel_screen.dart) - something no web page can do
@@ -52,9 +54,9 @@ class _ImmersionTabViewState extends State<ImmersionTabView> {
     super.dispose();
   }
 
-  Color get _fg => widget.isDarkMode ? Colors.white : Colors.black87;
+  Color get _fg => AppColors.text(widget.isDarkMode);
   Color get _fgMuted => widget.isDarkMode ? Colors.white60 : Colors.black54;
-  Color get _cardBg => widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
+  Color get _cardBg => AppColors.cardBg(widget.isDarkMode);
 
   void _openInApp(String url, String title) {
     if (kIsWeb) {
@@ -75,7 +77,7 @@ class _ImmersionTabViewState extends State<ImmersionTabView> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
         title: Text('Immersion isn\'t available on web', style: TextStyle(color: fg)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -187,9 +189,9 @@ class _ImmersionTabViewState extends State<ImmersionTabView> {
             child: OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 foregroundColor: _accent,
-                side: const BorderSide(color: _accent),
+                side: BorderSide(color: _accent),
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: _browseYouTube,
               icon: const Icon(Icons.explore_outlined),
@@ -209,7 +211,7 @@ class _ImmersionTabViewState extends State<ImmersionTabView> {
               color: _cardBg,
               margin: const EdgeInsets.only(bottom: 8),
               child: ListTile(
-                leading: const Icon(Icons.ondemand_video, color: _accent),
+                leading: Icon(Icons.ondemand_video, color: _accent),
                 title: Text(channel.name, style: TextStyle(color: _fg, fontWeight: FontWeight.w600)),
                 subtitle: Text(channel.description, style: TextStyle(color: _fgMuted)),
                 trailing: Icon(Icons.chevron_right, color: _fgMuted),
@@ -248,7 +250,7 @@ class _ImmersionTabViewState extends State<ImmersionTabView> {
                 backgroundColor: _accent,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: _watchVideo,
               child: const Text('Watch', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -275,7 +277,7 @@ class _WebUnavailableLink extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.open_in_new, color: _accent, size: 16),
+            Icon(Icons.open_in_new, color: _accent, size: 16),
             const SizedBox(width: 6),
             Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.w600)),
           ],

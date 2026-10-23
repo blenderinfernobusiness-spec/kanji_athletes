@@ -6,6 +6,8 @@ import 'dart:convert';
 import 'sets_data.dart';
 import 'item_detail.dart';
 import 'set_preferences.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 class ViewSetScreen extends StatefulWidget {
   final ItemSet itemSet;
@@ -60,8 +62,8 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: AppColors.cardBg(widget.isDarkMode),
+          shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             'Edit $selectedSetType Set',
             style: TextStyle(
@@ -117,7 +119,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF9A00FE),
+                          color: AppColors.accent,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -149,7 +151,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                               .map((tag) => Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF9A00FE),
+                                      color: AppColors.accent,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
@@ -261,8 +263,8 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                       final confirmed = await showDialog<bool>(
                         context: context,
                         builder: (dialogContext) => AlertDialog(
-                          backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          backgroundColor: AppColors.cardBg(widget.isDarkMode),
+                          shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                           title: Text(
                             'Delete Set?',
                             style: TextStyle(
@@ -281,7 +283,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                               onPressed: () => Navigator.pop(dialogContext, false),
                               child: Text(
                                 'Cancel',
-                                style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                                style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                               ),
                             ),
                             ElevatedButton(
@@ -349,7 +351,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'Cancel',
-                style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
               ),
             ),
             ElevatedButton(
@@ -378,7 +380,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9A00FE),
+                backgroundColor: AppColors.accent,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Save'),
@@ -397,8 +399,8 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: AppColors.cardBg(widget.isDarkMode),
+          shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             'Add Items',
             style: TextStyle(
@@ -419,7 +421,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                   icon: const Icon(Icons.add),
                   label: const Text('Add Single Item'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF9A00FE),
+                    backgroundColor: AppColors.accent,
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 45),
                   ),
@@ -437,7 +439,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   initialValue: selectedPreset,
-                  dropdownColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+                  dropdownColor: AppColors.cardBg(widget.isDarkMode),
                   style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                   decoration: InputDecoration(
                     filled: true,
@@ -502,7 +504,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Imported ${presetItems.length} items from $selectedPreset'),
-                          backgroundColor: const Color(0xFF9A00FE),
+                          backgroundColor: AppColors.accent,
                           duration: const Duration(seconds: 2),
                         ),
                       );
@@ -511,7 +513,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                   icon: const Icon(Icons.check),
                   label: const Text('Import Preset'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF9A00FE),
+                    backgroundColor: AppColors.accent,
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 45),
                   ),
@@ -616,7 +618,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('Imported $importedCount items from text file'),
-                            backgroundColor: const Color(0xFF9A00FE),
+                            backgroundColor: AppColors.accent,
                             duration: const Duration(seconds: 2),
                           ),
                         );
@@ -655,7 +657,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                         ),
                         value: 'Kanji (or kana)',
                         groupValue: textFileImportType,
-                        activeColor: const Color(0xFF9A00FE),
+                        activeColor: AppColors.accent,
                         onChanged: (String? value) {
                           if (value != null) {
                             setDialogState(() {
@@ -678,7 +680,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                         ),
                         value: 'Vocab',
                         groupValue: textFileImportType,
-                        activeColor: const Color(0xFF9A00FE),
+                        activeColor: AppColors.accent,
                         onChanged: (String? value) {
                           if (value != null) {
                             setDialogState(() {
@@ -698,7 +700,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'Close',
-                style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
               ),
             ),
           ],
@@ -733,8 +735,8 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: AppColors.cardBg(widget.isDarkMode),
+          shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             'Add New Item',
             style: TextStyle(
@@ -749,16 +751,16 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                 // Item Type dropdown
                 DropdownButtonFormField<String>(
                   initialValue: selectedType,
-                  dropdownColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+                  dropdownColor: AppColors.cardBg(widget.isDarkMode),
                   style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                   decoration: InputDecoration(
                     labelText: 'Item Type',
-                    labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                    labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                     enabledBorder: UnderlineInputBorder(
                       borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                     ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.accent),
                     ),
                   ),
                   items: ['Kanji', 'Hiragana', 'Katakana', 'Vocab'].map((String type) {
@@ -779,16 +781,16 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                 // Set selector dropdown
                 DropdownButtonFormField<String>(
                   initialValue: selectedSet,
-                  dropdownColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+                  dropdownColor: AppColors.cardBg(widget.isDarkMode),
                   style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                   decoration: InputDecoration(
                     labelText: 'Set',
-                    labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                    labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                     enabledBorder: UnderlineInputBorder(
                       borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                     ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.accent),
                     ),
                   ),
                   items: setsData.keys.map((String setName) {
@@ -845,12 +847,12 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                   style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                   decoration: InputDecoration(
                     labelText: selectedType == 'Vocab' ? 'Word' : (selectedType == 'Hiragana' ? 'Hiragana' : (selectedType == 'Katakana' ? 'Katakana' : 'Kanji')),
-                    labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                    labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                     enabledBorder: UnderlineInputBorder(
                       borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                     ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.accent),
                     ),
                   ),
                 ),
@@ -862,12 +864,12 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                     style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                     decoration: InputDecoration(
                       labelText: 'Reading',
-                      labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                      labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                       enabledBorder: UnderlineInputBorder(
                         borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                       ),
-                      focusedBorder: const UnderlineInputBorder(
-                        borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.accent),
                       ),
                     ),
                   ),
@@ -880,12 +882,12 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                     style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                     decoration: InputDecoration(
                       labelText: "On'yomi (音読み)",
-                      labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                      labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                       enabledBorder: UnderlineInputBorder(
                         borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                       ),
-                      focusedBorder: const UnderlineInputBorder(
-                        borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.accent),
                       ),
                     ),
                   ),
@@ -895,12 +897,12 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                     style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                     decoration: InputDecoration(
                       labelText: "Kun'yomi (訓読み)",
-                      labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                      labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                       enabledBorder: UnderlineInputBorder(
                         borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                       ),
-                      focusedBorder: const UnderlineInputBorder(
-                        borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.accent),
                       ),
                     ),
                   ),
@@ -910,12 +912,12 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                     style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                     decoration: InputDecoration(
                       labelText: "Nanori (名乗り)",
-                      labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                      labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                       enabledBorder: UnderlineInputBorder(
                         borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                       ),
-                      focusedBorder: const UnderlineInputBorder(
-                        borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.accent),
                       ),
                     ),
                   ),
@@ -926,12 +928,12 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                   style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
                   decoration: InputDecoration(
                     labelText: 'Translation',
-                    labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                    labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                     enabledBorder: UnderlineInputBorder(
                       borderSide: BorderSide(color: widget.isDarkMode ? Colors.white30 : Colors.black26),
                     ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF9A00FE)),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.accent),
                     ),
                   ),
                 ),
@@ -957,7 +959,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                   maxLines: 3,
                   decoration: InputDecoration(
                     labelText: 'Notes',
-                    labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                    labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                     hintText: 'Add personal notes about this item...',
                     hintStyle: TextStyle(color: widget.isDarkMode ? Colors.white38 : Colors.black38),
                     filled: true,
@@ -988,7 +990,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'Cancel',
-                style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
               ),
             ),
             ElevatedButton(
@@ -1043,14 +1045,14 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Item added to $selectedSet'),
-                      backgroundColor: const Color(0xFF9A00FE),
+                      backgroundColor: AppColors.accent,
                       duration: const Duration(seconds: 2),
                     ),
                   );
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9A00FE),
+                backgroundColor: AppColors.accent,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Add'),
@@ -1152,8 +1154,8 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Move to Set',
           style: TextStyle(
@@ -1188,7 +1190,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancel',
-              style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+              style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
             ),
           ),
         ],
@@ -1238,7 +1240,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Moved ${itemsToMove.length} item(s) to ${targetSet.name}'),
-        backgroundColor: const Color(0xFF9A00FE),
+        backgroundColor: AppColors.accent,
       ),
     );
   }
@@ -1340,7 +1342,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
           curve: Curves.easeInOut,
           child: AlertDialog(
             backgroundColor: localDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               style: TextStyle(
@@ -1360,12 +1362,14 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                 ),
                 Switch(
                   value: localDarkMode,
-                  onChanged: (value) {
-                    setState(() {
-                      localDarkMode = value;
-                    });
-                    widget.onThemeChanged(value);
-                  },
+                  onChanged: AppTheme.instance.pixelTheme?.forcedDarkMode != null
+                      ? null
+                      : (value) {
+                          setState(() {
+                            localDarkMode = value;
+                          });
+                          widget.onThemeChanged(value);
+                        },
                 ),
               ],
             ),
@@ -1388,7 +1392,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(widget.isDarkMode),
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: widget.isDarkMode ? Colors.white : Colors.black),
@@ -1397,7 +1401,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
           },
         ),
         title: Text(widget.itemSet.name, style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black)),
-        backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+        backgroundColor: AppColors.pageBg(widget.isDarkMode),
         actions: [
           IconButton(
             icon: Icon(Icons.add, color: widget.isDarkMode ? Colors.white : Colors.black),
@@ -1430,7 +1434,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
               child: Text(
                 'No items in this set yet',
                 style: TextStyle(
-                  color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                  color: AppColors.textMuted(widget.isDarkMode),
                   fontSize: 18,
                 ),
               ),
@@ -1513,10 +1517,10 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                         decoration: InputDecoration(
                           hintText: 'Search word, reading, or translation...',
                           hintStyle: TextStyle(color: widget.isDarkMode ? Colors.white54 : Colors.black54),
-                          prefixIcon: Icon(Icons.search, color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                          prefixIcon: Icon(Icons.search, color: AppColors.textMuted(widget.isDarkMode)),
                           suffixIcon: _searchController.text.isNotEmpty
                               ? IconButton(
-                                  icon: Icon(Icons.clear, color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                                  icon: Icon(Icons.clear, color: AppColors.textMuted(widget.isDarkMode)),
                                   onPressed: () {
                                     _searchController.clear();
                                     _filterItems('');
@@ -1565,7 +1569,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                                       : 'Select All',
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF9A00FE),
+                                  backgroundColor: AppColors.accent,
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(vertical: 12),
                                   shape: RoundedRectangleBorder(
@@ -1597,7 +1601,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                                     child: Text(
                                       'No items match your search',
                                       style: TextStyle(
-                                        color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                                        color: AppColors.textMuted(widget.isDarkMode),
                                         fontSize: 16,
                                       ),
                                     ),
@@ -1668,14 +1672,14 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                                                             }
                                                           });
                                                         },
-                                                        activeColor: const Color(0xFF9A00FE),
+                                                        activeColor: AppColors.accent,
                                                       ),
                                                       Container(
                                                         width: 50,
                                                         height: 50,
                                                         alignment: Alignment.center,
                                                         decoration: BoxDecoration(
-                                                          color: const Color(0xFF9A00FE),
+                                                          color: AppColors.accent,
                                                           borderRadius: BorderRadius.circular(8),
                                                         ),
                                                         child: Text(
@@ -1695,7 +1699,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                                                         height: 50,
                                                         alignment: Alignment.center,
                                                         decoration: BoxDecoration(
-                                                          color: const Color(0xFF9A00FE),
+                                                          color: AppColors.accent,
                                                           borderRadius: BorderRadius.circular(8),
                                                         ),
                                                         child: Text(
@@ -1837,8 +1841,8 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
-                            backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            backgroundColor: AppColors.cardBg(widget.isDarkMode),
+                            shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             title: Text(
                               'Delete Items',
                               style: TextStyle(
@@ -1857,7 +1861,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                                 onPressed: () => Navigator.pop(context),
                                 child: Text(
                                   'Cancel',
-                                  style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                                  style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                                 ),
                               ),
                               ElevatedButton(
@@ -1891,7 +1895,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                       icon: const Icon(Icons.copy, size: 20),
                       label: const Text('Duplicate'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF9A00FE),
+                        backgroundColor: AppColors.accent,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
@@ -1904,7 +1908,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                       icon: const Icon(Icons.move_to_inbox, size: 20),
                       label: const Text('Move'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF9A00FE),
+                        backgroundColor: AppColors.accent,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
@@ -1922,7 +1926,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                       icon: const Icon(Icons.vertical_align_top, size: 20),
                       label: const Text('Move to Top'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF9A00FE),
+                        backgroundColor: AppColors.accent,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
@@ -1935,7 +1939,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                       icon: const Icon(Icons.vertical_align_bottom, size: 20),
                       label: const Text('Move to Bottom'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF9A00FE),
+                        backgroundColor: AppColors.accent,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
@@ -1951,7 +1955,7 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
                   icon: const Icon(Icons.view_agenda, size: 20),
                   label: const Text('Select in Row'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF9A00FE),
+                    backgroundColor: AppColors.accent,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                     disabledBackgroundColor: Colors.grey,

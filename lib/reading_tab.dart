@@ -6,6 +6,8 @@ import 'beta_tag.dart';
 import 'immersion_tab.dart';
 import 'trial_gate.dart';
 import 'trial_service.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 // The Study screen's "Reading & Immersion" tab. On every platform but web,
 // a sub-tab for the existing Reading list (unchanged, see ReadingTabView
@@ -53,10 +55,10 @@ class _ReadingAndImmersionTabViewState extends State<ReadingAndImmersionTabView>
       child: Column(
         children: [
           Container(
-            color: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+            color: AppColors.pageBg(widget.isDarkMode),
             child: TabBar(
-              indicatorColor: const Color(0xFF9A00FE),
-              labelColor: const Color(0xFF9A00FE),
+              indicatorColor: AppColors.accent,
+              labelColor: AppColors.accent,
               unselectedLabelColor: widget.isDarkMode ? Colors.white54 : Colors.black45,
               tabs: [
                 const Tab(text: "Reading"),
@@ -135,11 +137,11 @@ class _ReadingTabViewState extends State<ReadingTabView> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "Import Text",
-          style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
         ),
         content: SizedBox(
           width: 340,
@@ -183,7 +185,7 @@ class _ReadingTabViewState extends State<ReadingTabView> {
             child: Text("Cancel", style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
             onPressed: () {
               final content = contentController.text.trim();
               if (content.isEmpty) return;
@@ -204,9 +206,9 @@ class _ReadingTabViewState extends State<ReadingTabView> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Delete Text?", style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text("Delete Text?", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode))),
         content: Text(
           'This will permanently delete "${text.title}". This cannot be undone.',
           style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87),
@@ -234,7 +236,7 @@ class _ReadingTabViewState extends State<ReadingTabView> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF9A00FE)))
+          ? Center(child: CircularProgressIndicator(color: AppColors.accent))
           : Column(
               children: [
                 Padding(
@@ -243,10 +245,10 @@ class _ReadingTabViewState extends State<ReadingTabView> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF9A00FE),
+                        backgroundColor: AppColors.accent,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 20),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                       onPressed: _showImportDialog,
                       icon: const Icon(Icons.add),
@@ -269,17 +271,17 @@ class _ReadingTabViewState extends State<ReadingTabView> {
                           itemBuilder: (context, index) {
                             final text = _texts[index];
                             return Card(
-                              color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+                              color: AppColors.cardBg(widget.isDarkMode),
                               child: ListTile(
                                 title: Text(
                                   text.title,
-                                  style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                                  style: TextStyle(color: AppColors.text(widget.isDarkMode)),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 subtitle: Text(
                                   '${text.content.length} characters',
-                                  style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                                  style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                                 ),
                                 onTap: () => Navigator.push(
                                   context,

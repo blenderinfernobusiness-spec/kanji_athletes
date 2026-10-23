@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'trial_service.dart';
 import 'unlock_dialog.dart';
+import 'app_colors.dart';
 
-const Color _accent = Color(0xFF9A00FE);
+Color get _accent => AppColors.accent;
 
 // Gates a one-off action (opening a game, the listening player, or viewing a
 // previously-completed lesson) behind the free trial - if the trial's run
@@ -44,7 +45,7 @@ class TrialStatusBanner extends StatelessWidget {
             : 'Your free trial has ended';
     return Container(
       width: double.infinity,
-      color: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      color: AppColors.pageBg(isDarkMode),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Wrap(
         alignment: WrapAlignment.center,
@@ -55,7 +56,7 @@ class TrialStatusBanner extends StatelessWidget {
           if (!unlocked)
             InkWell(
               onTap: () => _unlock(context),
-              child: const Text(
+              child: Text(
                 'Unlock full access here',
                 style: TextStyle(color: _accent, fontWeight: FontWeight.w600, fontSize: 13, decoration: TextDecoration.underline),
               ),
@@ -81,8 +82,8 @@ class TrialLockedBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = isDarkMode ? Colors.white : Colors.black87;
-    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    final fg = AppColors.text(isDarkMode);
+    final fgMuted = AppColors.textMuted(isDarkMode);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),

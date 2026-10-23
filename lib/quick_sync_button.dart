@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'backup_data.dart';
 import 'cloud_sync_service.dart';
+import 'app_colors.dart';
 
-const Color _accent = Color(0xFF9A00FE);
+Color get _accent => AppColors.accent;
 
 // A quick "sync to cloud" shortcut for app bars throughout the app, so
 // syncing doesn't require navigating all the way back to the home screen
@@ -43,7 +44,7 @@ class _SyncAppBarActionState extends State<SyncAppBarAction> {
   @override
   Widget build(BuildContext context) {
     if (_busy) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(horizontal: 12),
         child: SizedBox(
           width: 20,
@@ -70,8 +71,8 @@ class _SyncAppBarActionState extends State<SyncAppBarAction> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        title: Text("Sync with cloud?", style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        title: Text("Sync with cloud?", style: TextStyle(color: AppColors.text(widget.isDarkMode))),
         content: Text(
           "Makes this device's data the new cloud backup - anything you've deleted here stays deleted. Cards or "
           "decks added elsewhere (like the Chrome extension) since your last sync are pulled in first, so they "

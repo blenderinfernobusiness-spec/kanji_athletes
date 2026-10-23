@@ -10,8 +10,10 @@ import 'sets_data.dart';
 import 'study_data.dart';
 import 'study_mode.dart';
 import 'writing_practice_canvas.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
-const Color _accent = Color(0xFF9A00FE);
+Color get _accent => AppColors.accent;
 
 // Cumulative kanji count once a given JLPT level (and everything below it)
 // is known - each level's own count comes from practice_sets_data.dart's
@@ -336,8 +338,8 @@ class _WelcomeSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = isDarkMode ? Colors.white : Colors.black87;
-    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    final fg = AppColors.text(isDarkMode);
+    final fgMuted = AppColors.textMuted(isDarkMode);
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
       body: SafeArea(
@@ -381,7 +383,7 @@ class _WelcomeSlide extends StatelessWidget {
                         backgroundColor: _accent,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: onContinue,
                       child: const Text("Let's go", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -412,8 +414,8 @@ class _ExperienceSlideState extends State<_ExperienceSlide> {
 
   @override
   Widget build(BuildContext context) {
-    final fg = widget.isDarkMode ? Colors.white : Colors.black87;
-    final fgMuted = widget.isDarkMode ? Colors.white70 : Colors.black54;
+    final fg = AppColors.text(widget.isDarkMode);
+    final fgMuted = AppColors.textMuted(widget.isDarkMode);
     return Scaffold(
       backgroundColor: widget.isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
       body: SafeArea(
@@ -496,8 +498,8 @@ class _ChoiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final disabled = onTap == null;
     final fgMuted = isDarkMode ? Colors.white54 : Colors.black45;
-    final fg = disabled ? fgMuted : (isDarkMode ? Colors.white : Colors.black87);
-    final cardBg = isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
+    final fg = disabled ? fgMuted : (AppColors.text(isDarkMode));
+    final cardBg = AppColors.cardBg(isDarkMode);
     final badgeColor = disabled ? fgMuted : _accent;
     return Material(
       color: cardBg,
@@ -542,8 +544,8 @@ class _HiraganaIntroSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = isDarkMode ? Colors.white : Colors.black87;
-    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    final fg = AppColors.text(isDarkMode);
+    final fgMuted = AppColors.textMuted(isDarkMode);
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
       body: SafeArea(
@@ -580,7 +582,7 @@ class _HiraganaIntroSlide extends StatelessWidget {
                         backgroundColor: _accent,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: onContinue,
                       child: const Text('Continue', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -603,8 +605,8 @@ class _DrawHiraganaSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = isDarkMode ? Colors.white : Colors.black87;
-    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    final fg = AppColors.text(isDarkMode);
+    final fgMuted = AppColors.textMuted(isDarkMode);
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
       body: SafeArea(
@@ -650,7 +652,7 @@ class _DrawHiraganaSlide extends StatelessWidget {
                         backgroundColor: _accent,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: onContinue,
                       child: const Text('Continue', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -674,8 +676,8 @@ class _KanaCourseReadySlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = isDarkMode ? Colors.white : Colors.black87;
-    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    final fg = AppColors.text(isDarkMode);
+    final fgMuted = AppColors.textMuted(isDarkMode);
     Widget bullet(String text) => Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -717,7 +719,7 @@ class _KanaCourseReadySlide extends StatelessWidget {
                         backgroundColor: _accent,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: busy ? null : onStart,
                       child: busy
@@ -747,8 +749,8 @@ class _FocusSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = isDarkMode ? Colors.white : Colors.black87;
-    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    final fg = AppColors.text(isDarkMode);
+    final fgMuted = AppColors.textMuted(isDarkMode);
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
       body: SafeArea(
@@ -828,8 +830,8 @@ class _KanjiKnowledgeSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = isDarkMode ? Colors.white : Colors.black87;
-    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    final fg = AppColors.text(isDarkMode);
+    final fgMuted = AppColors.textMuted(isDarkMode);
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
       body: SafeArea(
@@ -837,7 +839,7 @@ class _KanjiKnowledgeSlide extends StatelessWidget {
           children: [
             Center(
               child: busy
-                  ? const CircularProgressIndicator(color: _accent)
+                  ? CircularProgressIndicator(color: _accent)
                   : ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 420),
                       child: SingleChildScrollView(
@@ -909,8 +911,8 @@ class _VocabKnowledgeSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = isDarkMode ? Colors.white : Colors.black87;
-    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    final fg = AppColors.text(isDarkMode);
+    final fgMuted = AppColors.textMuted(isDarkMode);
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
       body: SafeArea(
@@ -918,7 +920,7 @@ class _VocabKnowledgeSlide extends StatelessWidget {
           children: [
             Center(
               child: busy
-                  ? const CircularProgressIndicator(color: _accent)
+                  ? CircularProgressIndicator(color: _accent)
                   : ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 420),
                       child: SingleChildScrollView(
@@ -987,8 +989,8 @@ class _GrammarKnowledgeSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = isDarkMode ? Colors.white : Colors.black87;
-    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    final fg = AppColors.text(isDarkMode);
+    final fgMuted = AppColors.textMuted(isDarkMode);
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
       body: SafeArea(
@@ -996,7 +998,7 @@ class _GrammarKnowledgeSlide extends StatelessWidget {
           children: [
             Center(
               child: busy
-                  ? const CircularProgressIndicator(color: _accent)
+                  ? CircularProgressIndicator(color: _accent)
                   : ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 420),
                       child: SingleChildScrollView(
@@ -1099,7 +1101,7 @@ class _AuthSlideState extends State<_AuthSlide> {
               top: 4,
               left: 4,
               child: IconButton(
-                icon: Icon(Icons.arrow_back, color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                icon: Icon(Icons.arrow_back, color: AppColors.textMuted(widget.isDarkMode)),
                 onPressed: _busy ? null : widget.onBack,
               ),
             ),
@@ -1109,7 +1111,7 @@ class _AuthSlideState extends State<_AuthSlide> {
                 right: 4,
                 child: TextButton(
                   onPressed: _busy ? null : widget.onSkip,
-                  child: Text('Skip', style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54)),
+                  child: Text('Skip', style: TextStyle(color: AppColors.textMuted(widget.isDarkMode))),
                 ),
               ),
           ],

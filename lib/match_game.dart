@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'screenshot_saver.dart' as saver;
 import 'study_data.dart';
 import 'user_profile.dart';
+import 'app_colors.dart';
 
 // One tile on the board: either a card's Japanese or its English side. Two
 // tiles sharing the same card are a pair.
@@ -170,9 +171,9 @@ class _MatchGameScreenState extends State<MatchGameScreen> {
   Widget build(BuildContext context) {
     final isDarkMode = widget.isDarkMode;
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       appBar: AppBar(
-        backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+        backgroundColor: AppColors.pageBg(isDarkMode),
         title: Text('Match: ${widget.title}', style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: isDarkMode ? Colors.white : Colors.black),
@@ -196,14 +197,14 @@ class _MatchGameScreenState extends State<MatchGameScreen> {
             children: [
               Text(
                 _formatElapsed(_stopwatch.elapsed),
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
                     'Matched $_matchedTotal / $_totalPairs',
-                    style: TextStyle(fontSize: 16, color: isDarkMode ? Colors.white70 : Colors.black54),
+                    style: TextStyle(fontSize: 16, color: AppColors.textMuted(isDarkMode)),
                   ),
                   if (_rounds.length > 1)
                     Text(
@@ -247,13 +248,13 @@ class _MatchGameScreenState extends State<MatchGameScreen> {
                         : isWrong
                             ? Colors.red.withValues(alpha: 0.3)
                             : isSelected
-                                ? const Color(0xFF9A00FE).withValues(alpha: 0.35)
+                                ? AppColors.accent.withValues(alpha: 0.35)
                                 : (isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[200]!);
                     final Color border = isMatched
                         ? Colors.transparent
                         : isWrong
                             ? Colors.red
-                            : (isSelected ? const Color(0xFF9A00FE) : Colors.transparent);
+                            : (isSelected ? AppColors.accent : Colors.transparent);
                     // Matched tiles stay in place (never removed) so the
                     // tile count - and therefore the grid's computed layout
                     // - never changes mid-round; they just settle into a
@@ -293,7 +294,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> {
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w600,
-                                        color: isDarkMode ? Colors.white : Colors.black87,
+                                        color: AppColors.text(isDarkMode),
                                       ),
                                     ),
                                   ),
@@ -344,12 +345,12 @@ class _MatchGameScreenState extends State<MatchGameScreen> {
                       value: progress,
                       minHeight: 12,
                       backgroundColor: widget.isDarkMode ? Colors.white12 : Colors.black12,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF9A00FE)),
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
                     ),
                   ),
                   const SizedBox(height: 16),
                 ],
-                const Icon(Icons.emoji_events, color: Color(0xFF9A00FE), size: 64),
+                Icon(Icons.emoji_events, color: AppColors.accent, size: 64),
                 const SizedBox(height: 16),
                 Text(
                   'Well done!',
@@ -363,7 +364,7 @@ class _MatchGameScreenState extends State<MatchGameScreen> {
                 const SizedBox(height: 6),
                 Text(
                   '$_totalPairs pairs · $_wrongAttempts wrong attempt${_wrongAttempts == 1 ? '' : 's'}',
-                  style: TextStyle(fontSize: 16, color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                  style: TextStyle(fontSize: 16, color: AppColors.textMuted(widget.isDarkMode)),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(

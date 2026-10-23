@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 
 import 'backup_data.dart';
 import 'cloud_sync_service.dart';
+import 'app_colors.dart';
 
-const Color _accent = Color(0xFF9A00FE);
+Color get _accent => AppColors.accent;
 
 // Cloud backup/restore - email/password sign-in (see CloudSyncService's doc
 // comment for why not Google Sign-In), then a single backup file per
@@ -35,8 +36,8 @@ class _CloudSyncPageState extends State<CloudSyncPage> {
   bool _pendingSyncPrompt = false;
 
   Color get _bg => widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
-  Color get _fg => widget.isDarkMode ? Colors.white : Colors.black87;
-  Color get _fgMuted => widget.isDarkMode ? Colors.white70 : Colors.black54;
+  Color get _fg => AppColors.text(widget.isDarkMode);
+  Color get _fgMuted => AppColors.textMuted(widget.isDarkMode);
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +77,7 @@ class _CloudSyncPageState extends State<CloudSyncPage> {
         Card(
           color: _bg,
           child: ListTile(
-            leading: const Icon(Icons.account_circle, color: _accent),
+            leading: Icon(Icons.account_circle, color: _accent),
             title: Text(user.email ?? 'Signed in', style: TextStyle(color: _fg)),
             trailing: TextButton(
               onPressed: _busy ? null : () => CloudSyncService.signOut(),
@@ -135,7 +136,7 @@ class _CloudSyncPageState extends State<CloudSyncPage> {
         ),
         if (_busy) ...[
           const SizedBox(height: 16),
-          const Center(child: CircularProgressIndicator(color: _accent)),
+          Center(child: CircularProgressIndicator(color: _accent)),
         ],
       ],
     );
@@ -407,7 +408,7 @@ class CloudSignInFormState extends State<CloudSignInForm> {
 
   @override
   Widget build(BuildContext context) {
-    final fg = widget.isDarkMode ? Colors.white : Colors.black87;
+    final fg = AppColors.text(widget.isDarkMode);
     final fgMuted = widget.isDarkMode ? Colors.white54 : Colors.black54;
     final fieldFill = widget.isDarkMode ? const Color(0xFF2A2A2A) : const Color(0xFFEDEDED);
     return Padding(

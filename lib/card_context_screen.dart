@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'card_edit_dialog.dart';
 import 'stroke_order_animator.dart';
 import 'study_data.dart';
+import 'app_colors.dart';
 
-const Color _accent = Color(0xFF9A00FE);
+Color get _accent => AppColors.accent;
 
 // Full context for one flashcard: the word or kanji itself, its reading and
 // meaning, how each kanji in it reads, its stroke order, the memory technique
@@ -28,9 +29,9 @@ class CardContextScreen extends StatefulWidget {
 }
 
 class _CardContextScreenState extends State<CardContextScreen> {
-  Color get _fg => widget.isDarkMode ? Colors.white : Colors.black87;
+  Color get _fg => AppColors.text(widget.isDarkMode);
   Color get _fgMuted => widget.isDarkMode ? Colors.white60 : Colors.black54;
-  Color get _cardBg => widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
+  Color get _cardBg => AppColors.cardBg(widget.isDarkMode);
 
   Widget _section(String title, Widget child) => Padding(
     padding: const EdgeInsets.only(top: 24),
@@ -85,7 +86,7 @@ class _CardContextScreenState extends State<CardContextScreen> {
                   ),
                   child: Text(
                     card.cardType,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _accent),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _accent),
                   ),
                 ),
                 if (card.hiragana.isNotEmpty)
@@ -136,7 +137,7 @@ class _CardContextScreenState extends State<CardContextScreen> {
                     'STROKE ORDER',
                     card.kanjiVGCodes.isEmpty
                         ? OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(foregroundColor: _accent, side: const BorderSide(color: _accent)),
+                            style: OutlinedButton.styleFrom(foregroundColor: _accent, side: BorderSide(color: _accent)),
                             icon: const Icon(Icons.gesture),
                             label: const Text('Load stroke order'),
                             onPressed: () {

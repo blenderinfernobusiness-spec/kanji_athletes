@@ -3,8 +3,10 @@ import 'package:url_launcher/url_launcher.dart';
 import 'listening_player.dart' show WordPopupCard, DeckPickerDialog;
 import 'study_data.dart';
 import 'study_settings.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
-const Color _accent = Color(0xFF9A00FE);
+Color get _accent => AppColors.accent;
 
 // Word lookup used by every immersion video screen, so a tapped word behaves
 // the same whether it came from the overlay player or the subtitle panel.
@@ -55,7 +57,7 @@ void showImmersionUnknownText(BuildContext context, {required String text, requi
   final meaningController = TextEditingController();
   showModalBottomSheet(
     context: context,
-    backgroundColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+    backgroundColor: AppColors.cardBg(isDarkMode),
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
     builder: (sheetContext) => Padding(
       padding: EdgeInsets.only(
@@ -70,7 +72,7 @@ void showImmersionUnknownText(BuildContext context, {required String text, requi
         children: [
           Text(
             text,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
           ),
           const SizedBox(height: 4),
           Text(
@@ -83,13 +85,13 @@ void showImmersionUnknownText(BuildContext context, {required String text, requi
               final url = 'https://translate.google.com/?sl=ja&tl=en&text=${Uri.encodeComponent(text)}&op=translate';
               launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
             },
-            icon: const Icon(Icons.translate, color: _accent),
-            label: const Text("Open in Google Translate", style: TextStyle(color: _accent)),
+            icon: Icon(Icons.translate, color: _accent),
+            label: Text("Open in Google Translate", style: TextStyle(color: _accent)),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: meaningController,
-            style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
+            style: TextStyle(color: AppColors.text(isDarkMode)),
             decoration: InputDecoration(
               hintText: "English meaning (optional, for adding to a deck)",
               hintStyle: TextStyle(color: isDarkMode ? Colors.white38 : Colors.black38),
@@ -177,11 +179,11 @@ Future<void> editImmersionMemoryTechnique(
   final result = await showDialog<String>(
     context: context,
     builder: (context) => AlertDialog(
-      backgroundColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: AppColors.cardBg(isDarkMode),
+      shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(
         entry.memoryTechnique.isEmpty ? "Add Memory Technique" : "Edit Memory Technique",
-        style: TextStyle(fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+        style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
       ),
       content: TextField(
         controller: controller,

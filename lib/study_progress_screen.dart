@@ -4,8 +4,9 @@ import 'lesson_data.dart';
 import 'lesson_viewer_screen.dart';
 import 'spaced_repetition_standard.dart';
 import 'study_data.dart';
+import 'app_colors.dart';
 
-const Color _accent = Color(0xFF9A00FE);
+Color get _accent => AppColors.accent;
 
 // Every circle on the path - lessons, the flashcard counters between them, and
 // the remaining-cards counter at the end - shares this size.
@@ -233,7 +234,7 @@ class _StudyProgressScreenState extends State<StudyProgressScreen> {
     final currentDay = lessonDayFor(deck);
     final done = deck.completedLessonDays.toSet();
     final muted = isDarkMode ? Colors.white60 : Colors.black54;
-    final fg = isDarkMode ? Colors.white : Colors.black87;
+    final fg = AppColors.text(isDarkMode);
     final background = Theme.of(context).scaffoldBackgroundColor;
 
     final allCards = deck.cards;
@@ -502,7 +503,7 @@ class _StudyProgressScreenState extends State<StudyProgressScreen> {
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.style, color: _accent, size: 22),
+                Icon(Icons.style, color: _accent, size: 22),
                 Text(label, style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w600)),
               ],
             ),

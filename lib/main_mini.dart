@@ -14,8 +14,10 @@ import 'study_data.dart';
 import 'trial_gate.dart';
 import 'trial_service.dart';
 import 'writing_practice_canvas.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
-const Color _accent = Color(0xFF9A00FE);
+Color get _accent => AppColors.accent;
 const Color _bg = Color(0xFF1C1C1C);
 const Color _panel = Color(0xFF2A2A2A);
 
@@ -62,7 +64,7 @@ class MiniApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: _bg,
-        colorScheme: const ColorScheme.dark(primary: _accent, secondary: _accent),
+        colorScheme: ColorScheme.dark(primary: _accent, secondary: _accent),
       ),
       home: const MiniHomeScreen(),
     );
@@ -177,7 +179,7 @@ class _MiniHomeScreenState extends State<MiniHomeScreen> {
                     ? const []
                     : [
                         if (_busy)
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.symmetric(horizontal: 6),
                             child: SizedBox(
                               width: 14,
@@ -219,7 +221,7 @@ class _MiniHomeScreenState extends State<MiniHomeScreen> {
                   if (!_busy) {
                     WidgetsBinding.instance.addPostFrameCallback((_) => _syncNow(silent: true));
                   }
-                  return const Center(child: CircularProgressIndicator(color: _accent));
+                  return Center(child: CircularProgressIndicator(color: _accent));
                 }
                 return MiniModePicker(statusMessage: _statusMessage);
               },
@@ -286,7 +288,7 @@ class _ModeButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: _panel,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         onPressed: onTap,
         child: Column(
@@ -339,7 +341,7 @@ class _MiniDeckPickerState extends State<MiniDeckPicker> {
           MiniTopBar(title: 'Choose a deck', onBack: () => Navigator.of(context).pop()),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator(color: _accent))
+                ? Center(child: CircularProgressIndicator(color: _accent))
                 : _decks.isEmpty
                     ? const Center(
                         child: Padding(
@@ -472,7 +474,7 @@ class _MiniFlashcardsScreenState extends State<MiniFlashcardsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.check_circle_outline, color: _accent, size: 40),
+            Icon(Icons.check_circle_outline, color: _accent, size: 40),
             const SizedBox(height: 12),
             Text(
               _reviewedCount == 0

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
-const _kPurple = Color(0xFF9A00FE);
+Color get _kPurple => AppColors.accent;
 
 // Shown once, automatically, right before the very first card of ANY deck is
 // ever drilled in a Spaced Repetition session - special decks (the 90 Day
@@ -62,11 +64,11 @@ class AnswerFlashcardsIntroScreen extends StatelessWidget {
     final title = _title;
     final body = _body;
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       appBar: AppBar(
         title: const Text('How This Works'),
-        backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-        foregroundColor: isDarkMode ? Colors.white : Colors.black87,
+        backgroundColor: AppColors.pageBg(isDarkMode),
+        foregroundColor: AppColors.text(isDarkMode),
         elevation: 0,
       ),
       body: SafeArea(
@@ -81,7 +83,7 @@ class AnswerFlashcardsIntroScreen extends StatelessWidget {
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
                 ),
                 const SizedBox(height: 16),
                 Container(
@@ -90,7 +92,7 @@ class AnswerFlashcardsIntroScreen extends StatelessWidget {
                   child: Text(
                     body,
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, height: 1.4, color: isDarkMode ? Colors.white70 : Colors.black54),
+                    style: TextStyle(fontSize: 14, height: 1.4, color: AppColors.textMuted(isDarkMode)),
                   ),
                 ),
               ],
@@ -108,7 +110,7 @@ class AnswerFlashcardsIntroScreen extends StatelessWidget {
                 backgroundColor: _kPurple,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               onPressed: () => Navigator.pop(context),
               child: const Text("Got it", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),

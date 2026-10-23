@@ -7,6 +7,8 @@ import 'study_settings.dart';
 import 'tatoeba_service.dart';
 import 'translation_service.dart';
 import 'card_edit_dialog.dart' show showStrokeOrderDialog;
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 // LingQ-style lookup bubble content: word, reading, meaning, an audio
 // button, an add-to-deck action (for dictionary words not already in the
@@ -62,7 +64,7 @@ class WordPopupCard extends StatelessWidget {
             children: [
               Text(
                 base.japanese,
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
               ),
               if (base.reading.isNotEmpty && base.reading != base.japanese) ...[
                 const SizedBox(width: 6),
@@ -75,12 +77,12 @@ class WordPopupCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFF9A00FE).withValues(alpha: 0.2),
+                color: AppColors.accent.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
+              child: Text(
                 "Already in your deck",
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF9A00FE)),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.accent),
               ),
             )
           else
@@ -91,8 +93,8 @@ class WordPopupCard extends StatelessWidget {
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               onPressed: () => onAddToDeck(base),
-              icon: const Icon(Icons.add, size: 16, color: Color(0xFF9A00FE)),
-              label: const Text("Add to deck", style: TextStyle(color: Color(0xFF9A00FE), fontSize: 13)),
+              icon: Icon(Icons.add, size: 16, color: AppColors.accent),
+              label: Text("Add to deck", style: TextStyle(color: AppColors.accent, fontSize: 13)),
             ),
           TextButton(
             style: TextButton.styleFrom(
@@ -118,7 +120,7 @@ class WordPopupCard extends StatelessWidget {
         constraints: const BoxConstraints(maxHeight: 340),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+          color: AppColors.cardBg(isDarkMode),
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 14, offset: const Offset(0, 4)),
@@ -137,7 +139,7 @@ class WordPopupCard extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
-                        color: isDarkMode ? Colors.white : Colors.black87,
+                        color: AppColors.text(isDarkMode),
                       ),
                     ),
                   ),
@@ -152,7 +154,7 @@ class WordPopupCard extends StatelessWidget {
                       if (!ok && context.mounted) showMissingVoiceSnackBar(context, isDarkMode, 'Japanese');
                     },
                     icon: const Icon(Icons.volume_up, size: 20),
-                    color: const Color(0xFF9A00FE),
+                    color: AppColors.accent,
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -166,7 +168,7 @@ class WordPopupCard extends StatelessWidget {
                       isDarkMode,
                     ),
                     icon: const Icon(Icons.edit_outlined, size: 20),
-                    color: const Color(0xFF9A00FE),
+                    color: AppColors.accent,
                     tooltip: 'Practice writing',
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
@@ -186,7 +188,7 @@ class WordPopupCard extends StatelessWidget {
               // left out rather than showing the wrong one.
               if (entry.reading.isNotEmpty && !entry.reading.contains(',')) ...[
                 const SizedBox(height: 4),
-                Text(entry.reading.replaceAll('.', ''), style: TextStyle(fontSize: 13, color: isDarkMode ? Colors.white70 : Colors.black54)),
+                Text(entry.reading.replaceAll('.', ''), style: TextStyle(fontSize: 13, color: AppColors.textMuted(isDarkMode))),
               ],
               // The conjugation (Past negative, Te form, ...) takes priority
               // over the plain word type, since it says more: which form of
@@ -196,7 +198,7 @@ class WordPopupCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF9A00FE),
+                    color: AppColors.accent,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -214,7 +216,7 @@ class WordPopupCard extends StatelessWidget {
               ],
               if (entry.meaning.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text(entry.meaning, style: TextStyle(fontSize: 15, color: isDarkMode ? Colors.white : Colors.black87)),
+                Text(entry.meaning, style: TextStyle(fontSize: 15, color: AppColors.text(isDarkMode))),
               ],
               if (entry.memoryTechnique.isNotEmpty) ...[
                 const SizedBox(height: 8),
@@ -235,7 +237,7 @@ class WordPopupCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontStyle: FontStyle.italic,
-                            color: isDarkMode ? Colors.white70 : Colors.black54,
+                            color: AppColors.textMuted(isDarkMode),
                           ),
                         ),
                       ),
@@ -255,12 +257,12 @@ class WordPopupCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF9A00FE).withValues(alpha: 0.2),
+                    color: AppColors.accent.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
+                  child: Text(
                     "Already in your deck",
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF9A00FE)),
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.accent),
                   ),
                 ),
                 TextButton.icon(
@@ -273,11 +275,11 @@ class WordPopupCard extends StatelessWidget {
                   icon: Icon(
                     entry.memoryTechnique.isEmpty ? Icons.add : Icons.edit,
                     size: 16,
-                    color: const Color(0xFF9A00FE),
+                    color: AppColors.accent,
                   ),
                   label: Text(
                     entry.memoryTechnique.isEmpty ? "Add memory technique" : "Edit memory technique",
-                    style: const TextStyle(color: Color(0xFF9A00FE), fontSize: 13),
+                    style: TextStyle(color: AppColors.accent, fontSize: 13),
                   ),
                 ),
               ] else if (entry.item != null)
@@ -288,8 +290,8 @@ class WordPopupCard extends StatelessWidget {
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   onPressed: () => onAddToDeck(entry),
-                  icon: const Icon(Icons.add, size: 18, color: Color(0xFF9A00FE)),
-                  label: const Text("Add to deck", style: TextStyle(color: Color(0xFF9A00FE))),
+                  icon: Icon(Icons.add, size: 18, color: AppColors.accent),
+                  label: Text("Add to deck", style: TextStyle(color: AppColors.accent)),
                 ),
               if (kanji.isNotEmpty) ...[
                 const SizedBox(height: 8),
@@ -301,7 +303,7 @@ class WordPopupCard extends StatelessWidget {
                     return ActionChip(
                       label: Text(k, style: const TextStyle(fontSize: 14)),
                       visualDensity: VisualDensity.compact,
-                      backgroundColor: const Color(0xFF9A00FE).withValues(alpha: 0.15),
+                      backgroundColor: AppColors.accent.withValues(alpha: 0.15),
                       onPressed: kEntry == null ? null : () => onOpenKanji(kEntry),
                     );
                   }).toList(),
@@ -391,7 +393,7 @@ class _SelectionTranslateCardState extends State<SelectionTranslateCard> {
         constraints: const BoxConstraints(maxHeight: 320),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+          color: AppColors.cardBg(isDarkMode),
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 14, offset: const Offset(0, 4)),
@@ -407,13 +409,13 @@ class _SelectionTranslateCardState extends State<SelectionTranslateCard> {
                   Expanded(
                     child: Text(
                       widget.text,
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDarkMode ? Colors.white : Colors.black87),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.text(isDarkMode)),
                     ),
                   ),
                   IconButton(
                     onPressed: _speak,
                     icon: const Icon(Icons.volume_up, size: 20),
-                    color: const Color(0xFF9A00FE),
+                    color: AppColors.accent,
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -422,7 +424,7 @@ class _SelectionTranslateCardState extends State<SelectionTranslateCard> {
                     IconButton(
                       onPressed: () => showStrokeOrderDialog(context, kanjiVGCodes, isDarkMode),
                       icon: const Icon(Icons.edit_outlined, size: 20),
-                      color: const Color(0xFF9A00FE),
+                      color: AppColors.accent,
                       tooltip: 'Practice writing',
                       visualDensity: VisualDensity.compact,
                       padding: EdgeInsets.zero,
@@ -439,7 +441,7 @@ class _SelectionTranslateCardState extends State<SelectionTranslateCard> {
               ),
               if (_readingLine != null && _readingLine != widget.text) ...[
                 const SizedBox(height: 2),
-                Text(_readingLine!, style: TextStyle(fontSize: 13, color: isDarkMode ? Colors.white70 : Colors.black54)),
+                Text(_readingLine!, style: TextStyle(fontSize: 13, color: AppColors.textMuted(isDarkMode))),
               ],
               const SizedBox(height: 8),
               TextButton.icon(
@@ -449,8 +451,8 @@ class _SelectionTranslateCardState extends State<SelectionTranslateCard> {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 onPressed: () => openGoogleTranslate(widget.text),
-                icon: const Icon(Icons.open_in_new, size: 18, color: Color(0xFF9A00FE)),
-                label: const Text("Open in Google Translate", style: TextStyle(color: Color(0xFF9A00FE))),
+                icon: Icon(Icons.open_in_new, size: 18, color: AppColors.accent),
+                label: Text("Open in Google Translate", style: TextStyle(color: AppColors.accent)),
               ),
               const SizedBox(height: 4),
               TextButton.icon(
@@ -463,8 +465,8 @@ class _SelectionTranslateCardState extends State<SelectionTranslateCard> {
                   widget.onClose();
                   widget.onAddToDeck(widget.text, '');
                 },
-                icon: const Icon(Icons.add, size: 18, color: Color(0xFF9A00FE)),
-                label: const Text("Add to deck", style: TextStyle(color: Color(0xFF9A00FE))),
+                icon: Icon(Icons.add, size: 18, color: AppColors.accent),
+                label: Text("Add to deck", style: TextStyle(color: AppColors.accent)),
               ),
             ],
           ),
@@ -492,11 +494,11 @@ class DeckPickerDialogState extends State<DeckPickerDialog> {
     return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "New Deck",
-          style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
         ),
         content: TextField(
           controller: controller,
@@ -513,7 +515,7 @@ class DeckPickerDialogState extends State<DeckPickerDialog> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, controller.text),
             child: const Text("Create"),
           ),
@@ -525,11 +527,11 @@ class DeckPickerDialogState extends State<DeckPickerDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: AppColors.cardBg(widget.isDarkMode),
+      shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(
         "Add to Deck",
-        style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+        style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
       ),
       content: SizedBox(
         width: 280,
@@ -546,7 +548,7 @@ class DeckPickerDialogState extends State<DeckPickerDialog> {
                   itemBuilder: (context, index) {
                     final deck = widget.decks[index];
                     return ListTile(
-                      title: Text(deck.name, style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
+                      title: Text(deck.name, style: TextStyle(color: AppColors.text(widget.isDarkMode))),
                       subtitle: Text(
                         '${deck.cards.length} card${deck.cards.length == 1 ? '' : 's'}',
                         style: TextStyle(color: widget.isDarkMode ? Colors.white54 : Colors.black45),
@@ -567,7 +569,7 @@ class DeckPickerDialogState extends State<DeckPickerDialog> {
             widget.decks.add(newDeck);
             Navigator.pop(context, newDeck);
           },
-          child: const Text("New Deck", style: TextStyle(color: Color(0xFF9A00FE))),
+          child: Text("New Deck", style: TextStyle(color: AppColors.accent)),
         ),
       ],
     );
@@ -670,11 +672,11 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
       final action = await showDialog<String>(
         context: context,
         builder: (context) => AlertDialog(
-          backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: AppColors.cardBg(widget.isDarkMode),
+          shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             "No Japanese Voice Found",
-            style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+            style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
           ),
           content: Text(
             "This device doesn't have a Japanese text-to-speech voice installed, so sentences can't be read aloud yet.",
@@ -683,7 +685,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text("Dismiss")),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
               onPressed: () => Navigator.pop(context, canInstall ? 'install' : 'help'),
               child: Text(canInstall ? "Install" : "Help"),
             ),
@@ -936,11 +938,11 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
           }
 
           return AlertDialog(
-            backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: AppColors.cardBg(widget.isDarkMode),
+            shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: Text(
               "Listening Settings",
-              style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
             ),
             content: SizedBox(
               width: 320,
@@ -979,24 +981,24 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
                       contentPadding: EdgeInsets.zero,
                       title: Text(
                         "Auto-advance to next sentence",
-                        style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87, fontSize: 14),
+                        style: TextStyle(color: AppColors.text(widget.isDarkMode), fontSize: 14),
                       ),
                       value: _settings.listeningAutoAdvance,
-                      activeColor: const Color(0xFF9A00FE),
+                      activeColor: AppColors.accent,
                       onChanged: (v) => applyChange(() => _settings.listeningAutoAdvance = v),
                     ),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(
                         "Read known words first",
-                        style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87, fontSize: 14),
+                        style: TextStyle(color: AppColors.text(widget.isDarkMode), fontSize: 14),
                       ),
                       subtitle: Text(
                         "Reads each deck word (and its meaning) before the sentence, at most once every 3 sentences",
                         style: TextStyle(color: widget.isDarkMode ? Colors.white54 : Colors.black45, fontSize: 12),
                       ),
                       value: _settings.readKnownWordsFirst,
-                      activeColor: const Color(0xFF9A00FE),
+                      activeColor: AppColors.accent,
                       onChanged: (v) => applyChange(() => _settings.readKnownWordsFirst = v),
                     ),
                   ],
@@ -1005,7 +1007,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
             ),
             actions: [
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
                 onPressed: () => Navigator.pop(context),
                 child: const Text("Done"),
               ),
@@ -1029,7 +1031,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
           min: 0.5,
           max: 2.0,
           divisions: 30,
-          activeColor: const Color(0xFF9A00FE),
+          activeColor: AppColors.accent,
           onChanged: onChanged,
         ),
       ],
@@ -1056,13 +1058,13 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
             voices.isEmpty ? "No voice installed" : "Device default",
             style: TextStyle(color: widget.isDarkMode ? Colors.white54 : Colors.black45, fontSize: 13),
           ),
-          dropdownColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+          dropdownColor: AppColors.cardBg(widget.isDarkMode),
           items: [
             DropdownMenuItem<String?>(
               value: null,
               child: Text(
                 "Device default",
-                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87, fontSize: 13),
+                style: TextStyle(color: AppColors.text(widget.isDarkMode), fontSize: 13),
               ),
             ),
             ...names.map(
@@ -1071,7 +1073,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
                 child: Text(
                   n,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87, fontSize: 13),
+                  style: TextStyle(color: AppColors.text(widget.isDarkMode), fontSize: 13),
                 ),
               ),
             ),
@@ -1089,7 +1091,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
     final baseStyle = TextStyle(
       fontSize: 22,
       fontWeight: FontWeight.bold,
-      color: isDarkMode ? Colors.white : Colors.black87,
+      color: AppColors.text(isDarkMode),
     );
     final tokens = tokenizeSentence(text, _highlightIndex);
     final spans = <InlineSpan>[
@@ -1104,7 +1106,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF9A00FE).withValues(
+                  color: AppColors.accent.withValues(
                     alpha: tok.entry!.isDeckWord
                         ? (isDarkMode ? 0.55 : 0.35)
                         : (isDarkMode ? 0.25 : 0.15),
@@ -1277,11 +1279,11 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           entry.memoryTechnique.isEmpty ? "Add Memory Technique" : "Edit Memory Technique",
-          style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
         ),
         content: TextField(
           controller: controller,
@@ -1299,7 +1301,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, controller.text),
             child: const Text("Save"),
           ),
@@ -1341,11 +1343,11 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
   Widget build(BuildContext context) {
     final isDarkMode = widget.isDarkMode;
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       appBar: AppBar(
         title: Text('Listening: ${widget.title}'),
-        backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-        foregroundColor: isDarkMode ? Colors.white : Colors.black87,
+        backgroundColor: AppColors.pageBg(isDarkMode),
+        foregroundColor: AppColors.text(isDarkMode),
         elevation: 0,
         actions: [
           IconButton(
@@ -1377,19 +1379,19 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (showSpinner) ...[
-              const CircularProgressIndicator(color: Color(0xFF9A00FE)),
+              CircularProgressIndicator(color: AppColors.accent),
               const SizedBox(height: 16),
             ],
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, color: isDarkMode ? Colors.white70 : Colors.black54),
+              style: TextStyle(fontSize: 18, color: AppColors.textMuted(isDarkMode)),
             ),
             if (!showSpinner) ...[
               const SizedBox(height: 20),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF9A00FE),
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () => Navigator.pop(context),
@@ -1418,7 +1420,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
                   child: LinearProgressIndicator(
                     value: (_index + 1) / _queue.length,
                     backgroundColor: isDarkMode ? Colors.white12 : Colors.black12,
-                    color: const Color(0xFF9A00FE),
+                    color: AppColors.accent,
                     minHeight: 6,
                   ),
                 ),
@@ -1426,7 +1428,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
               const SizedBox(width: 10),
               Text(
                 '${_index + 1} / ${_queue.length}',
-                style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54, fontSize: 12),
+                style: TextStyle(color: AppColors.textMuted(isDarkMode), fontSize: 12),
               ),
             ],
           ),
@@ -1438,7 +1440,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
                   constraints: const BoxConstraints(maxWidth: 380),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+                    color: AppColors.cardBg(isDarkMode),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -1481,7 +1483,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
                           IconButton(
                             onPressed: _replaySentence,
                             icon: const Icon(Icons.volume_up, size: 20),
-                            color: const Color(0xFF9A00FE),
+                            color: AppColors.accent,
                             tooltip: "Replay sentence",
                             visualDensity: VisualDensity.compact,
                           ),
@@ -1498,7 +1500,7 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
                                   ? Text(
                                       sentence.translation!,
                                       textAlign: TextAlign.center,
-                                      style: TextStyle(fontSize: 16, color: isDarkMode ? Colors.white70 : Colors.black54),
+                                      style: TextStyle(fontSize: 16, color: AppColors.textMuted(isDarkMode)),
                                     )
                                   : Text(
                                       '${entry.card.english} (word meaning)',
@@ -1560,21 +1562,21 @@ class _ListeningPlayerScreenState extends State<ListeningPlayerScreen> {
                 onPressed: _index == 0 ? null : _previous,
                 icon: const Icon(Icons.skip_previous),
                 iconSize: 36,
-                color: isDarkMode ? Colors.white : Colors.black87,
+                color: AppColors.text(isDarkMode),
               ),
               const SizedBox(width: 16),
               IconButton(
                 onPressed: _togglePlayPause,
                 icon: Icon(_playing ? Icons.pause_circle_filled : Icons.play_circle_filled),
                 iconSize: 56,
-                color: const Color(0xFF9A00FE),
+                color: AppColors.accent,
               ),
               const SizedBox(width: 16),
               IconButton(
                 onPressed: _skip,
                 icon: const Icon(Icons.skip_next),
                 iconSize: 36,
-                color: isDarkMode ? Colors.white : Colors.black87,
+                color: AppColors.text(isDarkMode),
               ),
             ],
           ),

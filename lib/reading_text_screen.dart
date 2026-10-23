@@ -4,6 +4,8 @@ import 'study_settings.dart';
 import 'audio_service.dart';
 import 'translation_service.dart';
 import 'listening_player.dart' show WordPopupCard, DeckPickerDialog, SelectionTranslateCard;
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 // Splits imported text into individual sentences, breaking on Japanese/
 // English sentence-ending punctuation (。！？.!?) as well as line breaks -
@@ -347,11 +349,11 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           entry.memoryTechnique.isEmpty ? "Add Memory Technique" : "Edit Memory Technique",
-          style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
         ),
         content: TextField(
           controller: controller,
@@ -369,7 +371,7 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, controller.text),
             child: const Text("Save"),
           ),
@@ -397,11 +399,11 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
           }
 
           return AlertDialog(
-            backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: AppColors.cardBg(widget.isDarkMode),
+            shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: Text(
               "Reading Settings",
-              style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
             ),
             content: SizedBox(
               width: 320,
@@ -414,14 +416,14 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
                       contentPadding: EdgeInsets.zero,
                       title: Text(
                         "Show whole text",
-                        style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87, fontSize: 14),
+                        style: TextStyle(color: AppColors.text(widget.isDarkMode), fontSize: 14),
                       ),
                       subtitle: Text(
                         "See the whole passage at once, split into sentences by line breaks, instead of one sentence per screen.",
                         style: TextStyle(color: widget.isDarkMode ? Colors.white54 : Colors.black45, fontSize: 12),
                       ),
                       value: _settings.readingWholeTextView,
-                      activeColor: const Color(0xFF9A00FE),
+                      activeColor: AppColors.accent,
                       onChanged: (v) => applyChange(() => _settings.readingWholeTextView = v),
                     ),
                     const Divider(height: 24),
@@ -435,7 +437,7 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
                             min: 0.8,
                             max: 1.6,
                             divisions: 8,
-                            activeColor: const Color(0xFF9A00FE),
+                            activeColor: AppColors.accent,
                             label: '${(_settings.readingTextScale * 100).round()}%',
                             onChanged: (v) => applyChange(() => _settings.readingTextScale = v),
                           ),
@@ -461,10 +463,10 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
                       contentPadding: EdgeInsets.zero,
                       title: Text(
                         "Auto-advance to next sentence",
-                        style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87, fontSize: 14),
+                        style: TextStyle(color: AppColors.text(widget.isDarkMode), fontSize: 14),
                       ),
                       value: _settings.listeningAutoAdvance,
-                      activeColor: const Color(0xFF9A00FE),
+                      activeColor: AppColors.accent,
                       onChanged: (v) => applyChange(() => _settings.listeningAutoAdvance = v),
                     ),
                   ],
@@ -473,7 +475,7 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
             ),
             actions: [
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
                 onPressed: () => Navigator.pop(context),
                 child: const Text("Done"),
               ),
@@ -497,7 +499,7 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
           min: 0.5,
           max: 2.0,
           divisions: 30,
-          activeColor: const Color(0xFF9A00FE),
+          activeColor: AppColors.accent,
           onChanged: onChanged,
         ),
       ],
@@ -524,13 +526,13 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
             voices.isEmpty ? "No voice installed" : "Device default",
             style: TextStyle(color: widget.isDarkMode ? Colors.white54 : Colors.black45, fontSize: 13),
           ),
-          dropdownColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+          dropdownColor: AppColors.cardBg(widget.isDarkMode),
           items: [
             DropdownMenuItem<String?>(
               value: null,
               child: Text(
                 "Device default",
-                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87, fontSize: 13),
+                style: TextStyle(color: AppColors.text(widget.isDarkMode), fontSize: 13),
               ),
             ),
             ...names.map(
@@ -539,7 +541,7 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
                 child: Text(
                   n,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87, fontSize: 13),
+                  style: TextStyle(color: AppColors.text(widget.isDarkMode), fontSize: 13),
                 ),
               ),
             ),
@@ -554,7 +556,7 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
     final baseStyle = TextStyle(
       fontSize: 20 * _settings.readingTextScale,
       height: 1.9,
-      color: isDarkMode ? Colors.white : Colors.black87,
+      color: AppColors.text(isDarkMode),
     );
     final tokens = tokenizeSentence(text, _highlightIndex);
     final spans = <InlineSpan>[
@@ -569,7 +571,7 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF9A00FE).withValues(
+                  color: AppColors.accent.withValues(
                     alpha: tok.entry!.isDeckWord ? (isDarkMode ? 0.55 : 0.35) : (isDarkMode ? 0.25 : 0.15),
                   ),
                   borderRadius: BorderRadius.circular(4),
@@ -609,7 +611,7 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
           margin: const EdgeInsets.symmetric(horizontal: 20),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+            color: AppColors.cardBg(isDarkMode),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
@@ -624,7 +626,7 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
                     onPressed: () => _playSentenceAt(index),
                     icon: const Icon(Icons.volume_up),
                     iconSize: 28,
-                    color: const Color(0xFF9A00FE),
+                    color: AppColors.accent,
                     tooltip: "Play this sentence",
                   ),
                   const SizedBox(width: 8),
@@ -652,9 +654,9 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+            color: AppColors.cardBg(isDarkMode),
             borderRadius: BorderRadius.circular(12),
-            border: isActive ? Border.all(color: const Color(0xFF9A00FE), width: 2) : null,
+            border: isActive ? Border.all(color: AppColors.accent, width: 2) : null,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -666,7 +668,7 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
                   IconButton(
                     onPressed: () => _playSentenceAt(index),
                     icon: const Icon(Icons.volume_up, size: 20),
-                    color: const Color(0xFF9A00FE),
+                    color: AppColors.accent,
                     visualDensity: VisualDensity.compact,
                     tooltip: "Play this sentence",
                   ),
@@ -684,7 +686,7 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+        color: AppColors.cardBg(isDarkMode),
         border: Border(top: BorderSide(color: isDarkMode ? Colors.white12 : Colors.black12)),
       ),
       child: Row(
@@ -694,21 +696,21 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
             onPressed: _currentIndex == 0 ? null : _previous,
             icon: const Icon(Icons.skip_previous),
             iconSize: 36,
-            color: isDarkMode ? Colors.white : Colors.black87,
+            color: AppColors.text(isDarkMode),
           ),
           const SizedBox(width: 16),
           IconButton(
             onPressed: _togglePlayPause,
             icon: Icon(_playing ? Icons.pause_circle_filled : Icons.play_circle_filled),
             iconSize: 56,
-            color: const Color(0xFF9A00FE),
+            color: AppColors.accent,
           ),
           const SizedBox(width: 16),
           IconButton(
             onPressed: _currentIndex + 1 >= _sentences.length ? null : _skip,
             icon: const Icon(Icons.skip_next),
             iconSize: 36,
-            color: isDarkMode ? Colors.white : Colors.black87,
+            color: AppColors.text(isDarkMode),
           ),
         ],
       ),
@@ -719,11 +721,11 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
   Widget build(BuildContext context) {
     final isDarkMode = widget.isDarkMode;
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       appBar: AppBar(
         title: Text(widget.readingText.title, overflow: TextOverflow.ellipsis),
-        backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-        foregroundColor: isDarkMode ? Colors.white : Colors.black87,
+        backgroundColor: AppColors.pageBg(isDarkMode),
+        foregroundColor: AppColors.text(isDarkMode),
         elevation: 0,
         actions: [
           IconButton(
@@ -735,12 +737,12 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
       ),
       body: SafeArea(
         child: _loading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF9A00FE)))
+            ? Center(child: CircularProgressIndicator(color: AppColors.accent))
             : _sentences.isEmpty
                 ? Center(
                     child: Text(
                       "No readable text found.",
-                      style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
+                      style: TextStyle(color: AppColors.textMuted(isDarkMode)),
                     ),
                   )
                 : Column(
@@ -756,7 +758,7 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
                                   child: LinearProgressIndicator(
                                     value: (_currentIndex + 1) / _sentences.length,
                                     backgroundColor: isDarkMode ? Colors.white12 : Colors.black12,
-                                    color: const Color(0xFF9A00FE),
+                                    color: AppColors.accent,
                                     minHeight: 6,
                                   ),
                                 ),
@@ -764,7 +766,7 @@ class _ReadingTextScreenState extends State<ReadingTextScreen> {
                               const SizedBox(width: 10),
                               Text(
                                 '${_currentIndex + 1} / ${_sentences.length}',
-                                style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54, fontSize: 12),
+                                style: TextStyle(color: AppColors.textMuted(isDarkMode), fontSize: 12),
                               ),
                             ],
                           ),

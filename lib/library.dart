@@ -9,6 +9,7 @@ import 'input_resources.dart';
 import 'revision_resources.dart';
 import 'lessons_resources.dart';
 import 'other_resources.dart';
+import 'app_theme.dart';
 
 class LibraryScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -558,7 +559,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       child: Opacity(
                         opacity: 0.0,
                         child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 70), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), backgroundColor: Colors.transparent, shadowColor: Colors.transparent, elevation: 0),
+                          style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 70), shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), backgroundColor: Colors.transparent, shadowColor: Colors.transparent, elevation: 0),
                           icon: const Icon(Icons.folder_open),
                           label: const Text('Other'),
                           onPressed: () {

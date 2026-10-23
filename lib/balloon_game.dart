@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'screenshot_saver.dart' as saver;
 import 'study_data.dart';
 import 'user_profile.dart';
+import 'app_colors.dart';
 
 const List<Color> _balloonColors = [
   Color(0xFFEF5350),
@@ -173,9 +174,9 @@ class _BalloonGameScreenState extends State<BalloonGameScreen> with TickerProvid
   Widget build(BuildContext context) {
     final isDarkMode = widget.isDarkMode;
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       appBar: AppBar(
-        backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+        backgroundColor: AppColors.pageBg(isDarkMode),
         title: Text('Balloons: ${widget.title}', style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: isDarkMode ? Colors.white : Colors.black),
@@ -205,7 +206,7 @@ class _BalloonGameScreenState extends State<BalloonGameScreen> with TickerProvid
               Text(
                 'Find: ${target.english}',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
               ),
             ],
           ),
@@ -308,12 +309,12 @@ class _BalloonGameScreenState extends State<BalloonGameScreen> with TickerProvid
                       value: progress,
                       minHeight: 12,
                       backgroundColor: widget.isDarkMode ? Colors.white12 : Colors.black12,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF9A00FE)),
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
                     ),
                   ),
                   const SizedBox(height: 16),
                 ],
-                const Icon(Icons.emoji_events, color: Color(0xFF9A00FE), size: 64),
+                Icon(Icons.emoji_events, color: AppColors.accent, size: 64),
                 const SizedBox(height: 16),
                 Text(
                   'Well done!',

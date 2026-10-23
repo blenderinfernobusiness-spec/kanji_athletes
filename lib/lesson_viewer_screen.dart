@@ -5,6 +5,8 @@ import 'grammar_data.dart';
 import 'lesson_data.dart';
 import 'study_data.dart';
 import 'study_progress_screen.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 // Fades + slides a child in on first build. Give it a fresh key (or let it
 // mount fresh, e.g. inside a step that just became visible) to replay it.
@@ -100,7 +102,7 @@ class _ChoiceChipsState extends State<_ChoiceChips> with SingleTickerProviderSta
         Color border;
         if (_selected == null) {
           bg = isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05);
-          fg = isDarkMode ? Colors.white : Colors.black87;
+          fg = AppColors.text(isDarkMode);
           border = isDarkMode ? Colors.white24 : Colors.black12;
         } else if (i == widget.correctIndex) {
           bg = Colors.green.withValues(alpha: 0.15);
@@ -199,7 +201,7 @@ class _StepViewState extends State<_StepView> {
     final isDarkMode = widget.isDarkMode;
     final step = widget.step;
     return Container(
-      color: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      color: AppColors.pageBg(isDarkMode),
       padding: const EdgeInsets.fromLTRB(28, 36, 28, 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,7 +239,7 @@ class _StepViewState extends State<_StepView> {
                             Text(
                               step.question!,
                               textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDarkMode ? Colors.white70 : Colors.black54),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textMuted(isDarkMode)),
                             ),
                             const SizedBox(height: 14),
                             _ChoiceChips(
@@ -266,7 +268,7 @@ class _StepViewState extends State<_StepView> {
                             child: Text(
                               step.explanation!,
                               textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 15, height: 1.4, color: isDarkMode ? Colors.white70 : Colors.black54),
+                              style: TextStyle(fontSize: 15, height: 1.4, color: AppColors.textMuted(isDarkMode)),
                             ),
                           ),
                         ),
@@ -426,7 +428,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
   Widget _buildIntro(bool isDarkMode) {
     return Container(
       key: const ValueKey('intro'),
-      color: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      color: AppColors.pageBg(isDarkMode),
       padding: const EdgeInsets.all(32),
       child: Center(
         child: Column(
@@ -448,7 +450,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
               child: Text(
                 widget.lesson.introSubtitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: isDarkMode ? Colors.white70 : Colors.black54),
+                style: TextStyle(fontSize: 16, color: AppColors.textMuted(isDarkMode)),
               ),
             ),
             const SizedBox(height: 20),
@@ -463,14 +465,14 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.tips_and_updates, color: kLessonPurple, size: 20),
+                    Icon(Icons.tips_and_updates, color: kLessonPurple, size: 20),
                     const SizedBox(width: 10),
                     Flexible(
                       child: Text(
                         "You don't need to have watched anything beforehand. Don't worry about getting the "
                         "questions wrong. Guessing (even wrong!) is part of how you learn.",
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 13, color: isDarkMode ? Colors.white70 : Colors.black54),
+                        style: TextStyle(fontSize: 13, color: AppColors.textMuted(isDarkMode)),
                       ),
                     ),
                   ],
@@ -485,7 +487,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                   backgroundColor: kLessonPurple,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 ),
                 onPressed: _start,
                 child: const Row(
@@ -525,7 +527,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
   Widget _buildClosing(bool isDarkMode) {
     return Container(
       key: const ValueKey('closing'),
-      color: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      color: AppColors.pageBg(isDarkMode),
       padding: const EdgeInsets.all(32),
       child: Center(
         child: Column(
@@ -537,7 +539,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                 duration: const Duration(milliseconds: 500),
                 curve: Curves.elasticOut,
                 builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
-                child: const Icon(Icons.celebration, size: 56, color: kLessonPurple),
+                child: Icon(Icons.celebration, size: 56, color: kLessonPurple),
               ),
             ),
             const SizedBox(height: 20),
@@ -552,7 +554,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                     ? '${widget.lesson.title} complete'
                     : "You're ready for Day ${widget.lesson.endOfDay != null ? widget.lesson.endOfDay! + 1 : widget.lesson.day}!",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
               ),
             ),
             const SizedBox(height: 12),
@@ -561,7 +563,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
               child: Text(
                 "You can find this lesson, and any future ones, anytime in Study → Lessons, or in Study progress.",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 15, color: isDarkMode ? Colors.white70 : Colors.black54),
+                style: TextStyle(fontSize: 15, color: AppColors.textMuted(isDarkMode)),
               ),
             ),
             const SizedBox(height: 28),
@@ -574,7 +576,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                     backgroundColor: kLessonPurple,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: () => Navigator.pop(context, true),
                   child: const Text('Complete Lesson', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -590,9 +592,9 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       foregroundColor: kLessonPurple,
-                      side: const BorderSide(color: kLessonPurple),
+                      side: BorderSide(color: kLessonPurple),
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     onPressed: _openProgress,
                     child: const Text('Study progress', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -615,13 +617,13 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
       Navigator.pop(context, false);
       return;
     }
-    final fg = isDarkMode ? Colors.white : Colors.black87;
-    final muted = isDarkMode ? Colors.white70 : Colors.black54;
+    final fg = AppColors.text(isDarkMode);
+    final muted = AppColors.textMuted(isDarkMode);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Are you sure you want to cancel?', style: TextStyle(color: fg, fontWeight: FontWeight.bold)),
         content: Text(
           'You can find "${widget.lesson.title}" again in Study → Study Progress, or in Lessons.',
@@ -693,7 +695,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
           if (_phase == _Phase.closing)
             Positioned.fill(
               child: ColoredBox(
-                color: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+                color: AppColors.pageBg(isDarkMode),
                 child: _buildClosing(isDarkMode),
               ),
             ),
@@ -703,7 +705,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
     }
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       body: SafeArea(
         child: Column(
           children: [
@@ -720,7 +722,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                   IconButton(
                     icon: Icon(
                       Icons.arrow_back,
-                      color: showBackButton ? (isDarkMode ? Colors.white70 : Colors.black54) : Colors.transparent,
+                      color: showBackButton ? (AppColors.textMuted(isDarkMode)) : Colors.transparent,
                     ),
                     onPressed: showBackButton ? _back : null,
                   ),
@@ -740,7 +742,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close, color: isDarkMode ? Colors.white70 : Colors.black54),
+                    icon: Icon(Icons.close, color: AppColors.textMuted(isDarkMode)),
                     onPressed: () => _handleClose(context, isDarkMode),
                   ),
                 ],
@@ -770,7 +772,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                         backgroundColor: kLessonPurple,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       onPressed: _continue,
                       child: Row(

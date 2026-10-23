@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:xml/xml.dart';
 import 'package:http/http.dart' as http;
+import 'app_colors.dart';
 
 class WritingPracticeCanvas extends StatefulWidget {
     final int resetCounter;
@@ -195,7 +196,7 @@ class _WritingPracticeCanvasState extends State<WritingPracticeCanvas> {
           Text(
             widget.translation,
             style: TextStyle(
-              color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+              color: AppColors.textMuted(widget.isDarkMode),
               fontSize: 18 * widget.scale,
             ),
           ),
@@ -309,7 +310,7 @@ class _WritingPracticeCanvasState extends State<WritingPracticeCanvas> {
                 Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.remove, size: 16 * widget.scale, color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                      icon: Icon(Icons.remove, size: 16 * widget.scale, color: AppColors.textMuted(widget.isDarkMode)),
                       onPressed: () {
                         setState(() {
                           _thickness = (_thickness - 0.1).clamp(0.5, 2.0);
@@ -323,7 +324,7 @@ class _WritingPracticeCanvasState extends State<WritingPracticeCanvas> {
                         value: _thickness,
                         min: 0.5,
                         max: 2.0,
-                        activeColor: const Color(0xFF9A00FE),
+                        activeColor: AppColors.accent,
                         onChanged: (value) {
                           setState(() {
                             _thickness = value;
@@ -332,7 +333,7 @@ class _WritingPracticeCanvasState extends State<WritingPracticeCanvas> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.add, size: 16 * widget.scale, color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                      icon: Icon(Icons.add, size: 16 * widget.scale, color: AppColors.textMuted(widget.isDarkMode)),
                       onPressed: () {
                         setState(() {
                           _thickness = (_thickness + 0.1).clamp(0.5, 2.0);
@@ -376,7 +377,7 @@ class _WritingPracticeCanvasState extends State<WritingPracticeCanvas> {
                       icon: Icon(_showHint ? Icons.visibility_off : Icons.visibility, size: 18 * widget.scale),
                       label: Text(_showHint ? 'Hide Hint' : 'Show Hint', style: TextStyle(fontSize: 16 * widget.scale)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF9A00FE),
+                        backgroundColor: AppColors.accent,
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(horizontal: 16 * widget.scale, vertical: 12 * widget.scale),
                       ),
@@ -388,7 +389,7 @@ class _WritingPracticeCanvasState extends State<WritingPracticeCanvas> {
                     icon: Icon(_showAnswer ? Icons.check_box : Icons.check_box_outline_blank, size: 18 * widget.scale),
                     label: Text(_showAnswer ? 'Hide Answer' : 'Show Answer', style: TextStyle(fontSize: 16 * widget.scale)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF9A00FE),
+                      backgroundColor: AppColors.accent,
                       foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(horizontal: 16 * widget.scale, vertical: 12 * widget.scale),
                     ),
@@ -425,26 +426,26 @@ class _WritingPracticeCanvasState extends State<WritingPracticeCanvas> {
               IconButton(
                 icon: const Icon(Icons.refresh),
                 onPressed: _resetHint,
-                color: const Color(0xFF9A00FE),
+                color: AppColors.accent,
                 tooltip: 'Reset to first stroke',
               ),
               IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: _hintStroke > 0 ? _previousHint : null,
-                color: _hintStroke > 0 ? const Color(0xFF9A00FE) : Colors.grey,
+                color: _hintStroke > 0 ? AppColors.accent : Colors.grey,
                 tooltip: 'Previous stroke',
               ),
               IconButton(
                 icon: const Icon(Icons.arrow_forward),
                 onPressed: _hintStroke < _strokePaths.length - 1 ? _nextHint : null,
-                color: _hintStroke < _strokePaths.length - 1 ? const Color(0xFF9A00FE) : Colors.grey,
+                color: _hintStroke < _strokePaths.length - 1 ? AppColors.accent : Colors.grey,
                 tooltip: 'Next stroke',
               ),
               if (widget.compactStrokeControls) ...[
                 IconButton(
                   icon: Icon(_showAnswer ? Icons.visibility_off : Icons.visibility),
                   onPressed: _toggleAnswer,
-                  color: const Color(0xFF9A00FE),
+                  color: AppColors.accent,
                   tooltip: _showAnswer ? 'Hide answer' : 'Reveal answer',
                 ),
                 IconButton(
@@ -515,7 +516,7 @@ class WritingCanvasPainter extends CustomPainter {
         text: TextSpan(
           text: wordText,
           style: TextStyle(
-            color: const Color(0xFF9A00FE).withValues(alpha: 0.2),
+            color: AppColors.accent.withValues(alpha: 0.2),
             fontSize: 120 * scale,
             fontWeight: FontWeight.bold,
           ),
@@ -613,7 +614,7 @@ class WritingCanvasPainter extends CustomPainter {
             } else if (strokeIndex == hintStroke) {
               // Draw current hint stroke in purple
               final purplePaint = Paint()
-                ..color = const Color(0xFF9A00FE).withValues(alpha: 0.5)
+                ..color = AppColors.accent.withValues(alpha: 0.5)
                 ..style = PaintingStyle.stroke
                 ..strokeWidth = 4
                 ..strokeCap = StrokeCap.round
@@ -649,7 +650,7 @@ class WritingCanvasPainter extends CustomPainter {
         // Draw current hint stroke in purple
         if (hintStroke < strokePaths.length) {
           final purplePaint = Paint()
-            ..color = const Color(0xFF9A00FE).withValues(alpha: 0.5)
+            ..color = AppColors.accent.withValues(alpha: 0.5)
             ..style = PaintingStyle.stroke
             ..strokeWidth = 4
             ..strokeCap = StrokeCap.round

@@ -14,6 +14,9 @@ import 'lesson_viewer_screen.dart';
 import 'similar_kanji_screen.dart';
 import 'quick_sync_button.dart';
 import 'trial_gate.dart';
+import 'app_theme.dart';
+import 'app_fonts.dart';
+import 'app_colors.dart';
 
 class StudyScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -46,6 +49,17 @@ class _StudyScreenState extends State<StudyScreen> {
   List<StudyDeck> get _visibleDecks =>
       _adminUnlockAllLessons ? _decks : _decks.where((d) => d.lessonSetId != kGrammarN4TrackId).toList();
 
+  // Which pixel-theme deck-cover icon (see pixel_theme_dungeon.dart) fits a
+  // deck's lesson track, or null for a custom/no-track deck - those keep
+  // today's plain look (no leading icon) even under a pixel theme, since
+  // there's no sensible single cover for an arbitrary user deck.
+  String? _deckCoverIconId(StudyDeck deck) {
+    if (deck.lessonSetId == kHiraganaTrackId) return 'deckKana';
+    if (deck.lessonSetId == kKanjiChallengeTrackId) return 'deckKanji';
+    if (deck.lessonSetId != null && isGrammarTrackId(deck.lessonSetId)) return 'deckGrammar';
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -70,13 +84,13 @@ class _StudyScreenState extends State<StudyScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "Add Deck",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: widget.isDarkMode ? Colors.white : Colors.black87,
+            color: AppColors.text(widget.isDarkMode),
           ),
         ),
         content: Text(
@@ -96,7 +110,7 @@ class _StudyScreenState extends State<StudyScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF9A00FE),
+              backgroundColor: AppColors.accent,
               foregroundColor: Colors.white,
             ),
             onPressed: () {
@@ -115,13 +129,13 @@ class _StudyScreenState extends State<StudyScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "Name Your Deck",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: widget.isDarkMode ? Colors.white : Colors.black87,
+            color: AppColors.text(widget.isDarkMode),
           ),
         ),
         content: TextField(
@@ -149,7 +163,7 @@ class _StudyScreenState extends State<StudyScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF9A00FE),
+              backgroundColor: AppColors.accent,
               foregroundColor: Colors.white,
             ),
             onPressed: () {
@@ -185,21 +199,21 @@ class _StudyScreenState extends State<StudyScreen> {
     required VoidCallback onTap,
   }) {
     return Card(
-      color: const Color(0xFF9A00FE).withValues(alpha: widget.isDarkMode ? 0.12 : 0.05),
+      color: AppColors.accent.withValues(alpha: widget.isDarkMode ? 0.12 : 0.05),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Color(0xFF9A00FE)),
+        side: BorderSide(color: AppColors.accent),
       ),
       margin: EdgeInsets.zero,
       child: ListTile(
-        leading: Icon(icon, color: const Color(0xFF9A00FE)),
+        leading: Icon(icon, color: AppColors.accent),
         title: Text(
           title,
-          style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
         ),
         subtitle: Text(
           subtitle,
-          style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+          style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
         ),
         onTap: onTap,
       ),
@@ -218,11 +232,11 @@ class _StudyScreenState extends State<StudyScreen> {
               .toList()
             ..sort((a, b) => a.value.name.compareTo(b.value.name));
           return AlertDialog(
-            backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: AppColors.cardBg(widget.isDarkMode),
+            shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: Text(
               "Choose a Premade Set",
-              style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
             ),
             content: SizedBox(
               width: 320,
@@ -320,7 +334,7 @@ class _StudyScreenState extends State<StudyScreen> {
                         title: Text(entry.value.name, style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black)),
                         subtitle: Text(
                           '${entry.value.items.length} item${entry.value.items.length == 1 ? '' : 's'} · ${entry.value.setType}',
-                          style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                          style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                         ),
                         onTap: () {
                           Navigator.pop(context);
@@ -378,10 +392,10 @@ class _StudyScreenState extends State<StudyScreen> {
     return showDialog<int>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
         title: Text(
           "Already done some of this challenge?",
-          style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(color: AppColors.text(widget.isDarkMode)),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -389,7 +403,7 @@ class _StudyScreenState extends State<StudyScreen> {
           children: [
             Text(
               "If you already got partway through this on Anki (or anywhere else), enter the last day you completed. Those days will be marked as already studied instead of starting over, and the next day unlocks today.",
-              style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+              style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -409,7 +423,7 @@ class _StudyScreenState extends State<StudyScreen> {
             child: Text("Start from Day 1", style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent),
             onPressed: () {
               final parsed = int.tryParse(controller.text.trim());
               Navigator.pop(context, (parsed != null && parsed > 0) ? parsed : null);
@@ -519,7 +533,7 @@ class _StudyScreenState extends State<StudyScreen> {
           margin: const EdgeInsets.all(12),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+            color: AppColors.cardBg(widget.isDarkMode),
             borderRadius: BorderRadius.circular(24),
           ),
           child: Column(
@@ -527,7 +541,7 @@ class _StudyScreenState extends State<StudyScreen> {
             children: [
               Text(
                 deck.name,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
               ),
               const SizedBox(height: 16),
               ListTile(
@@ -574,9 +588,9 @@ class _StudyScreenState extends State<StudyScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Rename Deck", style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text("Rename Deck", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode))),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -595,7 +609,7 @@ class _StudyScreenState extends State<StudyScreen> {
             child: Text("Cancel", style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
             onPressed: () {
               final name = controller.text.trim();
               if (name.isEmpty) return;
@@ -614,9 +628,9 @@ class _StudyScreenState extends State<StudyScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Duplicate Deck?", style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text("Duplicate Deck?", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode))),
         content: Text(
           'This will create a copy of "${deck.name}", including all its cards and progress.',
           style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87),
@@ -627,7 +641,7 @@ class _StudyScreenState extends State<StudyScreen> {
             child: Text("Cancel", style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
             onPressed: () {
               Navigator.pop(context);
               _duplicateDeck(deck);
@@ -653,9 +667,9 @@ class _StudyScreenState extends State<StudyScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Reset Progress?", style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text("Reset Progress?", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode))),
         content: Text(
           'This marks every card in "${deck.name}" as new again${deck.challengeStartDate != null ? " and restarts its challenge schedule from day 1" : ""}. This cannot be undone.',
           style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87),
@@ -683,9 +697,9 @@ class _StudyScreenState extends State<StudyScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Delete Deck?", style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text("Delete Deck?", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode))),
         content: Text(
           'This will permanently delete "${deck.name}" and all ${deck.cards.length} card${deck.cards.length == 1 ? '' : 's'} in it. This cannot be undone.',
           style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87),
@@ -758,7 +772,7 @@ class _StudyScreenState extends State<StudyScreen> {
           margin: const EdgeInsets.all(12),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+            color: AppColors.cardBg(widget.isDarkMode),
             borderRadius: BorderRadius.circular(24),
           ),
           child: Column(
@@ -769,7 +783,7 @@ class _StudyScreenState extends State<StudyScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: widget.isDarkMode ? Colors.white : Colors.black87,
+                  color: AppColors.text(widget.isDarkMode),
                 ),
               ),
               const SizedBox(height: 16),
@@ -791,10 +805,10 @@ class _StudyScreenState extends State<StudyScreen> {
         width: double.infinity,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF9A00FE),
+            backgroundColor: AppColors.accent,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 18),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
           onPressed: () {
             Navigator.pop(context);
@@ -819,21 +833,21 @@ class _StudyScreenState extends State<StudyScreen> {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+        backgroundColor: AppColors.pageBg(widget.isDarkMode),
         appBar: AppBar(
           title: const Text('Study'),
-          backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-          foregroundColor: widget.isDarkMode ? Colors.white : Colors.black87,
+          backgroundColor: AppColors.pageBg(widget.isDarkMode),
+          foregroundColor: AppColors.text(widget.isDarkMode),
           elevation: 0,
           actions: [syncAppBarAction(context, widget.isDarkMode)],
           bottom: TabBar(
-            indicatorColor: const Color(0xFF9A00FE),
-            labelColor: const Color(0xFF9A00FE),
+            indicatorColor: AppColors.accent,
+            labelColor: AppColors.accent,
             unselectedLabelColor: widget.isDarkMode ? Colors.white54 : Colors.black45,
-            tabs: const [
-              Tab(text: "Flashcards"),
-              Tab(text: "Reading & Immersion"),
-              Tab(text: "Lessons"),
+            tabs: [
+              Tab(icon: ThemedIcon(iconId: 'tabCards', size: 22, fallback: const SizedBox.shrink()), text: "Flashcards"),
+              Tab(icon: ThemedIcon(iconId: 'tabReading', size: 22, fallback: const SizedBox.shrink()), text: "Reading & Immersion"),
+              Tab(icon: ThemedIcon(iconId: 'tabLessons', size: 22, fallback: const SizedBox.shrink()), text: "Lessons"),
             ],
           ),
         ),
@@ -851,7 +865,7 @@ class _StudyScreenState extends State<StudyScreen> {
   Widget _buildFlashcardsTab() {
     return SafeArea(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF9A00FE)))
+            ? Center(child: CircularProgressIndicator(color: AppColors.accent))
             : Column(
           children: [
             Padding(
@@ -860,15 +874,22 @@ class _StudyScreenState extends State<StudyScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF9A00FE),
+                    backgroundColor: AppColors.accent,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   onPressed: _showAddDeckDialog,
-                  child: const Text(
-                    "Press to add deck",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ThemedIcon(iconId: 'addDeck', size: 26, fallback: const SizedBox.shrink()),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Press to add deck",
+                        style: AppFonts.display(const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -880,37 +901,47 @@ class _StudyScreenState extends State<StudyScreen> {
                       itemBuilder: (context, index) {
                         if (index == _visibleDecks.length) {
                           return Card(
-                            color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+                            color: AppColors.cardBg(widget.isDarkMode),
                             margin: const EdgeInsets.only(bottom: 12),
+                            shape: pixelShape(),
                             child: ListTile(
-                              leading: const Icon(Icons.error_outline, color: Colors.orangeAccent),
+                              leading: ThemedIcon(
+                                iconId: 'deckMistakes',
+                                size: 40,
+                                fallback: const Icon(Icons.error_outline, color: Colors.orangeAccent),
+                              ),
                               title: Text(
                                 "Mistakes",
-                                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                                style: TextStyle(color: AppColors.text(widget.isDarkMode)),
                               ),
                               subtitle: Text(
                                 "Review cards you've gotten wrong",
-                                style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                                style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                               ),
                               onTap: _showMistakesScopeDialog,
                             ),
                           );
                         }
                         final deck = _visibleDecks[index];
+                        final coverIcon = _deckCoverIconId(deck);
                         return Card(
-                          color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+                          color: AppColors.cardBg(widget.isDarkMode),
+                          shape: pixelShape(),
                           child: ListTile(
+                            leading: coverIcon == null
+                                ? null
+                                : ThemedIcon(iconId: coverIcon, size: 40, fallback: const SizedBox.shrink()),
                             title: Text(
                               deck.name,
-                              style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                              style: TextStyle(color: AppColors.text(widget.isDarkMode)),
                             ),
                             subtitle: Text(
                               '${deck.cards.length} card${deck.cards.length == 1 ? '' : 's'}',
-                              style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                              style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                             ),
                             trailing: TextButton(
                               style: TextButton.styleFrom(
-                                foregroundColor: const Color(0xFF9A00FE),
+                                foregroundColor: AppColors.accent,
                               ),
                               onPressed: () => showStudyModeMenu(context, deck, widget.isDarkMode, _saveDecks),
                               child: const Text("Study"),
@@ -968,17 +999,17 @@ class _StudyScreenState extends State<StudyScreen> {
   // comparison at any time.
   Widget _buildSimilarKanjiCard() {
     return Card(
-      color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+      color: AppColors.cardBg(widget.isDarkMode),
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        leading: const Icon(Icons.compare_arrows, color: Color(0xFF9A00FE)),
+        leading: Icon(Icons.compare_arrows, color: AppColors.accent),
         title: Text(
           'Similar Kanji',
-          style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
         ),
         subtitle: Text(
           '${similarKanjiGroups.length} group${similarKanjiGroups.length == 1 ? '' : 's'} of easy-to-confuse kanji',
-          style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+          style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
         ),
         onTap: () => Navigator.push(
           context,
@@ -997,11 +1028,11 @@ class _StudyScreenState extends State<StudyScreen> {
     showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "Admin Unlock",
-          style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
         ),
         content: TextField(
           controller: controller,
@@ -1023,7 +1054,7 @@ class _StudyScreenState extends State<StudyScreen> {
             child: Text("Cancel", style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, controller.text),
             child: const Text("Unlock"),
           ),
@@ -1068,7 +1099,7 @@ class _StudyScreenState extends State<StudyScreen> {
         child: Text(
           section.value,
           style: TextStyle(
-            color: widget.isDarkMode ? Colors.white : Colors.black87,
+            color: AppColors.text(widget.isDarkMode),
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -1096,16 +1127,16 @@ class _StudyScreenState extends State<StudyScreen> {
     return Opacity(
       opacity: unlocked ? 1.0 : 0.4,
       child: Card(
-        color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+        color: AppColors.cardBg(widget.isDarkMode),
         margin: const EdgeInsets.only(bottom: 12),
         child: ListTile(
           leading: Icon(
             unlocked ? (completed ? Icons.check_circle : Icons.menu_book) : Icons.lock,
-            color: unlocked ? const Color(0xFF9A00FE) : (widget.isDarkMode ? Colors.white38 : Colors.black38),
+            color: unlocked ? AppColors.accent : (widget.isDarkMode ? Colors.white38 : Colors.black38),
           ),
           title: Text(
             lesson.endOfDay != null ? 'End of Day ${lesson.endOfDay}: ${lesson.title}' : 'Day ${lesson.day}: ${lesson.title}',
-            style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+            style: TextStyle(color: AppColors.text(widget.isDarkMode)),
           ),
           subtitle: Text(
             unlocked
@@ -1119,7 +1150,7 @@ class _StudyScreenState extends State<StudyScreen> {
                 : lesson.endOfDay != null
                     ? '${_trackLabel(lesson.trackId)} · unlocks at the end of day ${lesson.endOfDay}'
                     : '${_trackLabel(lesson.trackId)} · unlocks on day ${lesson.day}',
-            style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+            style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
           ),
           onTap: unlocked
               ? () async {

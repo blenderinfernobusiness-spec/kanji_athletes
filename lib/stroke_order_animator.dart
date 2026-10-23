@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:xml/xml.dart';
 import 'package:http/http.dart' as http;
+import 'app_colors.dart';
 
 class StrokeOrderAnimator extends StatefulWidget {
   final String? kanjiVGCode;
@@ -138,7 +139,7 @@ class _StrokeOrderAnimatorState extends State<StrokeOrderAnimator> {
         child: Text(
           _error ?? 'No stroke data',
           style: TextStyle(
-            color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+            color: AppColors.textMuted(widget.isDarkMode),
           ),
         ),
       );
@@ -187,19 +188,19 @@ class _StrokeOrderAnimatorState extends State<StrokeOrderAnimator> {
                     IconButton(
                       icon: const Icon(Icons.refresh),
                       onPressed: _reset,
-                      color: const Color(0xFF9A00FE),
+                      color: AppColors.accent,
                       tooltip: 'Reset',
                     ),
                     IconButton(
                       icon: const Icon(Icons.arrow_back),
                       onPressed: _currentStroke > 1 ? _previousStroke : null,
-                      color: _currentStroke > 1 ? const Color(0xFF9A00FE) : Colors.grey,
+                      color: _currentStroke > 1 ? AppColors.accent : Colors.grey,
                       tooltip: 'Previous',
                     ),
                     IconButton(
                       icon: const Icon(Icons.arrow_forward),
                       onPressed: _currentStroke < _strokePaths.length ? _nextStroke : null,
-                      color: _currentStroke < _strokePaths.length ? const Color(0xFF9A00FE) : Colors.grey,
+                      color: _currentStroke < _strokePaths.length ? AppColors.accent : Colors.grey,
                       tooltip: 'Next',
                     ),
                   ],
@@ -261,7 +262,7 @@ class StrokePainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round;
 
     final purplePaint = Paint()
-      ..color = const Color(0xFF9A00FE)
+      ..color = AppColors.accent
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4
       ..strokeCap = StrokeCap.round

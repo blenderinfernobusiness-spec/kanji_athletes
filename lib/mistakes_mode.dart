@@ -4,6 +4,8 @@ import 'isolated_flashcard_study.dart';
 import 'listening_player.dart';
 import 'games_mode.dart';
 import 'trial_gate.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 // Pop-up menu of study modes for a Mistakes selection. "Isolated Flashcard
 // Study" and "Reading & Listening" work; "Games and more" just dismisses the menu,
@@ -23,23 +25,32 @@ class _MistakesModeMenu extends StatelessWidget {
 
   const _MistakesModeMenu({required this.title, required this.cards, required this.isDarkMode});
 
-  Widget _buildModeButton(BuildContext context, String label, VoidCallback onPressed) {
+  Widget _buildModeButton(BuildContext context, String label, VoidCallback onPressed, {String? iconId}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: SizedBox(
         width: double.infinity,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF9A00FE),
+            backgroundColor: AppColors.accent,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 18),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
           onPressed: onPressed,
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (iconId != null) ...[
+                ThemedIcon(iconId: iconId, size: 22, fallback: const SizedBox.shrink()),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
         ),
       ),
@@ -52,10 +63,11 @@ class _MistakesModeMenu extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-        ),
+        decoration: pixelPanelDecoration(fill: AppColors.cardBg(isDarkMode)) ??
+            BoxDecoration(
+              color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -64,7 +76,7 @@ class _MistakesModeMenu extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: isDarkMode ? Colors.white : Colors.black87,
+                color: AppColors.text(isDarkMode),
               ),
             ),
             const SizedBox(height: 16),
@@ -80,7 +92,7 @@ class _MistakesModeMenu extends StatelessWidget {
                   ),
                 ),
               );
-            }),
+            }, iconId: 'tabCards'),
             _buildModeButton(context, "Reading & Listening", () async {
               final navigator = Navigator.of(context);
               navigator.pop();
@@ -96,7 +108,7 @@ class _MistakesModeMenu extends StatelessWidget {
                   ),
                 ),
               );
-            }),
+            }, iconId: 'tabReading'),
             _buildModeButton(context, "Games and more", () async {
               final navigator = Navigator.of(context);
               navigator.pop();
@@ -104,7 +116,7 @@ class _MistakesModeMenu extends StatelessWidget {
               final ok = await requireTrialAccess(hostContext, isDarkMode, featureName: 'Games');
               if (!ok || !hostContext.mounted) return;
               showGamesMenu(hostContext, title, cards, isDarkMode);
-            }),
+            }, iconId: 'sword'),
           ],
         ),
       ),

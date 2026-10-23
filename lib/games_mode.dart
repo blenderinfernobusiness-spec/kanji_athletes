@@ -6,6 +6,8 @@ import 'reading_game.dart';
 import 'match_game.dart';
 import 'balloon_game.dart';
 import 'jlpt_setup_screen.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 // Pop-up menu of games for a deck or Mistakes selection - shared by
 // study_mode.dart and mistakes_mode.dart's "Games and more" button. Each
@@ -33,10 +35,10 @@ class _GamesMenu extends StatelessWidget {
         width: double.infinity,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF9A00FE),
+            backgroundColor: AppColors.accent,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 18),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
           onPressed: onPressed,
           child: Text(
@@ -71,10 +73,11 @@ class _GamesMenu extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-        ),
+        decoration: pixelPanelDecoration(fill: AppColors.cardBg(isDarkMode)) ??
+            BoxDecoration(
+              color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -83,7 +86,7 @@ class _GamesMenu extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: isDarkMode ? Colors.white : Colors.black87,
+                color: AppColors.text(isDarkMode),
               ),
             ),
             const SizedBox(height: 16),

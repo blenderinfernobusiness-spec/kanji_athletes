@@ -29,8 +29,11 @@ import 'main_mini.dart';
 import 'onboarding_flow.dart';
 import 'trial_service.dart';
 import 'trial_gate.dart';
+import 'app_theme.dart';
+import 'app_fonts.dart';
 import 'update_check_service.dart';
 import 'update_dialog.dart';
+import 'app_colors.dart';
 // Application entrypoint. A single build serves both the full app and
 // "Kanji Athletes Mini" (a small always-on-top flashcard/listening
 // companion window, see main_mini.dart) - launching with a --mini argument
@@ -54,12 +57,11 @@ Future<void> main(List<String> args) async {
   // in case it was unlocked on another device.
   await TrialService.ensureTrialStarted();
   unawaited(TrialService.syncFromCloud());
+  await AppTheme.instance.load();
 
-  runApp(const MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: GemGridApp(),
-  ));
+  runApp(const GemGridApp());
 }
+
 // Custom hover icon button widget
 class HoverIconButton extends StatefulWidget {
   final IconData icon;
@@ -89,7 +91,7 @@ class _HoverIconButtonState extends State<HoverIconButton> {
       child: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: _isHovering ? const Color(0xFF9A00FE) : Colors.transparent,
+          color: _isHovering ? AppColors.accent : Colors.transparent,
         ),
         child: IconButton(
           icon: Icon(
@@ -113,12 +115,30 @@ class GemGridApp extends StatefulWidget {
 }
 
 class _GemGridAppState extends State<GemGridApp> {
+  // The user's own Dark Mode preference - kept separate from the effective
+  // value below so a locked theme (Dungeon/Kawaii) doesn't clobber it:
+  // switching back to Default or an unlocked theme later resumes whatever
+  // the user last actually chose.
   bool _isDarkMode = true;
 
   @override
   void initState() {
     super.initState();
     _loadThemePreference();
+    // A selected theme's forcedDarkMode (see pixel_sprites.dart) can change
+    // the *effective* brightness without touching _isDarkMode itself, so
+    // this screen needs to rebuild whenever the theme changes too.
+    AppTheme.instance.addListener(_onAppThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    AppTheme.instance.removeListener(_onAppThemeChanged);
+    super.dispose();
+  }
+
+  void _onAppThemeChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -145,21 +165,40 @@ class _GemGridAppState extends State<GemGridApp> {
     });
   }
 
+  // Dungeon is built dark and Kawaii is built light - either fighting the
+  // "wrong" Dark Mode setting would clash with its own palette, so a theme
+  // that has an opinion (forcedDarkMode) overrides the user's own setting
+  // while it's selected, same idea as ThemeMode.system overriding a manual
+  // toggle.
+  bool get _effectiveDarkMode => AppTheme.instance.pixelTheme?.forcedDarkMode ?? _isDarkMode;
+
   @override
   Widget build(BuildContext context) {
+    final pixelTheme = AppTheme.instance.pixelTheme;
+    final pixelThemeData = pixelTheme == null
+        ? null
+        : ThemeData(
+            brightness: _effectiveDarkMode ? Brightness.dark : Brightness.light,
+            scaffoldBackgroundColor: _effectiveDarkMode ? const Color(0xFF1A1A1A) : Colors.grey[50],
+            appBarTheme: const AppBarTheme(
+              titleTextStyle: TextStyle(fontFamily: 'PressStart2P', fontSize: 16, letterSpacing: 1),
+            ),
+          );
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.light().copyWith(
-        scaffoldBackgroundColor: Colors.grey[50],
-      ),
-      darkTheme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF1A1A1A),
-      ),
-      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      theme: pixelThemeData ??
+          ThemeData.light().copyWith(
+            scaffoldBackgroundColor: Colors.grey[50],
+          ),
+      darkTheme: pixelThemeData ??
+          ThemeData.dark().copyWith(
+            scaffoldBackgroundColor: const Color(0xFF1A1A1A),
+          ),
+      themeMode: _effectiveDarkMode ? ThemeMode.dark : ThemeMode.light,
       // Android draws edge-to-edge, so keep every screen clear of the system
       // navigation bar. Top is left alone since each app bar already handles it.
       builder: (context, child) => SafeArea(top: false, child: child!),
-      home: _StartupGate(onThemeChanged: _setThemePreference, isDarkMode: _isDarkMode),
+      home: _StartupGate(onThemeChanged: _setThemePreference, isDarkMode: _effectiveDarkMode),
     );
   }
 }
@@ -219,7 +258,7 @@ class _StartupGateState extends State<_StartupGate> {
     if (_showOnboarding == null) {
       return Scaffold(
         backgroundColor: widget.isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
-        body: const Center(child: CircularProgressIndicator(color: Color(0xFF9A00FE))),
+        body: Center(child: CircularProgressIndicator(color: AppColors.accent)),
       );
     }
     if (_showOnboarding == true) {
@@ -478,7 +517,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               focusNode: _titleFocusNode,
               autofocus: true,
               style: TextStyle(
-                color: widget.isDarkMode ? Colors.white : Colors.black87,
+                color: AppColors.text(widget.isDarkMode),
                 fontSize: 18,
               ),
               decoration: InputDecoration(
@@ -621,7 +660,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   label: const Text("Import from png"),
                   onPressed: _importFromImages,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF9A00FE),
+                    backgroundColor: AppColors.accent,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
@@ -656,14 +695,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "Settings",
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: widget.isDarkMode ? Colors.white : Colors.black87,
+            color: AppColors.text(widget.isDarkMode),
           ),
         ),
         content: Column(
@@ -674,22 +713,32 @@ class _InventoryScreenState extends State<InventoryScreen> {
               children: [
                 Text(
                   "Dark Mode",
-                  style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                  style: TextStyle(color: AppColors.text(widget.isDarkMode)),
                 ),
                 Switch(
                   value: widget.isDarkMode,
-                  onChanged: (value) {
-                    widget.onThemeChanged(value);
-                  },
+                  onChanged: AppTheme.instance.pixelTheme?.forcedDarkMode != null
+                      ? null
+                      : (value) {
+                          widget.onThemeChanged(value);
+                        },
                 ),
               ],
             ),
+            if (AppTheme.instance.pixelTheme?.forcedDarkMode != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Locked by the ${AppTheme.instance.pixelTheme!.name} theme (Home > Settings)",
+                  style: TextStyle(fontSize: 12, color: AppColors.textMuted(widget.isDarkMode)),
+                ),
+              ),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF9A00FE),
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () {
@@ -719,10 +768,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+          backgroundColor: AppColors.cardBg(widget.isDarkMode),
           title: Text(
             "Are you absolutely sure?",
-            style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+            style: TextStyle(color: AppColors.text(widget.isDarkMode)),
           ),
           content: Text(
             "You can import your items again later using the codes or item card images.",
@@ -740,7 +789,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9A00FE),
+                backgroundColor: AppColors.accent,
                 foregroundColor: Colors.white,
               ),
               onPressed: _resetInventory,
@@ -935,35 +984,84 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
         title: Text(
           "Settings",
-          style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+          style: AppFonts.display(TextStyle(color: AppColors.text(widget.isDarkMode))),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Dark Mode",
-                  style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
-                ),
-                Switch(
-                  value: widget.isDarkMode,
-                  onChanged: (value) {
-                    widget.onThemeChanged(value);
-                  },
-                ),
-              ],
+            StatefulBuilder(
+              builder: (context, setDialogState) {
+                final lockedDark = AppTheme.instance.pixelTheme?.forcedDarkMode;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Dark Mode",
+                          style: TextStyle(color: AppColors.text(widget.isDarkMode)),
+                        ),
+                        Switch(
+                          value: widget.isDarkMode,
+                          onChanged: lockedDark != null
+                              ? null
+                              : (value) {
+                                  widget.onThemeChanged(value);
+                                },
+                        ),
+                      ],
+                    ),
+                    if (lockedDark != null)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Locked to ${lockedDark ? 'dark' : 'light'} by the ${AppTheme.instance.pixelTheme!.name} theme",
+                          style: TextStyle(fontSize: 12, color: AppColors.textMuted(widget.isDarkMode)),
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "App Theme",
+                        style: TextStyle(color: AppColors.text(widget.isDarkMode), fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final choice in kThemeChoices)
+                          ChoiceChip(
+                            label: Text(choice.value),
+                            selected: AppTheme.instance.themeId == choice.key,
+                            onSelected: (_) {
+                              AppTheme.instance.setTheme(choice.key);
+                              setDialogState(() {});
+                            },
+                            selectedColor: AppColors.accent,
+                            labelStyle: TextStyle(
+                              color: AppTheme.instance.themeId == choice.key ? Colors.white : (widget.isDarkMode ? Colors.white70 : Colors.black87),
+                            ),
+                            backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.grey[200],
+                          ),
+                      ],
+                    ),
+                  ],
+                );
+              },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF9A00FE),
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () {
@@ -978,7 +1076,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF9A00FE),
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () {
@@ -1057,16 +1155,16 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87)),
-          Text(detail, style: TextStyle(fontSize: 13, color: widget.isDarkMode ? Colors.white70 : Colors.black54)),
+          Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode))),
+          Text(detail, style: TextStyle(fontSize: 13, color: AppColors.textMuted(widget.isDarkMode))),
         ],
       ),
     );
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        title: Text("Credits & Data Sources", style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        title: Text("Credits & Data Sources", style: TextStyle(color: AppColors.text(widget.isDarkMode))),
         content: SizedBox(
           width: 340,
           child: SingleChildScrollView(
@@ -1156,12 +1254,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        title: Text('Import data', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        title: Text('Import data', style: TextStyle(color: AppColors.text(widget.isDarkMode))),
         content: Text('Importing will REPLACE your current study decks, reading texts, unlocked gems, and dictionary sets/items. Continue?', style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel', style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87))),
-          ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE)), onPressed: () => Navigator.pop(context, true), child: const Text('Continue')),
+          ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent), onPressed: () => Navigator.pop(context, true), child: const Text('Continue')),
         ],
       ),
     );
@@ -1227,12 +1325,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.bar_chart, size: 32, color: widget.isDarkMode ? Colors.white : Colors.black87),
+                                ThemedIcon(
+                                  iconId: 'stats',
+                                  size: 32,
+                                  fallback: Icon(Icons.bar_chart, size: 32, color: AppColors.text(widget.isDarkMode)),
+                                ),
                                 const SizedBox(height: 2),
                                 Text(
                                   "Stats",
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(fontSize: 8, color: widget.isDarkMode ? Colors.white : Colors.black87),
+                                  style: TextStyle(fontSize: 8, color: AppColors.text(widget.isDarkMode)),
                                 ),
                               ],
                             ),
@@ -1297,10 +1399,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
                         child: Text(
                           "Welcome Home",
-                          style: TextStyle(
+                          style: AppFonts.display(TextStyle(
                             fontSize: MediaQuery.of(context).size.width < 600 ? 22 : 32,
                             fontWeight: FontWeight.bold,
-                          ),
+                          )),
                         ),
                       ),
                       Expanded(
@@ -1313,11 +1415,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.settings, size: 32, color: widget.isDarkMode ? Colors.white : Colors.black87),
+                                ThemedIcon(
+                                  iconId: 'settings',
+                                  size: 32,
+                                  fallback: Icon(Icons.settings, size: 32, color: AppColors.text(widget.isDarkMode)),
+                                ),
                                 const SizedBox(height: 2),
                                 Text(
                                   "Settings",
-                                  style: TextStyle(fontSize: 8, color: widget.isDarkMode ? Colors.white : Colors.black87),
+                                  style: TextStyle(fontSize: 8, color: AppColors.text(widget.isDarkMode)),
                                 ),
                               ],
                             ),
@@ -1333,6 +1439,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // XP/Level/Progress bar at the top
                   if (_userProfile != null) ...[
                     const SizedBox(height: 8),
+                    ThemedIcon(iconId: 'level', size: 56, param: '${_userProfile!.level}', fallback: const SizedBox.shrink()),
                     Text(
                       'Level ${_userProfile!.level}',
                       style: TextStyle(
@@ -1349,19 +1456,21 @@ class _HomeScreenState extends State<HomeScreen> {
                           'XP: ${_userProfile!.xp} / ${UserProfile.xpForLevel(_userProfile!.level)}',
                           style: TextStyle(fontSize: 18, color: widget.isDarkMode ? Colors.white : Colors.black),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 4),
+                        ThemedIcon(iconId: 'gem', size: 22, fallback: const SizedBox.shrink()),
+                        const SizedBox(width: 4),
                         IconButton(
                           icon: const Icon(Icons.info_outline),
-                          color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                          color: AppColors.textMuted(widget.isDarkMode),
                           tooltip: 'About XP & Levels',
                           onPressed: () {
                             showDialog(
                               context: context,
                               builder: (context) => AlertDialog(
-                                backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+                                backgroundColor: AppColors.cardBg(widget.isDarkMode),
                                 title: Text(
                                   "About XP & Levels",
-                                  style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                                  style: TextStyle(color: AppColors.text(widget.isDarkMode)),
                                 ),
                                 content: SingleChildScrollView(
                                   child: Column(
@@ -1385,7 +1494,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       const SizedBox(height: 16),
                                       Text(
                                         "Keep completing tasks to level up!",
-                                        style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87, fontWeight: FontWeight.bold),
+                                        style: TextStyle(color: AppColors.text(widget.isDarkMode), fontWeight: FontWeight.bold),
                                       ),
                                       const SizedBox(height: 12),
                                     ],
@@ -1492,11 +1601,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 32),
-                      child: LinearProgressIndicator(
+                      child: PixelProgressBar(
                         value: UserProfile.xpForLevel(_userProfile!.level) > 0 ? _userProfile!.xp / UserProfile.xpForLevel(_userProfile!.level) : 0.0,
-                        minHeight: 12,
-                        backgroundColor: widget.isDarkMode ? Colors.white12 : Colors.black12,
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF9A00FE)),
+                        pipColor: AppColors.pip(widget.isDarkMode),
+                        fillColor: AppColors.accent,
+                        height: 16,
+                        fallback: LinearProgressIndicator(
+                          value: UserProfile.xpForLevel(_userProfile!.level) > 0 ? _userProfile!.xp / UserProfile.xpForLevel(_userProfile!.level) : 0.0,
+                          minHeight: 12,
+                          backgroundColor: widget.isDarkMode ? Colors.white12 : Colors.black12,
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1550,13 +1665,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF9A00FE),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
+                                  decoration: pixelPanelDecoration(fill: AppColors.accent) ??
+                                      BoxDecoration(
+                                        color: AppColors.accent,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
+                                      ThemedIcon(iconId: 'dictComplete', size: 44, fallback: const SizedBox.shrink()),
                                       const Text(
                                         '辞書',
                                         style: TextStyle(
@@ -1600,13 +1717,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF9A00FE),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
+                                  decoration: pixelPanelDecoration(fill: AppColors.accent) ??
+                                      BoxDecoration(
+                                        color: AppColors.accent,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
+                                      ThemedIcon(iconId: 'dictKanji', size: 44, fallback: const SizedBox.shrink()),
                                       const Text(
                                         '漢字',
                                         style: TextStyle(
@@ -1650,13 +1769,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF9A00FE),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
+                                  decoration: pixelPanelDecoration(fill: AppColors.accent) ??
+                                      BoxDecoration(
+                                        color: AppColors.accent,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
+                                      ThemedIcon(iconId: 'dictVocab', size: 44, fallback: const SizedBox.shrink()),
                                       const Text(
                                         '単語',
                                         style: TextStyle(
@@ -1708,7 +1829,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             IconButton(
-                              icon: Icon(Icons.refresh, color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                              icon: Icon(Icons.refresh, color: AppColors.textMuted(widget.isDarkMode)),
                               tooltip: 'New random kanji',
                               onPressed: _pickRandomPracticeKanji,
                             ),
@@ -1719,7 +1840,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           _practiceKanji!.translation,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                            color: AppColors.textMuted(widget.isDarkMode),
                             fontSize: 14,
                           ),
                         ),
@@ -1768,6 +1889,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildHomeButton(
                   context,
                   image: 'assets/bookshelf.png',
+                  pixelIcon: 'library',
                   label: "Library",
                   onTap: () async {
                     await Navigator.push(
@@ -1783,6 +1905,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildHomeButton(
                   context,
                   image: 'assets/bookopen.png',
+                  pixelIcon: 'study',
                   label: "Study",
                   onTap: () async {
                     await Navigator.push(
@@ -1798,6 +1921,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildHomeButton(
                   context,
                   image: 'assets/itembox.png',
+                  pixelIcon: 'itembox',
                   label: "Item Box",
                   onTap: () async {
                     await Navigator.push(
@@ -1817,10 +1941,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // HELPER METHOD: Keeps all buttons looking exactly the same
-  Widget _buildHomeButton(BuildContext context, 
-      {required String image, required String label, required VoidCallback onTap}) {
+  Widget _buildHomeButton(BuildContext context,
+      {required String image, required String pixelIcon, required String label, required VoidCallback onTap}) {
     return _HomeButton(
       image: image,
+      pixelIcon: pixelIcon,
       label: label,
       onTap: onTap,
     );
@@ -1830,11 +1955,16 @@ class _HomeScreenState extends State<HomeScreen> {
 // Home button with hover effect
 class _HomeButton extends StatefulWidget {
   final String image;
+  // The pixel_sprites.dart icon id shown instead of [image] once a pixel
+  // theme (see app_theme.dart) is selected - falls back to [image] for the
+  // Default theme and for any theme that hasn't drawn this icon yet.
+  final String pixelIcon;
   final String label;
   final VoidCallback onTap;
 
   const _HomeButton({
     required this.image,
+    required this.pixelIcon,
     required this.label,
     required this.onTap,
   });
@@ -1861,20 +1991,24 @@ class _HomeButtonState extends State<_HomeButton> {
           width: 100,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: _isHovering ? const Color(0xFF9A00FE) : Colors.transparent,
+            color: _isHovering ? AppColors.accent : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Image.asset(widget.image, height: 50, fit: BoxFit.contain),
+              ThemedIcon(
+                iconId: widget.pixelIcon,
+                size: 50,
+                fallback: Image.asset(widget.image, height: 50, fit: BoxFit.contain),
+              ),
               const SizedBox(height: 8),
               Text(
                 widget.label,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: _isHovering ? Colors.white : (isDarkMode ? Colors.white : Colors.black87),
+                  color: _isHovering ? Colors.white : (AppColors.text(isDarkMode)),
                 ),
                 textAlign: TextAlign.center,
               ),

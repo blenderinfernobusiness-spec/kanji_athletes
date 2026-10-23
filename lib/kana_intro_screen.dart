@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'study_data.dart';
 import 'study_settings.dart';
 import 'audio_service.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
-const _kPurple = Color(0xFF9A00FE);
+Color get _kPurple => AppColors.accent;
 
 // Shown once, automatically, the first time a brand-new Kana-type flashcard
 // comes up in a Hiragana Challenge session (see spaced_repetition_standard
@@ -63,15 +65,15 @@ class _KanaIntroScreenState extends State<KanaIntroScreen> {
     final isDarkMode = widget.isDarkMode;
     final card = widget.card;
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       appBar: AppBar(
         title: Text(
           widget.batchTotal != null && widget.batchTotal! > 1
               ? 'New Hiragana  ·  ${widget.batchPosition}/${widget.batchTotal}'
               : 'New Hiragana',
         ),
-        backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-        foregroundColor: isDarkMode ? Colors.white : Colors.black87,
+        backgroundColor: AppColors.pageBg(isDarkMode),
+        foregroundColor: AppColors.text(isDarkMode),
         elevation: 0,
         actions: [
           IconButton(
@@ -104,7 +106,7 @@ class _KanaIntroScreenState extends State<KanaIntroScreen> {
                 ),
                 Text(
                   card.romaji.isNotEmpty ? card.romaji : card.english,
-                  style: TextStyle(fontSize: 28, color: isDarkMode ? Colors.white70 : Colors.black54),
+                  style: TextStyle(fontSize: 28, color: AppColors.textMuted(isDarkMode)),
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -127,7 +129,7 @@ class _KanaIntroScreenState extends State<KanaIntroScreen> {
                 backgroundColor: _kPurple,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               onPressed: () => Navigator.pop(context),
               child: Text(

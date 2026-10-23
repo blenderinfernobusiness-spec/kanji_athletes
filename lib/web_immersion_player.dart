@@ -9,8 +9,9 @@ import 'immersion_word_lookup.dart';
 import 'ruby_text.dart';
 import 'study_data.dart';
 import 'study_settings.dart';
+import 'app_colors.dart';
 
-const Color _accent = Color(0xFF9A00FE);
+Color get _accent => AppColors.accent;
 
 // Deployed via captions_service/ (see its README.md for how to redeploy
 // after a code change there).
@@ -54,7 +55,7 @@ class _WebImmersionPlayerScreenState extends State<WebImmersionPlayerScreen> {
   int _activeCueIndex = -1;
   Timer? _positionTimer;
 
-  Color get _fg => widget.isDarkMode ? Colors.white : Colors.black87;
+  Color get _fg => AppColors.text(widget.isDarkMode);
   Color get _fgMuted => widget.isDarkMode ? Colors.white60 : Colors.black54;
   Color get _bg => widget.isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5F5);
 
@@ -205,7 +206,7 @@ class _WebImmersionPlayerScreenState extends State<WebImmersionPlayerScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(color: _accent),
+            CircularProgressIndicator(color: _accent),
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),

@@ -5,8 +5,10 @@ import 'study_settings.dart';
 import 'audio_service.dart';
 import 'tatoeba_service.dart';
 import 'listening_player.dart' show WordPopupCard, DeckPickerDialog;
+import 'app_colors.dart';
+import 'app_theme.dart';
 
-const _kPurple = Color(0xFF9A00FE);
+Color get _kPurple => AppColors.accent;
 
 // Shown once, automatically, the first time a brand-new Vocab-type
 // flashcard comes up in a Spaced Repetition session (see
@@ -177,11 +179,11 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
     return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           current.isEmpty ? "Add Memory Technique" : "Edit Memory Technique",
-          style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
         ),
         content: TextField(
           controller: controller,
@@ -240,7 +242,7 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
   }
 
   InlineSpan _sentenceSpan(String text, bool isDarkMode) {
-    final baseStyle = TextStyle(fontSize: 17, color: isDarkMode ? Colors.white : Colors.black87);
+    final baseStyle = TextStyle(fontSize: 17, color: AppColors.text(isDarkMode));
     final tokens = tokenizeSentence(text, _highlightIndex);
     final spans = <InlineSpan>[
       for (final tok in tokens)
@@ -276,7 +278,7 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+        color: AppColors.cardBg(isDarkMode),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -284,12 +286,12 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.tips_and_updates, color: _kPurple, size: 20),
+              Icon(Icons.tips_and_updates, color: _kPurple, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Memory technique',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
                 ),
               ),
               IconButton(
@@ -302,7 +304,7 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
           ),
           if (technique.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(technique, style: TextStyle(fontSize: 14, color: isDarkMode ? Colors.white70 : Colors.black54)),
+            Text(technique, style: TextStyle(fontSize: 14, color: AppColors.textMuted(isDarkMode))),
           ] else ...[
             const SizedBox(height: 4),
             Text(
@@ -321,7 +323,7 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+        color: AppColors.cardBg(isDarkMode),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -344,7 +346,7 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
             const SizedBox(height: 6),
             Text(
               sentence.translation!,
-              style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: isDarkMode ? Colors.white70 : Colors.black54),
+              style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: AppColors.textMuted(isDarkMode)),
             ),
           ],
           const SizedBox(height: 6),
@@ -391,7 +393,7 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
     final visibleSentences = (_sentences ?? const []).take(_shownCount).toList();
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       appBar: AppBar(
         title: Text(
           widget.batchTotal == null
@@ -400,8 +402,8 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
                   ? 'New Word  ·  ${widget.batchPosition}/${widget.batchTotal}'
                   : 'New Word',
         ),
-        backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-        foregroundColor: isDarkMode ? Colors.white : Colors.black87,
+        backgroundColor: AppColors.pageBg(isDarkMode),
+        foregroundColor: AppColors.text(isDarkMode),
         elevation: 0,
         actions: [
           IconButton(
@@ -413,7 +415,7 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
       ),
       body: SafeArea(
         child: _loading
-            ? const Center(child: CircularProgressIndicator(color: _kPurple))
+            ? Center(child: CircularProgressIndicator(color: _kPurple))
             : ListView(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                 children: [
@@ -438,13 +440,13 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
                         if (!redacted && card.hiragana.isNotEmpty && card.hiragana != card.japanese)
                           Text(
                             card.hiragana,
-                            style: TextStyle(fontSize: 18, color: isDarkMode ? Colors.white70 : Colors.black54),
+                            style: TextStyle(fontSize: 18, color: AppColors.textMuted(isDarkMode)),
                           ),
                         const SizedBox(height: 6),
                         Text(
                           card.english,
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 18, color: isDarkMode ? Colors.white70 : Colors.black54),
+                          style: TextStyle(fontSize: 18, color: AppColors.textMuted(isDarkMode)),
                         ),
                       ],
                     ),
@@ -454,7 +456,7 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
                   if (!redacted && _kanjiInWord.isNotEmpty) ...[
                     Text(
                       'Kanji in this word',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
                     ),
                     const SizedBox(height: 10),
                     Wrap(
@@ -466,11 +468,11 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
                   const SizedBox(height: 28),
                   Text(
                     'Example sentences',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
                   ),
                   const SizedBox(height: 12),
                   if (_sentences == null)
-                    const Center(
+                    Center(
                       child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: _kPurple)),
                     )
                   else if (_sentences!.isEmpty)
@@ -484,8 +486,8 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
                       Center(
                         child: TextButton.icon(
                           onPressed: _showMore,
-                          icon: const Icon(Icons.add, color: _kPurple),
-                          label: const Text("More example sentences", style: TextStyle(color: _kPurple)),
+                          icon: Icon(Icons.add, color: _kPurple),
+                          label: Text("More example sentences", style: TextStyle(color: _kPurple)),
                         ),
                       ),
                   ],
@@ -502,7 +504,7 @@ class _VocabIntroScreenState extends State<VocabIntroScreen> {
                 backgroundColor: _kPurple,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               onPressed: () => Navigator.pop(context),
               child: Text(

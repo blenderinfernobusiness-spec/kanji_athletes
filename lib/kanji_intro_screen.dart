@@ -6,8 +6,10 @@ import 'study_settings.dart';
 import 'audio_service.dart';
 import 'tatoeba_service.dart';
 import 'listening_player.dart' show WordPopupCard, DeckPickerDialog;
+import 'app_colors.dart';
+import 'app_theme.dart';
 
-const _kPurple = Color(0xFF9A00FE);
+Color get _kPurple => AppColors.accent;
 
 // Shown once, automatically, the first time a brand-new Kanji-type
 // flashcard comes up in a Spaced Repetition session (see
@@ -194,11 +196,11 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
     return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           current.isEmpty ? "Add Memory Technique" : "Edit Memory Technique",
-          style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
         ),
         content: TextField(
           controller: controller,
@@ -257,7 +259,7 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
   }
 
   InlineSpan _sentenceSpan(String text, bool isDarkMode) {
-    final baseStyle = TextStyle(fontSize: 17, color: isDarkMode ? Colors.white : Colors.black87);
+    final baseStyle = TextStyle(fontSize: 17, color: AppColors.text(isDarkMode));
     final tokens = tokenizeSentence(text, _highlightIndex);
     final spans = <InlineSpan>[
       for (final tok in tokens)
@@ -293,7 +295,7 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+        color: AppColors.cardBg(isDarkMode),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -301,12 +303,12 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.tips_and_updates, color: _kPurple, size: 20),
+              Icon(Icons.tips_and_updates, color: _kPurple, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Memory technique',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
                 ),
               ),
               IconButton(
@@ -326,7 +328,7 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
           ],
           if (technique.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(technique, style: TextStyle(fontSize: 14, color: isDarkMode ? Colors.white70 : Colors.black54)),
+            Text(technique, style: TextStyle(fontSize: 14, color: AppColors.textMuted(isDarkMode))),
           ] else ...[
             const SizedBox(height: 4),
             Text(
@@ -346,7 +348,7 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+        color: AppColors.cardBg(isDarkMode),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -360,11 +362,11 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
                   children: [
                     Text(
                       redacted ? _mask(word.japanese) : word.japanese,
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
                     ),
                     if (!redacted && word.reading.isNotEmpty) ...[
                       const SizedBox(width: 8),
-                      Text(word.reading, style: TextStyle(fontSize: 14, color: isDarkMode ? Colors.white70 : Colors.black54)),
+                      Text(word.reading, style: TextStyle(fontSize: 14, color: AppColors.textMuted(isDarkMode))),
                     ],
                   ],
                 ),
@@ -378,10 +380,10 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
                 ),
             ],
           ),
-          Text(word.translation, style: TextStyle(fontSize: 14, color: isDarkMode ? Colors.white70 : Colors.black54)),
+          Text(word.translation, style: TextStyle(fontSize: 14, color: AppColors.textMuted(isDarkMode))),
           if (sentences == null) ...[
             const SizedBox(height: 12),
-            const Center(
+            Center(
               child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: _kPurple)),
             ),
           ] else if (sentences.isEmpty) ...[
@@ -411,7 +413,7 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
               const SizedBox(height: 6),
               Text(
                 sentences.first.translation!,
-                style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: isDarkMode ? Colors.white70 : Colors.black54),
+                style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: AppColors.textMuted(isDarkMode)),
               ),
             ],
             const SizedBox(height: 6),
@@ -448,7 +450,7 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
           ];
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       appBar: AppBar(
         title: Text(
           widget.batchTotal == null
@@ -457,8 +459,8 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
                   ? 'New Kanji  ·  ${widget.batchPosition}/${widget.batchTotal}'
                   : 'New Kanji',
         ),
-        backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-        foregroundColor: isDarkMode ? Colors.white : Colors.black87,
+        backgroundColor: AppColors.pageBg(isDarkMode),
+        foregroundColor: AppColors.text(isDarkMode),
         elevation: 0,
         actions: [
           IconButton(
@@ -470,7 +472,7 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
       ),
       body: SafeArea(
         child: _loading
-            ? const Center(child: CircularProgressIndicator(color: _kPurple))
+            ? Center(child: CircularProgressIndicator(color: _kPurple))
             : ListView(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                 children: [
@@ -495,7 +497,7 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
                         Text(
                           card.english,
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 18, color: isDarkMode ? Colors.white70 : Colors.black54),
+                          style: TextStyle(fontSize: 18, color: AppColors.textMuted(isDarkMode)),
                         ),
                         if (readings.isNotEmpty) ...[
                           const SizedBox(height: 10),
@@ -503,7 +505,7 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
                             alignment: WrapAlignment.center,
                             spacing: 12,
                             children: readings
-                                .map((r) => Text(r, style: TextStyle(fontSize: 15, color: isDarkMode ? Colors.white70 : Colors.black54)))
+                                .map((r) => Text(r, style: TextStyle(fontSize: 15, color: AppColors.textMuted(isDarkMode))))
                                 .toList(),
                           ),
                         ],
@@ -521,7 +523,7 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
                   else ...[
                     Text(
                       'Example words',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
                     ),
                     const SizedBox(height: 12),
                     for (final word in _visibleWords) _exampleWordCard(isDarkMode, word),
@@ -529,8 +531,8 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
                       Center(
                         child: TextButton.icon(
                           onPressed: _showMore,
-                          icon: const Icon(Icons.add, color: _kPurple),
-                          label: const Text("More example words", style: TextStyle(color: _kPurple)),
+                          icon: Icon(Icons.add, color: _kPurple),
+                          label: Text("More example words", style: TextStyle(color: _kPurple)),
                         ),
                       ),
                   ],
@@ -547,7 +549,7 @@ class _KanjiIntroScreenState extends State<KanjiIntroScreen> {
                 backgroundColor: _kPurple,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               onPressed: () => Navigator.pop(context),
               child: Text(

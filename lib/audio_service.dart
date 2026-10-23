@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:android_intent_plus/android_intent.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 // Text-to-speech via the device's own OS speech engine (flutter_tts), rather
 // than an unofficial Google Translate endpoint - that endpoint isn't a
@@ -210,7 +212,7 @@ Widget _setupStep(int number, String text, bool isDarkMode) {
       children: [
         CircleAvatar(
           radius: 12,
-          backgroundColor: const Color(0xFF9A00FE),
+          backgroundColor: AppColors.accent,
           child: Text(
             '$number',
             style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
@@ -232,13 +234,13 @@ Future<void> showWindowsVoiceSetupHelp(BuildContext context, bool isDarkMode, St
   return showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
-      backgroundColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: AppColors.cardBg(isDarkMode),
+      shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(
         "Set Up $language Voice on Windows",
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          color: isDarkMode ? Colors.white : Colors.black87,
+          color: AppColors.text(isDarkMode),
         ),
       ),
       content: SizedBox(
@@ -266,7 +268,7 @@ Future<void> showWindowsVoiceSetupHelp(BuildContext context, bool isDarkMode, St
       actions: [
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF9A00FE),
+            backgroundColor: AppColors.accent,
             foregroundColor: Colors.white,
           ),
           onPressed: () => Navigator.pop(context),

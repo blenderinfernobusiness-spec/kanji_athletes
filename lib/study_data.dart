@@ -765,8 +765,9 @@ bool isCardDue(StudyCard card) {
 // (tracked per calendar day, rolling that counter over here when it's a new
 // day - the caller should persist the deck afterwards), or, for a
 // day-scheduled challenge deck, gated by each card's own challengeDay
-// against how many days have elapsed since the deck started. Reviews are
-// never capped.
+// against deck.unlockedChallengeDay (see advanceChallengeDayIfReady, called
+// here - the caller should persist the deck afterwards if that advanced
+// it). Reviews are never capped.
 List<StudyCard> buildSpacedRepetitionQueue(StudyDeck deck, {bool revisionOnly = false}) {
   final due = deck.cards.where(isCardDue).toList();
   final reviews = due.where((c) => c.nextReviewDate != null).toList();
@@ -781,15 +782,8 @@ List<StudyCard> buildSpacedRepetitionQueue(StudyDeck deck, {bool revisionOnly = 
 
   List<StudyCard> newCardsForSession;
   if (deck.challengeStartDate != null) {
-    final start = DateTime.parse(deck.challengeStartDate!);
-    // Freeze day-scheduled decks (Kana Course, 90 Day Kanji Challenge, the
-    // grammar decks) at whatever day they'd reached right when the trial
-    // ended - substituting that moment for "now" here is enough; everything
-    // else (existing due reviews, already-introduced cards) is untouched, so
-    // progress already made stays fully visible and reviewable.
-    final effectiveNow = trialExpired ? TrialService.trialEndDate : DateTime.now();
-    final currentDay = effectiveNow.difference(start).inDays + 1;
-    newCardsForSession = newCards.where((c) => (c.challengeDay ?? 1) <= currentDay).toList();
+    advanceChallengeDayIfReady(deck);
+    newCardsForSession = newCards.where((c) => (c.challengeDay ?? 1) <= deck.unlockedChallengeDay).toList();
   } else {
     final today = todayStamp();
     if (deck.newCardsIntroducedDate != today) {
@@ -800,6 +794,30 @@ List<StudyCard> buildSpacedRepetitionQueue(StudyDeck deck, {bool revisionOnly = 
     newCardsForSession = newCards.take(newAllowed).toList();
   }
   return [...newCardsForSession, ...reviews];
+}
+
+// Moves a day-scheduled challenge deck's unlocked day forward by exactly one
+// day, if (and only if) every card from the currently-unlocked day has been
+// studied at least once *and* today's calendar date is after the date that
+// day was unlocked on. Without the calendar-date half of this check, a user
+// working fast could blow through the whole deck in one sitting; without the
+// completion half, leaving the deck untouched for a week would silently
+// unlock a week's worth of new cards for one giant session the next time it
+// was opened (exactly the bug this replaced - see study.dart's "a little
+// while ago" report). Never advances once the free trial's run out without
+// the code, or past the last authored day.
+void advanceChallengeDayIfReady(StudyDeck deck) {
+  if (deck.challengeStartDate == null) return;
+  if (!TrialService.hasTrialAccessSync) return;
+  final maxDay = deck.cards.fold<int>(0, (m, c) => (c.challengeDay ?? 0) > m ? c.challengeDay! : m);
+  if (deck.unlockedChallengeDay >= maxDay) return;
+  final unlockedOn = deck.unlockedChallengeDayDate ?? deck.challengeStartDate!;
+  final today = todayStamp();
+  if (today == unlockedOn) return;
+  final dayCards = deck.cards.where((c) => c.challengeDay == deck.unlockedChallengeDay);
+  if (dayCards.isEmpty || !dayCards.every((c) => c.nextReviewDate != null)) return;
+  deck.unlockedChallengeDay += 1;
+  deck.unlockedChallengeDayDate = today;
 }
 
 // Simplified SM-2: only two grades (correct/incorrect) instead of 0-5 quality.
@@ -845,6 +863,11 @@ void applyImportedChallengeProgress(StudyDeck deck, int completedDay) {
   final today = _parseStamp(todayStamp());
   final backdatedStart = today.subtract(Duration(days: completedDay));
   deck.challengeStartDate = _stampFor(backdatedStart);
+  // Day completedDay+1 is immediately available - this is a deliberate
+  // one-time catch-up for progress made elsewhere, so it bypasses the
+  // ordinary completion+calendar gating (advanceChallengeDayIfReady).
+  deck.unlockedChallengeDay = completedDay + 1;
+  deck.unlockedChallengeDayDate = todayStamp();
 
   for (final card in deck.cards) {
     final day = card.challengeDay;
@@ -895,9 +918,18 @@ class StudyDeck {
 
   // Non-null marks this as a day-scheduled challenge deck (e.g. the 90 Day
   // Kanji Challenge): new cards unlock by their own StudyCard.challengeDay
-  // reaching the number of days elapsed since this date, instead of being
-  // capped by newCardsPerDay.
+  // reaching unlockedChallengeDay below, instead of being capped by
+  // newCardsPerDay.
   String? challengeStartDate;
+
+  // The highest challenge day currently unlocked, and the calendar date it
+  // was unlocked on - see advanceChallengeDayIfReady, which is what actually
+  // moves these forward (one day at a time, only once the current day's
+  // cards have all been studied *and* the calendar date has moved on, so
+  // falling behind for a week doesn't dump a week's worth of new cards into
+  // one session the next time the deck's opened).
+  int unlockedChallengeDay;
+  String? unlockedChallengeDayDate;
 
   // Which challenge days' lesson recap (see lesson_data.dart) have already
   // been completed - so the lesson only gates the start of Spaced
@@ -930,6 +962,8 @@ class StudyDeck {
     this.newCardsIntroducedDate,
     this.newCardsIntroducedToday = 0,
     this.challengeStartDate,
+    this.unlockedChallengeDay = 1,
+    this.unlockedChallengeDayDate,
     List<int>? completedLessonDays,
     this.lessonSetId,
     this.deckCreatedDate,
@@ -946,6 +980,8 @@ class StudyDeck {
     'newCardsIntroducedDate': newCardsIntroducedDate,
     'newCardsIntroducedToday': newCardsIntroducedToday,
     'challengeStartDate': challengeStartDate,
+    'unlockedChallengeDay': unlockedChallengeDay,
+    'unlockedChallengeDayDate': unlockedChallengeDayDate,
     'completedLessonDays': completedLessonDays,
     'lessonSetId': lessonSetId,
     'deckCreatedDate': deckCreatedDate,
@@ -956,6 +992,22 @@ class StudyDeck {
     final cards = (map['cards'] as List? ?? [])
         .map((c) => StudyCard.fromMap(Map<String, dynamic>.from(c)))
         .toList();
+    // Migrating a challenge deck saved before unlockedChallengeDay existed:
+    // grandfather in the highest day actually reached in practice (the
+    // highest challengeDay among cards already introduced), not the old
+    // elapsed-time formula - that formula is exactly what let an unopened
+    // deck's "unlocked" day balloon to however many days had passed, so
+    // reusing it here would just reproduce the same jump once on upgrade.
+    // A deck with zero reviews correctly migrates to day 1, matching what
+    // "I never started it" should actually show.
+    int migratedUnlockedDay = 1;
+    if (map['unlockedChallengeDay'] == null) {
+      for (final c in cards) {
+        if (c.nextReviewDate != null && (c.challengeDay ?? 0) > migratedUnlockedDay) {
+          migratedUnlockedDay = c.challengeDay!;
+        }
+      }
+    }
     return StudyDeck(
       // Deterministic fallback - see StudyCard.fromMap's id for why.
       id: map['id'] as String? ?? (map['name'] as String? ?? ''),
@@ -965,6 +1017,8 @@ class StudyDeck {
       newCardsIntroducedDate: map['newCardsIntroducedDate'],
       newCardsIntroducedToday: map['newCardsIntroducedToday'] ?? 0,
       challengeStartDate: map['challengeStartDate'],
+      unlockedChallengeDay: map['unlockedChallengeDay'] ?? migratedUnlockedDay,
+      unlockedChallengeDayDate: map['unlockedChallengeDayDate'],
       completedLessonDays: List<int>.from(map['completedLessonDays'] ?? const []),
       lessonSetId: map['lessonSetId'],
       deckCreatedDate: map['deckCreatedDate'],
@@ -993,6 +1047,8 @@ StudyDeck duplicateDeck(StudyDeck original, List<StudyDeck> existingDecks) {
     newCardsIntroducedDate: original.newCardsIntroducedDate,
     newCardsIntroducedToday: original.newCardsIntroducedToday,
     challengeStartDate: original.challengeStartDate,
+    unlockedChallengeDay: original.unlockedChallengeDay,
+    unlockedChallengeDayDate: original.unlockedChallengeDayDate,
     completedLessonDays: List<int>.from(original.completedLessonDays),
     lessonSetId: original.lessonSetId,
     deckCreatedDate: original.deckCreatedDate,
@@ -1011,6 +1067,8 @@ void resetDeckProgress(StudyDeck deck) {
   deck.newCardsIntroducedToday = 0;
   if (deck.challengeStartDate != null) {
     deck.challengeStartDate = todayStamp();
+    deck.unlockedChallengeDay = 1;
+    deck.unlockedChallengeDayDate = null;
     deck.completedLessonDays.clear();
   } else if (deck.deckCreatedDate != null) {
     deck.deckCreatedDate = todayStamp();

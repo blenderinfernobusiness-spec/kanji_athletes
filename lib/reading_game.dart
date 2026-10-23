@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'study_data.dart';
 import 'user_profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'app_colors.dart';
 
 // Reading game: shows the Japanese, the user types the reading, auto-marked
 // on an exact match against the card's hiragana or romaji (falling back to
@@ -171,9 +172,9 @@ class _ReadingGameScreenState extends State<ReadingGameScreen> {
     final card = !finished ? _questions[_currentIndex] : null;
     final promptText = card?.japanese ?? '';
     return Scaffold(
-      backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(widget.isDarkMode),
       appBar: AppBar(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+        backgroundColor: AppColors.pageBg(widget.isDarkMode),
         title: Text('Reading: ${widget.title}', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: widget.isDarkMode ? Colors.white : Colors.black),
@@ -225,7 +226,7 @@ class _ReadingGameScreenState extends State<ReadingGameScreen> {
                     LinearProgressIndicator(
                       value: (_currentIndex + 1) / _questions.length,
                       backgroundColor: widget.isDarkMode ? Colors.white12 : Colors.black12,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF9A00FE)),
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
                       minHeight: 8,
                     ),
                     const SizedBox(height: 14),
@@ -262,10 +263,10 @@ class _ReadingGameScreenState extends State<ReadingGameScreen> {
                     if (card != null)
                       TextField(
                         controller: _answerController,
-                        style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87, fontSize: 22),
+                        style: TextStyle(color: AppColors.text(widget.isDarkMode), fontSize: 22),
                         decoration: InputDecoration(
                           labelText: 'Type the reading',
-                          labelStyle: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                          labelStyle: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                           filled: true,
                           fillColor: widget.isDarkMode ? const Color(0xFF222222) : Colors.grey[200],
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
@@ -277,7 +278,7 @@ class _ReadingGameScreenState extends State<ReadingGameScreen> {
                     if (!_showResult)
                       ElevatedButton(
                         onPressed: _checkAnswer,
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
                         child: const Text('Enter'),
                       )
                     else if (_isCorrect == true)
@@ -373,12 +374,12 @@ class _ReadingGameScreenState extends State<ReadingGameScreen> {
                 value: progress,
                 minHeight: 12,
                 backgroundColor: widget.isDarkMode ? Colors.white12 : Colors.black12,
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF9A00FE)),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
               ),
             ),
             const SizedBox(height: 16),
           ],
-          const Icon(Icons.emoji_events, color: Color(0xFF9A00FE), size: 64),
+          Icon(Icons.emoji_events, color: AppColors.accent, size: 64),
           const SizedBox(height: 16),
           Text('Well done!', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black)),
           const SizedBox(height: 12),
@@ -404,7 +405,7 @@ class _ReadingGameScreenState extends State<ReadingGameScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               TabBar(
-                                labelColor: const Color(0xFF9A00FE),
+                                labelColor: AppColors.accent,
                                 unselectedLabelColor: Colors.grey,
                                 tabs: const [Tab(text: 'Correct'), Tab(text: 'Wrong')],
                               ),
@@ -461,7 +462,7 @@ class _ReadingGameScreenState extends State<ReadingGameScreen> {
                 },
               );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
             child: const Text('View Details'),
           ),
           const SizedBox(height: 16),

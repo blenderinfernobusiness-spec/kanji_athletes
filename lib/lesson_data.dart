@@ -9,6 +9,8 @@ import 'grammar_activities.dart';
 import 'grammar_data.dart';
 import 'ruby_text.dart';
 import 'trial_service.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 // One step of an interactive lesson journey. Every step shows [before]
 // first; if [question] is set, the learner has to pick an answer from
@@ -146,31 +148,35 @@ int? _dayFromStartDate(String? startDateStamp) {
 // The 90 Day Kanji Challenge deck's current day (1-based, clamped to the
 // range of authored days), or 0 if [deck] isn't a challenge deck
 // (challengeStartDate unset). Used for both its card-unlock schedule and its
-// lesson gating.
+// lesson gating. Reads deck.unlockedChallengeDay directly rather than
+// elapsed time - see study_data.dart's advanceChallengeDayIfReady for what
+// actually moves it forward.
 int currentChallengeDayFor(StudyDeck deck) {
-  final day = _dayFromStartDate(deck.challengeStartDate);
-  if (day == null) return 0;
+  if (deck.challengeStartDate == null) return 0;
+  final day = deck.unlockedChallengeDay;
   return day > kanjiChallengeDays.length ? kanjiChallengeDays.length : day;
 }
 
-// Which day a deck is on for LESSON-gating purposes only - works for a
-// day-scheduled challenge deck (via challengeStartDate) just as well as an
-// ordinary deck that's simply tracking lessons from its own creation date
-// (deckCreatedDate), e.g. the Essential Vocabulary Challenge, whose cards
-// are otherwise introduced at the user's own configured daily rate rather
-// than a fixed per-day schedule.
+// Which day a deck is on for LESSON-gating purposes only - for a
+// day-scheduled challenge deck (via challengeStartDate), that's
+// deck.unlockedChallengeDay; for an ordinary deck that's simply tracking
+// lessons from its own creation date (deckCreatedDate), e.g. the Essential
+// Vocabulary Challenge, whose cards are otherwise introduced at the user's
+// own configured daily rate rather than a fixed per-day schedule, it's
+// still elapsed time since creation.
 int lessonDayFor(StudyDeck deck) {
-  return _dayFromStartDate(deck.challengeStartDate) ?? _dayFromStartDate(deck.deckCreatedDate) ?? 0;
+  if (deck.challengeStartDate != null) return deck.unlockedChallengeDay;
+  return _dayFromStartDate(deck.deckCreatedDate) ?? 0;
 }
 
-const kLessonPurple = Color(0xFF9A00FE);
+Color get kLessonPurple => AppColors.accent;
 const kLessonHiraganaColor = Color(0xFF2E7DD7); // blue
 const kLessonKatakanaColor = Color(0xFFE0742F); // orange
 
 TextStyle lessonBodyStyle(bool isDarkMode, {double size = 24, FontWeight weight = FontWeight.w800}) => TextStyle(
   fontSize: size,
   fontWeight: weight,
-  color: isDarkMode ? Colors.white : Colors.black87,
+  color: AppColors.text(isDarkMode),
   height: 1.3,
 );
 
@@ -223,8 +229,8 @@ Widget skoolVideoLink(String url) {
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
     },
-    icon: const Icon(Icons.play_circle_outline, color: kLessonPurple),
-    label: const Text('Optional: watch on Skool', style: TextStyle(color: kLessonPurple, fontWeight: FontWeight.bold)),
+    icon: Icon(Icons.play_circle_outline, color: kLessonPurple),
+    label: Text('Optional: watch on Skool', style: TextStyle(color: kLessonPurple, fontWeight: FontWeight.bold)),
   );
 }
 
@@ -256,7 +262,7 @@ Widget youonChart(bool isDarkMode) {
           width: 60,
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+            color: AppColors.cardBg(isDarkMode),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Column(
@@ -366,7 +372,7 @@ class _StartVocabButtonState extends State<_StartVocabButton> {
         backgroundColor: kLessonPurple,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       ),
       icon: _busy
           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
@@ -1496,7 +1502,7 @@ final List<Lesson> lessons = [
         question: 'Do you think writing a word out by hand teaches you something typing doesn\'t?',
         options: const ['Yes - it builds muscle memory for recall', 'No, they\'re the same'],
         correctIndex: 0,
-        after: (dark) => const Icon(Icons.edit, size: 48, color: kLessonPurple),
+        after: (dark) => Icon(Icons.edit, size: 48, color: kLessonPurple),
         explanation: "Typing (or tapping a flashcard) is fast for daily review, but writing by hand builds a deeper, "
             "more physical kind of memory - that's what this app's Practice Writing and stroke-order tools are for.",
       ),
@@ -1508,7 +1514,7 @@ final List<Lesson> lessons = [
         question: 'Which do you think helps a word stick best in the long run?',
         options: const ['Flashcards alone', 'Flashcards plus real exposure (reading, listening, media)'],
         correctIndex: 1,
-        after: (dark) => const Icon(Icons.menu_book, size: 48, color: kLessonPurple),
+        after: (dark) => Icon(Icons.menu_book, size: 48, color: kLessonPurple),
         explanation: "Meeting a word again naturally - in a story, a song, a sentence you're reading or listening to "
             "- reinforces it far more than drilling it in isolation. That's exactly what this app's Reading and "
             "Listening tabs are for.",
@@ -1588,7 +1594,7 @@ final List<Lesson> lessons = [
         question: '走る (hashiru) has an i-sound right before る too. So is it an Ichidan verb?',
         options: const ["No - it's actually a Godan verb", 'Yes, it must be'],
         correctIndex: 0,
-        after: (dark) => const Icon(Icons.warning_amber_rounded, size: 40, color: kLessonPurple),
+        after: (dark) => Icon(Icons.warning_amber_rounded, size: 40, color: kLessonPurple),
         explanation: "Not every verb ending in an e/i sound + る is Ichidan. 走る (to run) looks exactly like one "
             "but is actually Godan. There's no shortcut that covers every verb; a few just have to be "
             "memorised as exceptions.",
@@ -2127,7 +2133,7 @@ final List<Lesson> lessons = [
         question: '小さな猫 means the same thing as 小さい猫. Can you also say 猫は小さなです (the cat is small) with 小さな?',
         options: const ['No - 小さな only ever goes directly before a noun', 'Yes, it works anywhere 小さい does'],
         correctIndex: 0,
-        after: (dark) => const Icon(Icons.info_outline, size: 40, color: kLessonPurple),
+        after: (dark) => Icon(Icons.info_outline, size: 40, color: kLessonPurple),
         explanation: "小さな and 大きな look like な-adjectives, but they're a special exception: they ONLY appear "
             "directly in front of a noun, and never conjugate. No 小さなです, no 小さなかった. For everything "
             "else, use 小さい/大きい instead.",

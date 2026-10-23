@@ -9,8 +9,9 @@ import 'ruby_text.dart';
 import 'listening_player.dart' show SelectionTranslateCard, WordPopupCard;
 import 'study_data.dart';
 import 'study_settings.dart';
+import 'app_colors.dart';
 
-const Color _accent = Color(0xFF9A00FE);
+Color get _accent => AppColors.accent;
 const double _cardWidth = 260.0;
 
 const String _textScalePrefsKey = 'panel_text_scale';
@@ -30,12 +31,12 @@ const List<Color> _textColorPresets = [
   Color(0xFFFFAB40),
 ];
 
-const List<Color> _highlightColorPresets = [
+List<Color> get _highlightColorPresets => [
   _accent,
-  Color(0xFFFFEB3B),
-  Color(0xFF00E5FF),
-  Color(0xFF69F0AE),
-  Color(0xFFFF4081),
+  const Color(0xFFFFEB3B),
+  const Color(0xFF00E5FF),
+  const Color(0xFF69F0AE),
+  const Color(0xFFFF4081),
   Colors.white,
 ];
 
@@ -330,11 +331,11 @@ class _VideoSubtitlePanelScreenState extends State<VideoSubtitlePanelScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+      backgroundColor: AppColors.cardBg(widget.isDarkMode),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) {
-          final fg = widget.isDarkMode ? Colors.white : Colors.black87;
+          final fg = AppColors.text(widget.isDarkMode);
           final muted = widget.isDarkMode ? Colors.white54 : Colors.black45;
           Widget heading(String text) => Padding(
             padding: const EdgeInsets.only(top: 16, bottom: 8),
@@ -454,7 +455,7 @@ class _VideoSubtitlePanelScreenState extends State<VideoSubtitlePanelScreen> {
                   width: c == current ? 3 : 1,
                 ),
               ),
-              child: c == null ? Text('Auto', style: TextStyle(fontSize: 9, color: widget.isDarkMode ? Colors.white70 : Colors.black54)) : null,
+              child: c == null ? Text('Auto', style: TextStyle(fontSize: 9, color: AppColors.textMuted(widget.isDarkMode))) : null,
             ),
           ),
       ],
@@ -617,8 +618,8 @@ class _VideoSubtitlePanelScreenState extends State<VideoSubtitlePanelScreen> {
               if (isImmersionBeta) ...[const SizedBox(width: 8), const BetaTag()],
             ],
           ),
-          backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-          foregroundColor: widget.isDarkMode ? Colors.white : Colors.black87,
+          backgroundColor: AppColors.pageBg(widget.isDarkMode),
+          foregroundColor: AppColors.text(widget.isDarkMode),
           actions: [
             IconButton(
               icon: const Icon(Icons.tune),
@@ -633,7 +634,7 @@ class _VideoSubtitlePanelScreenState extends State<VideoSubtitlePanelScreen> {
           ],
         ),
         body: _loading
-            ? const Center(child: CircularProgressIndicator(color: _accent))
+            ? Center(child: CircularProgressIndicator(color: _accent))
             : LayoutBuilder(
                 builder: (context, constraints) {
                   // The WebView stays at the same place in this tree in both
@@ -776,7 +777,7 @@ class _TokenView extends StatelessWidget {
     final romaji = knownRomaji.isNotEmpty ? knownRomaji : (romajiSource.isEmpty ? '' : kanaToRomaji(romajiSource));
 
     final muted = isDarkMode ? Colors.white60 : Colors.black54;
-    final defaultText = isDarkMode ? Colors.white : Colors.black87;
+    final defaultText = AppColors.text(isDarkMode);
     final fg = entry != null ? highlightColor : (textColor ?? defaultText);
 
     return GestureDetector(

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'kanji_challenge_data.dart' show SimilarKanji, similarKanjiGroups;
+import 'app_colors.dart';
+import 'app_theme.dart';
 
-const _kPurple = Color(0xFF9A00FE);
+Color get _kPurple => AppColors.accent;
 
 // The single "Similar Kanji" entry in Study → Lessons opens this - a list of
 // every authored comparison group in one place, each tappable into its own
@@ -15,11 +17,11 @@ class SimilarKanjiListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       appBar: AppBar(
         title: const Text('Similar Kanji'),
-        backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-        foregroundColor: isDarkMode ? Colors.white : Colors.black87,
+        backgroundColor: AppColors.pageBg(isDarkMode),
+        foregroundColor: AppColors.text(isDarkMode),
         elevation: 0,
       ),
       body: SafeArea(
@@ -29,17 +31,17 @@ class SimilarKanjiListScreen extends StatelessWidget {
           itemBuilder: (context, index) {
             final group = similarKanjiGroups[index];
             return Card(
-              color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+              color: AppColors.cardBg(isDarkMode),
               margin: const EdgeInsets.only(bottom: 12),
               child: ListTile(
-                leading: const Icon(Icons.compare_arrows, color: _kPurple),
+                leading: Icon(Icons.compare_arrows, color: _kPurple),
                 title: Text(
                   group.members.map((m) => m.japanese).join('　·　'),
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
                 ),
                 subtitle: Text(
                   group.members.map((m) => m.english).join(' · '),
-                  style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
+                  style: TextStyle(color: AppColors.textMuted(isDarkMode)),
                 ),
                 onTap: () => Navigator.push(
                   context,
@@ -78,7 +80,7 @@ class SimilarKanjiScreen extends StatelessWidget {
       width: 130,
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
       decoration: BoxDecoration(
-        color: isTarget ? _kPurple.withValues(alpha: isDarkMode ? 0.25 : 0.12) : (isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100]),
+        color: isTarget ? _kPurple.withValues(alpha: isDarkMode ? 0.25 : 0.12) : (AppColors.cardBg(isDarkMode)),
         borderRadius: BorderRadius.circular(16),
         border: isTarget ? Border.all(color: _kPurple, width: 2) : null,
       ),
@@ -90,7 +92,7 @@ class SimilarKanjiScreen extends StatelessWidget {
           Text(
             english,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: isDarkMode ? Colors.white70 : Colors.black54),
+            style: TextStyle(fontSize: 13, color: AppColors.textMuted(isDarkMode)),
           ),
         ],
       ),
@@ -103,11 +105,11 @@ class SimilarKanjiScreen extends StatelessWidget {
         ? '$highlight looks a lot like ${members.length > 2 ? "these kanji" : "this kanji"} - take a moment to compare them.'
         : "These kanji are easy to mix up - take a moment to compare them.";
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       appBar: AppBar(
         title: const Text('Similar Kanji'),
-        backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-        foregroundColor: isDarkMode ? Colors.white : Colors.black87,
+        backgroundColor: AppColors.pageBg(isDarkMode),
+        foregroundColor: AppColors.text(isDarkMode),
         elevation: 0,
       ),
       body: SafeArea(
@@ -115,7 +117,7 @@ class SimilarKanjiScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
           child: Column(
             children: [
-              Text(intro, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: isDarkMode ? Colors.white70 : Colors.black54)),
+              Text(intro, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: AppColors.textMuted(isDarkMode))),
               const SizedBox(height: 28),
               Wrap(
                 alignment: WrapAlignment.center,
@@ -139,7 +141,7 @@ class SimilarKanjiScreen extends StatelessWidget {
                 backgroundColor: _kPurple,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               onPressed: () => Navigator.pop(context),
               child: const Text("Got it", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),

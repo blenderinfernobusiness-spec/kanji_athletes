@@ -27,6 +27,8 @@ import 'jlpt_setup_screen.dart';
 import 'game_scope_dialog.dart';
 import 'trial_service.dart';
 import 'trial_gate.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 // XP awarded per correct answer, matching the arcade modes' per-item reward.
 const int _xpPerCorrectAnswer = 10;
@@ -95,9 +97,6 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
   // Set alongside _showNewCardsComplete when that day's capstone lesson is
   // waiting to be shown once the screen above is dismissed.
   int? _pendingEndOfDayLessonDay;
-  // How many challenge days beyond the currently-unlocked one the user has
-  // chosen to pull in early this session (see _buildContinuePrompt).
-  int _extraChallengeDaysUnlocked = 0;
 
   UserProfile? _userProfile;
   int _levelAtStart = 0;
@@ -160,15 +159,11 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
   void _buildQueue() {
     final deck = widget.deck;
     final introducedDateBefore = deck.newCardsIntroducedDate;
+    final unlockedDayBefore = deck.unlockedChallengeDay;
     _queue = buildSpacedRepetitionQueue(deck, revisionOnly: widget.revisionOnly);
-    if (deck.newCardsIntroducedDate != introducedDateBefore) widget.onChanged();
-  }
-
-  // How many days into a challenge deck's schedule today is (day 1 = the
-  // day the deck was created).
-  int _currentChallengeDay() {
-    final start = DateTime.parse(widget.deck.challengeStartDate!);
-    return DateTime.now().difference(start).inDays + 1;
+    if (deck.newCardsIntroducedDate != introducedDateBefore || deck.unlockedChallengeDay != unlockedDayBefore) {
+      widget.onChanged();
+    }
   }
 
   // Every not-yet-studied card that isn't already in the session's queue -
@@ -178,45 +173,12 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
     return widget.deck.cards.where((c) => c.nextReviewDate == null && !queued.contains(c)).toList();
   }
 
-  // The next challenge day beyond what's currently unlocked (including any
-  // already pulled in early this session) that actually has unstudied cards
-  // waiting, or null if there's nothing further to offer.
-  int? _nextEarlyChallengeDay() {
-    final nextDay = _currentChallengeDay() + 1 + _extraChallengeDaysUnlocked;
-    final hasCards = widget.deck.cards.any((c) => c.challengeDay == nextDay && c.nextReviewDate == null);
-    return hasCards ? nextDay : null;
-  }
-
   void _continueWithMoreCards() {
     final more = _unqueuedNewCards();
     final count = more.length < widget.deck.newCardsPerDay ? more.length : widget.deck.newCardsPerDay;
     if (count <= 0) return;
     setState(() => _queue = [..._queue, ...more.take(count)]);
     _afterAdvancingToNewCard();
-  }
-
-  // Pulling in a day early skips the normal Spaced Repetition entry point
-  // (study_mode.dart's startSpacedRepetition), which is the only other
-  // place that day's lesson recap would have been shown - so gate it here
-  // too, the same way: show the lesson first (if it exists and hasn't been
-  // completed yet), and only pull in the day's cards once it's done.
-  Future<void> _continueWithChallengeDay(int day) async {
-    final lesson = lessonForTrackAndDay(widget.deck.lessonSetId ?? kKanjiChallengeTrackId, day);
-    if (lesson != null && !widget.deck.completedLessonDays.contains(day)) {
-      final completed = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(builder: (context) => LessonViewerScreen(lesson: lesson, isDarkMode: widget.isDarkMode, deck: widget.deck, onChanged: widget.onChanged)),
-      );
-      if (completed != true || !mounted) return;
-      widget.deck.completedLessonDays.add(day);
-      widget.onChanged();
-    }
-    final unlocked = widget.deck.cards.where((c) => c.challengeDay == day && c.nextReviewDate == null).toList();
-    setState(() {
-      _queue = [..._queue, ...unlocked];
-      _extraChallengeDaysUnlocked++;
-    });
-    await _afterAdvancingToNewCard();
   }
 
   Future<void> _loadVoices() async {
@@ -515,13 +477,13 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "Memory Technique",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: widget.isDarkMode ? Colors.white : Colors.black87,
+            color: AppColors.text(widget.isDarkMode),
           ),
         ),
         content: TextField(
@@ -550,7 +512,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF9A00FE),
+              backgroundColor: AppColors.accent,
               foregroundColor: Colors.white,
             ),
             onPressed: () {
@@ -571,8 +533,8 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
         padding: const EdgeInsets.only(top: 8),
         child: TextButton.icon(
           onPressed: () => setState(() => _memoryTechniqueRevealed = true),
-          icon: const Icon(Icons.psychology, color: Color(0xFF9A00FE)),
-          label: const Text("Memory Technique", style: TextStyle(color: Color(0xFF9A00FE))),
+          icon: Icon(Icons.psychology, color: AppColors.accent),
+          label: Text("Memory Technique", style: TextStyle(color: AppColors.accent)),
         ),
       );
     }
@@ -606,7 +568,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.edit, size: 18, color: Color(0xFF9A00FE)),
+                  icon: Icon(Icons.edit, size: 18, color: AppColors.accent),
                   tooltip: 'Edit memory technique',
                   onPressed: () => _editMemoryTechnique(card),
                 ),
@@ -788,11 +750,11 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "End session?",
-          style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(color: AppColors.text(widget.isDarkMode)),
         ),
         content: Text(
           "You've studied $studied card${studied == 1 ? '' : 's'} so far. See your summary now?",
@@ -808,7 +770,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF9A00FE),
+              backgroundColor: AppColors.accent,
               foregroundColor: Colors.white,
             ),
             onPressed: () {
@@ -854,13 +816,13 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: AppColors.cardBg(widget.isDarkMode),
+          shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             "Study Settings",
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: widget.isDarkMode ? Colors.white : Colors.black87,
+              color: AppColors.text(widget.isDarkMode),
             ),
           ),
           content: SingleChildScrollView(
@@ -869,10 +831,10 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
               children: [
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  activeThumbColor: const Color(0xFF9A00FE),
+                  activeThumbColor: AppColors.accent,
                   title: Text(
                     "Enable Romaji",
-                    style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                    style: TextStyle(color: AppColors.text(widget.isDarkMode)),
                   ),
                   value: _settings.enableRomaji,
                   onChanged: (value) {
@@ -883,10 +845,10 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  activeThumbColor: const Color(0xFF9A00FE),
+                  activeThumbColor: AppColors.accent,
                   title: Text(
                     "Auto-read English",
-                    style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                    style: TextStyle(color: AppColors.text(widget.isDarkMode)),
                   ),
                   value: _settings.autoReadEnglish,
                   onChanged: (value) {
@@ -897,10 +859,10 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  activeThumbColor: const Color(0xFF9A00FE),
+                  activeThumbColor: AppColors.accent,
                   title: Text(
                     "Auto-read Japanese",
-                    style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                    style: TextStyle(color: AppColors.text(widget.isDarkMode)),
                   ),
                   value: _settings.autoReadJapanese,
                   onChanged: (value) {
@@ -960,7 +922,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
           actions: [
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9A00FE),
+                backgroundColor: AppColors.accent,
                 foregroundColor: Colors.white,
               ),
               onPressed: () => Navigator.pop(context),
@@ -993,11 +955,11 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
     final validSelected = voices.any((v) => v['name'] == selected) ? selected : null;
     return DropdownButtonFormField<String?>(
       initialValue: validSelected,
-      dropdownColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+      dropdownColor: AppColors.cardBg(isDarkMode),
       style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
+        labelStyle: TextStyle(color: AppColors.textMuted(isDarkMode)),
         filled: true,
         fillColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.grey[200],
         border: OutlineInputBorder(
@@ -1027,14 +989,14 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
       children: [
         Text(
           '$label: ${value.toStringAsFixed(2)}x',
-          style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(color: AppColors.text(isDarkMode)),
         ),
         Slider(
           value: value,
           min: 0.5,
           max: 2.0,
           divisions: 15,
-          activeColor: const Color(0xFF9A00FE),
+          activeColor: AppColors.accent,
           label: '${value.toStringAsFixed(2)}x',
           onChanged: onChanged,
         ),
@@ -1044,8 +1006,8 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
 
   Widget _audioButton(String text, String language) {
     return IconButton(
-      icon: const Icon(Icons.volume_up),
-      color: const Color(0xFF9A00FE),
+      icon: ThemedIcon(iconId: 'bell', size: 26, fallback: const Icon(Icons.volume_up)),
+      color: AppColors.accent,
       tooltip: 'Play audio',
       onPressed: () async {
         final isEnglish = language == 'English';
@@ -1067,26 +1029,26 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
     final isDarkMode = widget.isDarkMode;
     final hasCurrentCard = _queue.isNotEmpty && _index < _queue.length && !_showNewCardsComplete;
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       appBar: AppBar(
         title: Text('${widget.deck.name} - Spaced Repetition${widget.revisionOnly ? ' (Revision)' : ''}'),
-        backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-        foregroundColor: isDarkMode ? Colors.white : Colors.black87,
+        backgroundColor: AppColors.pageBg(isDarkMode),
+        foregroundColor: AppColors.text(isDarkMode),
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.undo),
+            icon: ThemedIcon(iconId: 'undo', size: 22, fallback: const Icon(Icons.undo)),
             tooltip: 'Undo last answer',
             onPressed: _lastUndo == null ? null : _undo,
           ),
           if (hasCurrentCard) ...[
             IconButton(
-              icon: const Icon(Icons.flag),
+              icon: ThemedIcon(iconId: 'flag', size: 22, fallback: const Icon(Icons.flag)),
               tooltip: 'End session',
               onPressed: _confirmEndSession,
             ),
             IconButton(
-              icon: const Icon(Icons.edit),
+              icon: ThemedIcon(iconId: 'quill', size: 22, fallback: const Icon(Icons.edit)),
               tooltip: 'Edit card',
               onPressed: () => showEditCardDialog(
                 context,
@@ -1101,7 +1063,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
               onPressed: _flipCurrentCard,
             ),
             IconButton(
-              icon: const Icon(Icons.gesture),
+              icon: ThemedIcon(iconId: 'brush', size: 22, fallback: const Icon(Icons.gesture)),
               tooltip: 'View stroke order',
               onPressed: () => showStrokeOrderDialogFor(context, _queue[_index], isDarkMode),
             ),
@@ -1113,7 +1075,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
               ),
           ],
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: ThemedIcon(iconId: 'settings', size: 22, fallback: const Icon(Icons.settings)),
             tooltip: 'Study settings',
             onPressed: _showSettingsDialog,
           ),
@@ -1140,7 +1102,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
   // A video-player-style card: thumbnail with a play button overlay, and the
   // video's caption underneath - used by _buildNewCardsCompleteScreen.
   Widget _buildVideoRecapCard(DeckVideo video, Color labelColor) {
-    const purple = Color(0xFF9A00FE);
+    final purple = AppColors.accent;
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 440),
@@ -1196,7 +1158,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
 
   Widget _buildNewCardsCompleteScreen(bool isDarkMode) {
     final video = deckCompletionVideo(widget.deck);
-    final fg = isDarkMode ? Colors.white : Colors.black87;
+    final fg = AppColors.text(isDarkMode);
     final muted = isDarkMode ? Colors.white60 : Colors.black54;
     final hasReviews = _queue.skip(_index).any((c) => c.nextReviewDate != null);
     final String subtitle;
@@ -1221,7 +1183,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
               _buildVideoRecapCard(video, fg),
               const SizedBox(height: 32),
             ],
-            const Icon(Icons.celebration_outlined, size: 56, color: Color(0xFF9A00FE)),
+            Icon(Icons.celebration_outlined, size: 56, color: AppColors.accent),
             const SizedBox(height: 16),
             Text(
               "Today's new cards complete!",
@@ -1235,7 +1197,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF9A00FE),
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -1260,7 +1222,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, color: isDarkMode ? Colors.white70 : Colors.black54),
+              style: TextStyle(fontSize: 18, color: AppColors.textMuted(isDarkMode)),
             ),
             const SizedBox(height: 20),
             _buildContinuePrompt(isDarkMode),
@@ -1268,7 +1230,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF9A00FE),
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () => Navigator.pop(context),
@@ -1319,16 +1281,16 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          const Icon(Icons.emoji_events, color: Color(0xFF9A00FE), size: 64),
+          Icon(Icons.emoji_events, color: AppColors.accent, size: 64),
           const SizedBox(height: 12),
           Text(
             "Session Complete!",
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
           ),
           const SizedBox(height: 4),
           Text(
             total == 0 ? "No cards graded" : "$_correctCount / $total correct",
-            style: TextStyle(fontSize: 18, color: isDarkMode ? Colors.white70 : Colors.black54),
+            style: TextStyle(fontSize: 18, color: AppColors.textMuted(isDarkMode)),
           ),
           if (profile != null) ...[
             const SizedBox(height: 24),
@@ -1351,13 +1313,13 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: isDarkMode ? Colors.white : Colors.black87,
+                  color: AppColors.text(isDarkMode),
                 ),
               ),
             ),
             const SizedBox(height: 8),
             ..._results.map((r) => Card(
-                  color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+                  color: AppColors.cardBg(isDarkMode),
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
                     leading: Icon(
@@ -1366,11 +1328,11 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
                     ),
                     title: Text(
                       r.card.japanese,
-                      style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: AppColors.text(isDarkMode), fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
                       r.card.english,
-                      style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
+                      style: TextStyle(color: AppColors.textMuted(isDarkMode)),
                     ),
                   ),
                 )),
@@ -1395,10 +1357,10 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9A00FE),
+                backgroundColor: AppColors.accent,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: () => Navigator.pop(context),
               child: const Text("Done", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -1409,32 +1371,24 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
     );
   }
 
-  // Offers to keep the session going once its queue runs out naturally:
-  // more new cards (up to the deck's daily amount) for an ordinary deck, or
-  // - for the day-scheduled 90 Day Kanji Challenge - the next day's kanji
-  // early, for a user working through it faster than one day at a time.
+  // Offers to keep the session going once its queue runs out naturally with
+  // more new cards, up to the deck's daily amount. A day-scheduled challenge
+  // deck (Kana Course, 90 Day Kanji Challenge) never offers this - its next
+  // day only unlocks once today's is fully studied *and* the calendar date
+  // has actually moved on (see advanceChallengeDayIfReady), never by working
+  // fast within one sitting.
   Widget _buildContinuePrompt(bool isDarkMode) {
     // Revision-only never offers more new cards - that's the whole point.
     // Same once the free trial's run out: no new content, at all, full stop.
     if (widget.revisionOnly || !TrialService.hasTrialAccessSync) return const SizedBox.shrink();
-    final String message;
-    final String buttonLabel;
-    final VoidCallback onPressed;
+    if (widget.deck.challengeStartDate != null) return const SizedBox.shrink();
 
-    if (widget.deck.challengeStartDate != null) {
-      final nextDay = _nextEarlyChallengeDay();
-      if (nextDay == null) return const SizedBox.shrink();
-      message = "Working fast! Want to learn Day $nextDay's content early?";
-      buttonLabel = "Learn Day $nextDay Now";
-      onPressed = () => _continueWithChallengeDay(nextDay);
-    } else {
-      final more = _unqueuedNewCards();
-      final take = more.length < widget.deck.newCardsPerDay ? more.length : widget.deck.newCardsPerDay;
-      if (take <= 0) return const SizedBox.shrink();
-      message = "Want to keep going with $take more new card${take == 1 ? '' : 's'}?";
-      buttonLabel = "Continue";
-      onPressed = _continueWithMoreCards;
-    }
+    final more = _unqueuedNewCards();
+    final take = more.length < widget.deck.newCardsPerDay ? more.length : widget.deck.newCardsPerDay;
+    if (take <= 0) return const SizedBox.shrink();
+    final message = "Want to keep going with $take more new card${take == 1 ? '' : 's'}?";
+    const buttonLabel = "Continue";
+    final VoidCallback onPressed = _continueWithMoreCards;
 
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 16),
@@ -1442,22 +1396,22 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF9A00FE).withValues(alpha: 0.1),
+          color: AppColors.accent.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF9A00FE).withValues(alpha: 0.4)),
+          border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
         ),
         child: Column(
           children: [
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87, fontSize: 15),
+              style: TextStyle(color: AppColors.text(isDarkMode), fontSize: 15),
             ),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
                 onPressed: onPressed,
                 child: Text(buttonLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
@@ -1479,10 +1433,17 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
                 backgroundColor: Colors.redAccent,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: () => _answer(false),
-              child: const Text("Incorrect", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ThemedIcon(iconId: 'skull', size: 20, fallback: const SizedBox.shrink()),
+                  const SizedBox(width: 4),
+                  const Text("Incorrect", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                ],
+              ),
             ),
           ),
         ),
@@ -1494,10 +1455,17 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: () => _answer(true),
-              child: const Text("Correct", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ThemedIcon(iconId: 'crown', size: 20, fallback: const SizedBox.shrink()),
+                  const SizedBox(width: 4),
+                  const Text("Correct", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                ],
+              ),
             ),
           ),
         ),
@@ -1515,7 +1483,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
             style: TextStyle(
               fontSize: 40,
               fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : Colors.black87,
+              color: AppColors.text(isDarkMode),
             ),
           ),
         Text(
@@ -1537,7 +1505,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: isDarkMode ? Colors.white : Colors.black87,
+              color: AppColors.text(isDarkMode),
             ),
           ),
         ],
@@ -1578,7 +1546,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
         children: [
           Text(
             'Card ${_index + 1} of ${_queue.length}',
-            style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
+            style: TextStyle(color: AppColors.textMuted(isDarkMode)),
           ),
           const SizedBox(height: 24),
           Text(
@@ -1587,7 +1555,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
             style: TextStyle(
               fontSize: frontIsEnglish ? 32 : 48,
               fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : Colors.black87,
+              color: AppColors.text(isDarkMode),
             ),
           ),
           card.cardType == 'Kana'
@@ -1622,10 +1590,10 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF9A00FE),
+                    backgroundColor: AppColors.accent,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   onPressed: () => _revealDrawAnswer(card, isDarkMode),
                   child: const Text("Show Answer", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
@@ -1634,8 +1602,8 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
             else
               TextButton.icon(
                 onPressed: () => showStrokeOrderDialogFor(context, card, isDarkMode),
-                icon: const Icon(Icons.gesture, color: Color(0xFF9A00FE)),
-                label: const Text("View stroke order again", style: TextStyle(color: Color(0xFF9A00FE))),
+                icon: Icon(Icons.gesture, color: AppColors.accent),
+                label: Text("View stroke order again", style: TextStyle(color: AppColors.accent)),
               ),
             if (_drawAnswerRevealed) _memoryTechniqueSection(card, isDarkMode),
             const SizedBox(height: 16),
@@ -1663,10 +1631,10 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF9A00FE),
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 onPressed: _submitTypedAnswer,
                 child: const Text("Submit", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -1685,10 +1653,10 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF9A00FE),
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 onPressed: _showAnswerNow,
                 child: const Text("Show Answer", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -1737,7 +1705,7 @@ class _LevelProgressAnimation extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFF9A00FE),
+                color: AppColors.accent,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -1753,7 +1721,7 @@ class _LevelProgressAnimation extends StatelessWidget {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: isDarkMode ? Colors.white : Colors.black87,
+            color: AppColors.text(isDarkMode),
           ),
         ),
         const SizedBox(height: 8),
@@ -1769,7 +1737,7 @@ class _LevelProgressAnimation extends StatelessWidget {
                 value: value,
                 minHeight: 14,
                 backgroundColor: isDarkMode ? Colors.white12 : Colors.black12,
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF9A00FE)),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
               ),
             ),
           ),
@@ -1777,7 +1745,7 @@ class _LevelProgressAnimation extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           "+$xpEarned XP earned",
-          style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
+          style: TextStyle(color: AppColors.textMuted(isDarkMode)),
         ),
       ],
     );
@@ -1804,10 +1772,10 @@ class _MoreWaysToStudyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = isDarkMode ? Colors.white : Colors.black87;
-    final fgMuted = isDarkMode ? Colors.white70 : Colors.black54;
+    final fg = AppColors.text(isDarkMode);
+    final fgMuted = AppColors.textMuted(isDarkMode);
     return Card(
-      color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+      color: AppColors.cardBg(isDarkMode),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1856,7 +1824,7 @@ class _MoreWaysButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFF9A00FE),
+      color: AppColors.accent,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'study_data.dart';
 import 'stroke_order_animator.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 InputDecoration _fieldDecoration(bool isDarkMode, String hint) => InputDecoration(
   hintText: hint,
@@ -27,7 +29,7 @@ Widget answerModeField({
 }) {
   return DropdownButtonFormField<String>(
     initialValue: value,
-    dropdownColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+    dropdownColor: AppColors.cardBg(isDarkMode),
     style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
     decoration: _fieldDecoration(isDarkMode, "Answer mode"),
     items: answerModeLabels.entries
@@ -48,7 +50,7 @@ Widget cardTypeField({
 }) {
   return DropdownButtonFormField<String>(
     initialValue: cardTypeOptions.contains(value) ? value : 'Vocab',
-    dropdownColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+    dropdownColor: AppColors.cardBg(isDarkMode),
     style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
     decoration: _fieldDecoration(isDarkMode, "Card type"),
     items: cardTypeOptions.map((type) => DropdownMenuItem<String>(value: type, child: Text(type))).toList(),
@@ -66,11 +68,11 @@ void _confirmResetProgress(
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      backgroundColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: AppColors.cardBg(isDarkMode),
+      shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(
         "Reset Progress?",
-        style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
+        style: TextStyle(color: AppColors.text(isDarkMode)),
       ),
       content: Text(
         "This card's spaced repetition progress will go back to new. This cannot be undone.",
@@ -86,7 +88,7 @@ void _confirmResetProgress(
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF9A00FE),
+            backgroundColor: AppColors.accent,
             foregroundColor: Colors.white,
           ),
           onPressed: () {
@@ -118,13 +120,13 @@ void showEditCardDialog(BuildContext context, StudyCard card, bool isDarkMode, V
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setDialogState) => AlertDialog(
-        backgroundColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "Edit Card",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: isDarkMode ? Colors.white : Colors.black87,
+            color: AppColors.text(isDarkMode),
           ),
         ),
         content: SizedBox(
@@ -171,12 +173,12 @@ void showEditCardDialog(BuildContext context, StudyCard card, bool isDarkMode, V
                     Expanded(
                       child: Text(
                         englishFirst ? "Prompt with English first" : "Prompt with Japanese first",
-                        style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
+                        style: TextStyle(color: AppColors.text(isDarkMode)),
                       ),
                     ),
                     Switch(
                       value: englishFirst,
-                      activeThumbColor: const Color(0xFF9A00FE),
+                      activeThumbColor: AppColors.accent,
                       onChanged: (value) => setDialogState(() => englishFirst = value),
                     ),
                   ],
@@ -203,7 +205,7 @@ void showEditCardDialog(BuildContext context, StudyCard card, bool isDarkMode, V
                   children: [
                     Text(
                       "Study progress: ${card.progress}%",
-                      style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
+                      style: TextStyle(color: AppColors.textMuted(isDarkMode)),
                     ),
                     TextButton(
                       onPressed: () => _confirmResetProgress(context, card, isDarkMode, onUpdate, setDialogState),
@@ -225,7 +227,7 @@ void showEditCardDialog(BuildContext context, StudyCard card, bool isDarkMode, V
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF9A00FE),
+              backgroundColor: AppColors.accent,
               foregroundColor: Colors.white,
             ),
             onPressed: () {

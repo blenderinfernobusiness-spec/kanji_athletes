@@ -8,8 +8,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'ruby_text.dart';
 import 'study_data.dart';
 import 'study_settings.dart';
+import 'app_colors.dart';
 
-const Color _accent = Color(0xFF9A00FE);
+Color get _accent => AppColors.accent;
 
 // What each form means, used by the "why" note when a fill-in answer is wrong.
 const Map<String, String> _formNotes = {
@@ -149,9 +150,9 @@ class GrammarLessonActivityState extends State<GrammarLessonActivity> {
     super.dispose();
   }
 
-  Color get _fg => widget.isDarkMode ? Colors.white : Colors.black87;
+  Color get _fg => AppColors.text(widget.isDarkMode);
   Color get _fgMuted => widget.isDarkMode ? Colors.white60 : Colors.black54;
-  Color get _cardBg => widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
+  Color get _cardBg => AppColors.cardBg(widget.isDarkMode);
 
   GrammarSentence get _current => widget.point.sentences[_sentence];
 
@@ -663,7 +664,7 @@ class GrammarLessonActivityState extends State<GrammarLessonActivity> {
   Widget _revealButton(String label, bool shown, VoidCallback onTap) => OutlinedButton(
     style: OutlinedButton.styleFrom(
       foregroundColor: _accent,
-      side: const BorderSide(color: _accent),
+      side: BorderSide(color: _accent),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       textStyle: const TextStyle(fontSize: 16),
     ),
@@ -1367,7 +1368,7 @@ class _TokenButton extends StatelessWidget {
     final fill = selected ? _accent : (isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[200]!);
     final fg = selected
         ? Colors.white
-        : (isTarget ? _accent : (isDarkMode ? Colors.white : Colors.black87));
+        : (isTarget ? _accent : (AppColors.text(isDarkMode)));
     final muted = selected ? Colors.white70 : (isDarkMode ? Colors.white60 : Colors.black54);
     return GestureDetector(
       onTap: onTap,
@@ -1414,7 +1415,7 @@ class _GrammarFormCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = isDarkMode ? Colors.white : Colors.black87;
+    final fg = AppColors.text(isDarkMode);
     final muted = isDarkMode ? Colors.white60 : Colors.black54;
     return Material(
       color: Colors.transparent,
@@ -1423,7 +1424,7 @@ class _GrammarFormCard extends StatelessWidget {
         constraints: const BoxConstraints(maxHeight: 320),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+          color: AppColors.cardBg(isDarkMode),
           borderRadius: BorderRadius.circular(16),
           boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 12)],
         ),
@@ -1435,7 +1436,7 @@ class _GrammarFormCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(form, style: const TextStyle(color: _accent, fontSize: 26, fontWeight: FontWeight.bold)),
+                    child: Text(form, style: TextStyle(color: _accent, fontSize: 26, fontWeight: FontWeight.bold)),
                   ),
                   IconButton(
                     onPressed: onClose,
@@ -1480,7 +1481,7 @@ class _NoEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = isDarkMode ? Colors.white : Colors.black87;
+    final fg = AppColors.text(isDarkMode);
     final muted = isDarkMode ? Colors.white60 : Colors.black54;
     return Material(
       color: Colors.transparent,
@@ -1488,7 +1489,7 @@ class _NoEntryCard extends StatelessWidget {
         width: 260,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+          color: AppColors.cardBg(isDarkMode),
           borderRadius: BorderRadius.circular(16),
           boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 12)],
         ),
@@ -1736,9 +1737,9 @@ class _CreativeSentenceState extends State<_CreativeSentence> {
     await launchUrl(Uri.parse(_skoolUrl), mode: LaunchMode.externalApplication);
   }
 
-  Color get _fg => widget.isDarkMode ? Colors.white : Colors.black87;
+  Color get _fg => AppColors.text(widget.isDarkMode);
   Color get _fgMuted => widget.isDarkMode ? Colors.white60 : Colors.black54;
-  Color get _cardBg => widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100]!;
+  Color get _cardBg => AppColors.cardBg(widget.isDarkMode);
 
   InputDecoration _decoration(String hint) => InputDecoration(
     hintText: hint,
@@ -1845,7 +1846,7 @@ class _CreativeSentenceState extends State<_CreativeSentence> {
                       value: _selectedVariant,
                       underline: const SizedBox.shrink(),
                       dropdownColor: _cardBg,
-                      style: const TextStyle(color: _accent, fontSize: 30, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: _accent, fontSize: 30, fontWeight: FontWeight.bold),
                       items: [
                         for (final variant in _formVariants)
                           DropdownMenuItem(value: variant, child: Text(variant)),
@@ -1854,7 +1855,7 @@ class _CreativeSentenceState extends State<_CreativeSentence> {
                         if (value != null) setState(() => _selectedVariant = value);
                       },
                     )
-                  : Text(point.form, style: const TextStyle(color: _accent, fontSize: 30, fontWeight: FontWeight.bold)),
+                  : Text(point.form, style: TextStyle(color: _accent, fontSize: 30, fontWeight: FontWeight.bold)),
             ),
             Expanded(
               child: TextField(
@@ -1879,7 +1880,7 @@ class _CreativeSentenceState extends State<_CreativeSentence> {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.refresh, color: _accent),
+              icon: Icon(Icons.refresh, color: _accent),
               tooltip: 'More words',
               onPressed: _pickIdeas,
             ),
@@ -1930,7 +1931,7 @@ class _CreativeSentenceState extends State<_CreativeSentence> {
             OutlinedButton(
               style: OutlinedButton.styleFrom(
                 foregroundColor: _accent,
-                side: const BorderSide(color: _accent),
+                side: BorderSide(color: _accent),
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
               ),
               onPressed: _saveSentence,
@@ -1939,7 +1940,7 @@ class _CreativeSentenceState extends State<_CreativeSentence> {
             OutlinedButton(
               style: OutlinedButton.styleFrom(
                 foregroundColor: _accent,
-                side: const BorderSide(color: _accent),
+                side: BorderSide(color: _accent),
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
               ),
               onPressed: _addSentence,

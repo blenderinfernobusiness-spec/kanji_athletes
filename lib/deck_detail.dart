@@ -4,6 +4,8 @@ import 'study_data.dart';
 import 'card_context_screen.dart';
 import 'card_edit_dialog.dart';
 import 'grammar_data.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
 class DeckDetailScreen extends StatefulWidget {
   final StudyDeck deck;
@@ -72,11 +74,11 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "Deck Settings",
-          style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -86,7 +88,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                 ? [
                     Text(
                       "New cards per day",
-                      style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                      style: TextStyle(color: AppColors.text(widget.isDarkMode)),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -97,7 +99,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                 : [
                     Text(
                       "New cards per day",
-                      style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                      style: TextStyle(color: AppColors.text(widget.isDarkMode)),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -120,10 +122,10 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
             const Divider(height: 32),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.build, color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+              leading: Icon(Icons.build, color: AppColors.textMuted(widget.isDarkMode)),
               title: Text(
                 "Manage Deck",
-                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                style: TextStyle(color: AppColors.text(widget.isDarkMode)),
               ),
               subtitle: Text(
                 "Rename, duplicate, reset progress, or delete",
@@ -143,7 +145,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
           ),
           if (!isChallengeDeck)
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
               onPressed: () {
                 final value = int.tryParse(controller.text.trim());
                 if (value == null || value < 0) return;
@@ -167,7 +169,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
           margin: const EdgeInsets.all(12),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+            color: AppColors.cardBg(widget.isDarkMode),
             borderRadius: BorderRadius.circular(24),
           ),
           child: Column(
@@ -175,7 +177,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
             children: [
               Text(
                 widget.deck.name,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode)),
               ),
               const SizedBox(height: 16),
               ListTile(
@@ -222,9 +224,9 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Rename Deck", style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text("Rename Deck", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode))),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -243,7 +245,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
             child: Text("Cancel", style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
             onPressed: () {
               final name = controller.text.trim();
               if (name.isEmpty) return;
@@ -262,9 +264,9 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Duplicate Deck?", style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text("Duplicate Deck?", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode))),
         content: Text(
           'This will create a copy of "${widget.deck.name}", including all its cards and progress.',
           style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87),
@@ -275,7 +277,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
             child: Text("Cancel", style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9A00FE), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.white),
             onPressed: () async {
               Navigator.pop(dialogContext);
               await widget.onDuplicate();
@@ -295,9 +297,9 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Reset Progress?", style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text("Reset Progress?", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode))),
         content: Text(
           'This marks every card in "${widget.deck.name}" as new again${widget.deck.challengeStartDate != null ? " and restarts its challenge schedule from day 1" : ""}. This cannot be undone.',
           style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87),
@@ -325,9 +327,9 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Delete Deck?", style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text("Delete Deck?", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode))),
         content: Text(
           'This will permanently delete "${widget.deck.name}" and all ${widget.deck.cards.length} card${widget.deck.cards.length == 1 ? '' : 's'} in it. This cannot be undone.',
           style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87),
@@ -357,11 +359,11 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "Delete $count card${count == 1 ? '' : 's'}?",
-          style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(color: AppColors.text(widget.isDarkMode)),
         ),
         content: Text(
           "This cannot be undone.",
@@ -427,11 +429,11 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "Reset progress for $count card${count == 1 ? '' : 's'}?",
-          style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(color: AppColors.text(widget.isDarkMode)),
         ),
         content: Text(
           "Their spaced repetition progress will go back to new. This cannot be undone.",
@@ -447,7 +449,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF9A00FE),
+              backgroundColor: AppColors.accent,
               foregroundColor: Colors.white,
             ),
             onPressed: () {
@@ -474,13 +476,13 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: AppColors.cardBg(widget.isDarkMode),
+          shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             "Set Answer Mode",
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: widget.isDarkMode ? Colors.white : Colors.black87,
+              color: AppColors.text(widget.isDarkMode),
             ),
           ),
           content: SizedBox(
@@ -503,7 +505,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9A00FE),
+                backgroundColor: AppColors.accent,
                 foregroundColor: Colors.white,
               ),
               onPressed: () {
@@ -531,13 +533,13 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: AppColors.cardBg(widget.isDarkMode),
+          shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             "Set Card Type",
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: widget.isDarkMode ? Colors.white : Colors.black87,
+              color: AppColors.text(widget.isDarkMode),
             ),
           ),
           content: SizedBox(
@@ -560,7 +562,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9A00FE),
+                backgroundColor: AppColors.accent,
                 foregroundColor: Colors.white,
               ),
               onPressed: () {
@@ -636,13 +638,13 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-        backgroundColor: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "Add Card",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: widget.isDarkMode ? Colors.white : Colors.black87,
+            color: AppColors.text(widget.isDarkMode),
           ),
         ),
         content: SizedBox(
@@ -686,20 +688,20 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                         ),
                         subtitle: Text(
                           item.translation,
-                          style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                          style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
                         ),
                         trailing: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF9A00FE).withValues(alpha: 0.15),
+                            color: AppColors.accent.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             item.itemType,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF9A00FE),
+                              color: AppColors.accent,
                             ),
                           ),
                         ),
@@ -777,7 +779,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF9A00FE),
+              backgroundColor: AppColors.accent,
               foregroundColor: Colors.white,
             ),
             onPressed: () {
@@ -814,7 +816,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(widget.isDarkMode),
       appBar: _selectionMode
           ? AppBar(
               leading: IconButton(
@@ -823,8 +825,8 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                 onPressed: _exitSelection,
               ),
               title: Text('${_selected.length} selected'),
-              backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-              foregroundColor: widget.isDarkMode ? Colors.white : Colors.black87,
+              backgroundColor: AppColors.pageBg(widget.isDarkMode),
+              foregroundColor: AppColors.text(widget.isDarkMode),
               elevation: 0,
               actions: [
                 IconButton(
@@ -856,8 +858,8 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
             )
           : AppBar(
               title: Text(widget.deck.name),
-              backgroundColor: widget.isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-              foregroundColor: widget.isDarkMode ? Colors.white : Colors.black87,
+              backgroundColor: AppColors.pageBg(widget.isDarkMode),
+              foregroundColor: AppColors.text(widget.isDarkMode),
               elevation: 0,
               actions: [
                 IconButton(
@@ -876,7 +878,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
               child: Text(
                 "No cards yet.\nTap + to add one.",
                 textAlign: TextAlign.center,
-                style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
               ),
             )
           : widget.deck.challengeStartDate != null || isGrammarTrackId(widget.deck.lessonSetId)
@@ -915,7 +917,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
-                color: widget.isDarkMode ? Colors.white : Colors.black87,
+                color: AppColors.text(widget.isDarkMode),
               ),
             ),
           ));
@@ -926,7 +928,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
         padding: const EdgeInsets.only(top: 12, bottom: 8),
         child: Text(
           day == 0 ? 'Unassigned' : 'Day $day',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF9A00FE)),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.accent),
         ),
       ));
       children.addAll(groups[day]!.map(_buildCardTile));
@@ -955,7 +957,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
     final isSelected = _selected.contains(card);
     return Card(
       color: isSelected
-          ? const Color(0xFF9A00FE).withValues(alpha: 0.15)
+          ? AppColors.accent.withValues(alpha: 0.15)
           : widget.isDarkMode
               ? const Color(0xFF2A2A2A)
               : Colors.grey[100],
@@ -966,7 +968,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
         leading: _selectionMode
             ? Checkbox(
                 value: isSelected,
-                activeColor: const Color(0xFF9A00FE),
+                activeColor: AppColors.accent,
                 onChanged: (_) => _toggleSelection(card),
               )
             : null,
@@ -978,19 +980,19 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: widget.isDarkMode ? Colors.white : Colors.black87,
+                color: AppColors.text(widget.isDarkMode),
               ),
             ),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFF9A00FE).withValues(alpha: 0.15),
+                color: AppColors.accent.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 card.cardType,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF9A00FE)),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.accent),
               ),
             ),
           ],
@@ -1004,7 +1006,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                 if (card.romaji.isNotEmpty) card.romaji,
                 card.english,
               ].join(' · '),
-              style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+              style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
             ),
             const SizedBox(height: 4),
             Text(
@@ -1012,7 +1014,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: widget.isDarkMode ? const Color(0xFFBB86FC) : const Color(0xFF9A00FE),
+                color: widget.isDarkMode ? const Color(0xFFBB86FC) : AppColors.accent,
               ),
             ),
           ],
@@ -1025,7 +1027,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                   IconButton(
                     icon: Icon(
                       Icons.edit,
-                      color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                      color: AppColors.textMuted(widget.isDarkMode),
                     ),
                     tooltip: 'Edit card',
                     onPressed: () => showEditCardDialog(
@@ -1042,7 +1044,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                     icon: Icon(
                       Icons.gesture,
                       color: card.kanjiVGCodes.isNotEmpty
-                          ? const Color(0xFF9A00FE)
+                          ? AppColors.accent
                           : Colors.grey,
                     ),
                     tooltip: 'View stroke order',

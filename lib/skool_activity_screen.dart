@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
-const _kPurple = Color(0xFF9A00FE);
+Color get _kPurple => AppColors.accent;
 const _kSkoolUrl = 'https://www.skool.com/kanji-athletes-5541';
 
 // One fill-in-the-blank line in a SkoolActivityScreen - the learner types
@@ -86,7 +88,7 @@ class _SkoolActivityScreenState extends State<SkoolActivityScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+        color: AppColors.cardBg(isDarkMode),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -106,7 +108,7 @@ class _SkoolActivityScreenState extends State<SkoolActivityScreen> {
               hintText: "Your word (romaji, hiragana, or kanji)",
               hintStyle: TextStyle(color: isDarkMode ? Colors.white38 : Colors.black38),
               filled: true,
-              fillColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+              fillColor: AppColors.pageBg(isDarkMode),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
@@ -131,13 +133,13 @@ class _SkoolActivityScreenState extends State<SkoolActivityScreen> {
           Text(
             widget.title,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
           ),
           const SizedBox(height: 12),
           Text(
             widget.instructions,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: isDarkMode ? Colors.white70 : Colors.black54),
+            style: TextStyle(fontSize: 14, color: AppColors.textMuted(isDarkMode)),
           ),
           const SizedBox(height: 28),
           for (var i = 0; i < widget.prompts.length; i++) ...[
@@ -150,7 +152,7 @@ class _SkoolActivityScreenState extends State<SkoolActivityScreen> {
               backgroundColor: _kPurple,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
             onPressed: () => setState(() => _showResults = true),
             child: const Text("Build It", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -166,19 +168,19 @@ class _SkoolActivityScreenState extends State<SkoolActivityScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(Icons.celebration, size: 48, color: _kPurple),
+          Icon(Icons.celebration, size: 48, color: _kPurple),
           const SizedBox(height: 16),
           Text(
             widget.resultsHeading,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
           ),
           const SizedBox(height: 20),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+              color: AppColors.cardBg(isDarkMode),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -201,7 +203,7 @@ class _SkoolActivityScreenState extends State<SkoolActivityScreen> {
               backgroundColor: _kPurple,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
             icon: const Icon(Icons.ios_share),
             label: const Text("Copy & Share to Skool", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -215,18 +217,18 @@ class _SkoolActivityScreenState extends State<SkoolActivityScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.tips_and_updates, color: _kPurple, size: 20),
+                    Icon(Icons.tips_and_updates, color: _kPurple, size: 20),
                     const SizedBox(width: 8),
                     Text(
                       "Share for feedback!",
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
                   widget.shareInstructions,
-                  style: TextStyle(fontSize: 13, height: 1.4, color: isDarkMode ? Colors.white70 : Colors.black54),
+                  style: TextStyle(fontSize: 13, height: 1.4, color: AppColors.textMuted(isDarkMode)),
                 ),
               ],
             ),
@@ -237,7 +239,7 @@ class _SkoolActivityScreenState extends State<SkoolActivityScreen> {
               backgroundColor: _kPurple,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
             onPressed: widget.onDone,
             child: const Text("Done", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -251,7 +253,7 @@ class _SkoolActivityScreenState extends State<SkoolActivityScreen> {
   Widget build(BuildContext context) {
     final isDarkMode = widget.isDarkMode;
     return Container(
-      color: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      color: AppColors.pageBg(isDarkMode),
       width: double.infinity,
       height: double.infinity,
       child: _showResults ? _buildResults(isDarkMode) : _buildInputForm(isDarkMode),

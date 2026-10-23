@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'study_data.dart';
 import 'sets_data.dart';
 import 'kanji_challenge_data.dart';
+import 'app_colors.dart';
 
 // Replaces the old To-Do list button on the home screen. Summarizes Study
 // progress: total words studied (nextReviewDate != null is the same "has
@@ -116,7 +117,7 @@ class _StatsScreenState extends State<StatsScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[100],
+        color: AppColors.cardBg(widget.isDarkMode),
         borderRadius: BorderRadius.circular(16),
       ),
       child: child,
@@ -129,8 +130,8 @@ class _StatsScreenState extends State<StatsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54)),
-          Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87)),
+          Text(label, style: TextStyle(color: AppColors.textMuted(widget.isDarkMode))),
+          Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(widget.isDarkMode))),
         ],
       ),
     );
@@ -140,16 +141,16 @@ class _StatsScreenState extends State<StatsScreen> {
   Widget build(BuildContext context) {
     final isDarkMode = widget.isDarkMode;
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       appBar: AppBar(
         title: const Text('Stats'),
-        backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-        foregroundColor: isDarkMode ? Colors.white : Colors.black87,
+        backgroundColor: AppColors.pageBg(isDarkMode),
+        foregroundColor: AppColors.text(isDarkMode),
         elevation: 0,
       ),
       body: SafeArea(
         child: _loading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF9A00FE)))
+            ? Center(child: CircularProgressIndicator(color: AppColors.accent))
             : ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
@@ -159,7 +160,7 @@ class _StatsScreenState extends State<StatsScreen> {
                       children: [
                         Text(
                           'Study progress',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
                         ),
                         const SizedBox(height: 8),
                         _statRow('Decks', '$_deckCount'),
@@ -174,7 +175,7 @@ class _StatsScreenState extends State<StatsScreen> {
                                 value: _studiedCount / _totalCards,
                                 minHeight: 8,
                                 backgroundColor: isDarkMode ? Colors.white12 : Colors.black12,
-                                color: const Color(0xFF9A00FE),
+                                color: AppColors.accent,
                               ),
                             ),
                           ),
@@ -187,7 +188,7 @@ class _StatsScreenState extends State<StatsScreen> {
                       children: [
                         Text(
                           'Words studied by JLPT level',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
                         ),
                         const SizedBox(height: 8),
                         for (final level in _levelOrder) _statRow(level, '${_levelCounts[level] ?? 0}'),
@@ -202,7 +203,7 @@ class _StatsScreenState extends State<StatsScreen> {
                         children: [
                           Text(
                             kanjiChallengeDeckName,
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text(isDarkMode)),
                           ),
                           const SizedBox(height: 8),
                           _statRow('Day', '$_challengeDayNumber / ${kanjiChallengeDays.length}'),
@@ -216,7 +217,7 @@ class _StatsScreenState extends State<StatsScreen> {
                                 value: _challengeTotal > 0 ? _challengeStudied / _challengeTotal : 0.0,
                                 minHeight: 8,
                                 backgroundColor: isDarkMode ? Colors.white12 : Colors.black12,
-                                color: const Color(0xFF9A00FE),
+                                color: AppColors.accent,
                               ),
                             ),
                           ),

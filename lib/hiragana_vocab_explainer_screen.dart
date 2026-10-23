@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'app_colors.dart';
+import 'app_theme.dart';
 
-const _kPurple = Color(0xFF9A00FE);
+Color get _kPurple => AppColors.accent;
 
 // Shown once, automatically, the very first time a Hiragana Challenge
 // session reaches its first batch of example-word flashcards - explains how
@@ -16,11 +18,11 @@ class HiraganaVocabExplainerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: AppColors.pageBg(isDarkMode),
       appBar: AppBar(
         title: const Text('Example Words'),
-        backgroundColor: isDarkMode ? const Color(0xFF1A1A1A) : Colors.white,
-        foregroundColor: isDarkMode ? Colors.white : Colors.black87,
+        backgroundColor: AppColors.pageBg(isDarkMode),
+        foregroundColor: AppColors.text(isDarkMode),
         elevation: 0,
       ),
       body: SafeArea(
@@ -33,7 +35,7 @@ class HiraganaVocabExplainerScreen extends StatelessWidget {
                 Text(
                   'Now that you know a few hiragana, here are some real words that use them.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: isDarkMode ? Colors.white70 : Colors.black54),
+                  style: TextStyle(fontSize: 16, color: AppColors.textMuted(isDarkMode)),
                 ),
                 const SizedBox(height: 28),
                 Text(
@@ -41,9 +43,9 @@ class HiraganaVocabExplainerScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: isDarkMode ? Colors.white : Colors.black),
                 ),
                 const SizedBox(height: 14),
-                Text('a me', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: isDarkMode ? Colors.white70 : Colors.black54)),
+                Text('a me', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textMuted(isDarkMode))),
                 const SizedBox(height: 6),
-                Text('Rain', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: isDarkMode ? Colors.white70 : Colors.black54)),
+                Text('Rain', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textMuted(isDarkMode))),
                 const SizedBox(height: 28),
                 Container(
                   padding: const EdgeInsets.all(14),
@@ -53,7 +55,7 @@ class HiraganaVocabExplainerScreen extends StatelessWidget {
                     "read aloud. When a word has a kanji spelling, like 雨 here, it's shown in brackets as a "
                     "preview - you don't need to learn it yet, it'll come naturally in the 90 Day Kanji Challenge.",
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: isDarkMode ? Colors.white70 : Colors.black54),
+                    style: TextStyle(fontSize: 14, color: AppColors.textMuted(isDarkMode)),
                   ),
                 ),
               ],
@@ -71,7 +73,7 @@ class HiraganaVocabExplainerScreen extends StatelessWidget {
                 backgroundColor: _kPurple,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               onPressed: () => Navigator.pop(context),
               child: const Text("Got it", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),

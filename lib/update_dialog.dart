@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'update_check_service.dart';
+import 'app_colors.dart';
 
-const Color _accent = Color(0xFF9A00FE);
+Color get _accent => AppColors.accent;
 
 // Shows the "a new version is available" prompt. Non-dismissible (no "Not
 // now", no tap-outside-to-close) when [info.required] is true - used only
@@ -17,10 +18,10 @@ Future<void> showUpdateDialog(BuildContext context, UpdateInfo info, bool isDark
     builder: (context) => PopScope(
       canPop: !info.required,
       child: AlertDialog(
-        backgroundColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+        backgroundColor: AppColors.cardBg(isDarkMode),
         title: Text(
           info.required ? 'Update required' : 'Update available',
-          style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
+          style: TextStyle(color: AppColors.text(isDarkMode)),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
