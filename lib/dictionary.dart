@@ -10,8 +10,6 @@ import 'package:path/path.dart' as p;
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'quick_sync_button.dart';
-import 'trial_gate.dart';
-import 'trial_service.dart';
 import 'app_colors.dart';
 import 'app_theme.dart';
 
@@ -538,11 +536,8 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
       ),
       body: Column(
         children: [
-          TrialStatusBanner(isDarkMode: widget.isDarkMode, onChanged: () => setState(() {})),
           Expanded(
-            child: !TrialService.hasTrialAccessSync
-                ? TrialLockedBody(isDarkMode: widget.isDarkMode, featureName: 'the Dictionary', onChanged: () => setState(() {}))
-                : Padding(
+            child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [

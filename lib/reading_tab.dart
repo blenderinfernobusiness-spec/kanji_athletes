@@ -4,8 +4,6 @@ import 'study_data.dart';
 import 'reading_text_screen.dart';
 import 'beta_tag.dart';
 import 'immersion_tab.dart';
-import 'trial_gate.dart';
-import 'trial_service.dart';
 import 'app_colors.dart';
 import 'app_theme.dart';
 
@@ -19,10 +17,6 @@ import 'app_theme.dart';
 // dialog for channels/browsing), so on web this is just Reading on its own,
 // no tab bar needed for a single tab.
 //
-// Free for the first 7 days (see trial_service.dart) - a status banner shows
-// the days left (or, once unlocked, a permanent confirmation), and once the
-// trial runs out the content is replaced by a locked placeholder until the
-// code is entered.
 class ReadingAndImmersionTabView extends StatefulWidget {
   final bool isDarkMode;
   const ReadingAndImmersionTabView({super.key, required this.isDarkMode});
@@ -34,20 +28,8 @@ class ReadingAndImmersionTabView extends StatefulWidget {
 class _ReadingAndImmersionTabViewState extends State<ReadingAndImmersionTabView> {
   @override
   Widget build(BuildContext context) {
-    final locked = !TrialService.hasTrialAccessSync;
-    final lockedBody = TrialLockedBody(
-      isDarkMode: widget.isDarkMode,
-      featureName: kIsWeb ? 'Reading' : 'Reading & Immersion',
-      onChanged: () => setState(() {}),
-    );
-
     if (kIsWeb) {
-      return Column(
-        children: [
-          TrialStatusBanner(isDarkMode: widget.isDarkMode, onChanged: () => setState(() {})),
-          Expanded(child: locked ? lockedBody : ReadingTabView(isDarkMode: widget.isDarkMode)),
-        ],
-      );
+      return ReadingTabView(isDarkMode: widget.isDarkMode);
     }
 
     return DefaultTabController(
@@ -74,16 +56,13 @@ class _ReadingAndImmersionTabViewState extends State<ReadingAndImmersionTabView>
               ],
             ),
           ),
-          TrialStatusBanner(isDarkMode: widget.isDarkMode, onChanged: () => setState(() {})),
           Expanded(
-            child: locked
-                ? lockedBody
-                : TabBarView(
-                    children: [
-                      ReadingTabView(isDarkMode: widget.isDarkMode),
-                      ImmersionTabView(isDarkMode: widget.isDarkMode),
-                    ],
-                  ),
+            child: TabBarView(
+              children: [
+                ReadingTabView(isDarkMode: widget.isDarkMode),
+                ImmersionTabView(isDarkMode: widget.isDarkMode),
+              ],
+            ),
           ),
         ],
       ),

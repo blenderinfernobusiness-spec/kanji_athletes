@@ -27,8 +27,6 @@ import 'cloud_sync_page.dart';
 import 'quick_sync_button.dart';
 import 'main_mini.dart';
 import 'onboarding_flow.dart';
-import 'trial_service.dart';
-import 'trial_gate.dart';
 import 'app_theme.dart';
 import 'app_fonts.dart';
 import 'update_check_service.dart';
@@ -51,12 +49,6 @@ Future<void> main(List<String> args) async {
   // Ensure any migrations and saved sets are loaded before the app starts
   await SetPreferences.checkMigration();
   await SetPreferences.loadAllSets();
-  // Starts (or resumes) the free-trial clock, and loads it into memory so
-  // the rest of the app can check it synchronously. If already signed in
-  // from a previous session, also pulls down this account's unlock status
-  // in case it was unlocked on another device.
-  await TrialService.ensureTrialStarted();
-  unawaited(TrialService.syncFromCloud());
   await AppTheme.instance.load();
 
   runApp(const GemGridApp());
@@ -1433,8 +1425,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-
-                TrialStatusBanner(isDarkMode: widget.isDarkMode, onChanged: () => setState(() {})),
 
                 // XP/Level/Progress bar at the top
                   if (_userProfile != null) ...[

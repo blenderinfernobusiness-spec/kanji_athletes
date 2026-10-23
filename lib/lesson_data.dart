@@ -8,7 +8,6 @@ import 'skool_activity_screen.dart';
 import 'grammar_activities.dart';
 import 'grammar_data.dart';
 import 'ruby_text.dart';
-import 'trial_service.dart';
 import 'app_colors.dart';
 import 'app_theme.dart';
 
@@ -136,12 +135,7 @@ Lesson? lessonForTrackAndDay(String trackId, int day) {
 int? _dayFromStartDate(String? startDateStamp) {
   if (startDateStamp == null) return null;
   final start = DateTime.parse(startDateStamp);
-  // Once the free trial's run out without the code being entered, freeze
-  // day progression at whatever day it had reached right when the trial
-  // ended, so no further days' lessons or cards unlock for free - matching
-  // study_data.dart's buildSpacedRepetitionQueue freeze.
-  final now = TrialService.hasTrialAccessSync ? DateTime.now() : TrialService.trialEndDate;
-  final day = now.difference(start).inDays + 1;
+  final day = DateTime.now().difference(start).inDays + 1;
   return day < 1 ? 1 : day;
 }
 

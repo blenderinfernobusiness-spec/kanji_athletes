@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'sets_data.dart';
-import 'trial_service.dart';
 import 'verb_conjugation.dart';
 import 'word_types.dart';
 
@@ -774,12 +773,6 @@ List<StudyCard> buildSpacedRepetitionQueue(StudyDeck deck, {bool revisionOnly = 
   if (revisionOnly) return reviews;
   final newCards = due.where((c) => c.nextReviewDate == null).toList();
 
-  // Once the free trial has run out without the code being entered, every
-  // deck (premade or custom) stops introducing new cards - revising what's
-  // already been learned keeps working with no cap, since `reviews` above is
-  // untouched either way.
-  final trialExpired = !TrialService.hasTrialAccessSync;
-
   List<StudyCard> newCardsForSession;
   if (deck.challengeStartDate != null) {
     advanceChallengeDayIfReady(deck);
@@ -790,7 +783,7 @@ List<StudyCard> buildSpacedRepetitionQueue(StudyDeck deck, {bool revisionOnly = 
       deck.newCardsIntroducedDate = today;
       deck.newCardsIntroducedToday = 0;
     }
-    final newAllowed = trialExpired ? 0 : (deck.newCardsPerDay - deck.newCardsIntroducedToday).clamp(0, newCards.length);
+    final newAllowed = (deck.newCardsPerDay - deck.newCardsIntroducedToday).clamp(0, newCards.length);
     newCardsForSession = newCards.take(newAllowed).toList();
   }
   return [...newCardsForSession, ...reviews];
@@ -804,11 +797,9 @@ List<StudyCard> buildSpacedRepetitionQueue(StudyDeck deck, {bool revisionOnly = 
 // completion half, leaving the deck untouched for a week would silently
 // unlock a week's worth of new cards for one giant session the next time it
 // was opened (exactly the bug this replaced - see study.dart's "a little
-// while ago" report). Never advances once the free trial's run out without
-// the code, or past the last authored day.
+// while ago" report). Never advances past the last authored day.
 void advanceChallengeDayIfReady(StudyDeck deck) {
   if (deck.challengeStartDate == null) return;
-  if (!TrialService.hasTrialAccessSync) return;
   final maxDay = deck.cards.fold<int>(0, (m, c) => (c.challengeDay ?? 0) > m ? c.challengeDay! : m);
   if (deck.unlockedChallengeDay >= maxDay) return;
   final unlockedOn = deck.unlockedChallengeDayDate ?? deck.challengeStartDate!;

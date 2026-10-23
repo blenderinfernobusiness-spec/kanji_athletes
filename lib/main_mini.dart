@@ -11,8 +11,6 @@ import 'cloud_sync_service.dart';
 import 'firebase_options.dart';
 import 'listening_player.dart';
 import 'study_data.dart';
-import 'trial_gate.dart';
-import 'trial_service.dart';
 import 'writing_practice_canvas.dart';
 import 'app_colors.dart';
 import 'app_theme.dart';
@@ -30,12 +28,6 @@ const Color _panel = Color(0xFF2A2A2A);
 Future<void> runMiniApp() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // Mini studies decks the full app already created, so the trial clock
-  // (see trial_service.dart) needs to be loaded here too - otherwise
-  // buildSpacedRepetitionQueue's trial-gating check would fall back to its
-  // "cache never loaded" default.
-  await TrialService.ensureTrialStarted();
-  unawaited(TrialService.syncFromCloud());
   await windowManager.ensureInitialized();
 
   const options = WindowOptions(
@@ -248,10 +240,6 @@ class MiniModePicker extends StatelessWidget {
             Text(statusMessage!, style: const TextStyle(color: Colors.white38, fontSize: 12)),
             const SizedBox(height: 16),
           ],
-          StatefulBuilder(
-            builder: (context, setState) => TrialStatusBanner(isDarkMode: true, onChanged: () => setState(() {})),
-          ),
-          const SizedBox(height: 16),
           _ModeButton(
             icon: Icons.style_outlined,
             label: 'Flashcards',
@@ -373,8 +361,6 @@ class _MiniDeckPickerState extends State<MiniDeckPicker> {
                                   ),
                                 );
                               } else {
-                                final ok = await requireTrialAccess(context, true, featureName: 'Reading & Listening');
-                                if (!ok || !context.mounted) return;
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) => ListeningPlayerScreen(

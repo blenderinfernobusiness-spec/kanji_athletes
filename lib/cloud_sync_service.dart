@@ -4,7 +4,6 @@ import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'trial_service.dart';
 
 // Email/password auth + a single-file backup/restore in Firebase Storage —
 // deliberately not Google Sign-In, since that needs a separate, clunkier
@@ -28,11 +27,6 @@ class CloudSyncService {
 
   static Future<void> signIn({required String email, required String password}) async {
     await _auth.signInWithEmailAndPassword(email: email.trim(), password: password);
-    // Best-effort - picks up this account's free-trial unlock status (see
-    // trial_service.dart) in case it was unlocked on another device, so
-    // switching accounts (or signing in on a fresh install) doesn't need the
-    // code re-entered. Never blocks sign-in itself on this.
-    unawaited(TrialService.syncFromCloud());
   }
 
   static Future<void> signOut() => _auth.signOut();

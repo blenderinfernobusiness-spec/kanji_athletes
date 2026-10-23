@@ -7,7 +7,6 @@ import 'lesson_data.dart';
 import 'lesson_viewer_screen.dart';
 import 'grammar_data.dart';
 import 'study_progress_screen.dart';
-import 'trial_gate.dart';
 import 'app_colors.dart';
 import 'app_theme.dart';
 
@@ -259,10 +258,8 @@ class _StudyModeMenu extends StatelessWidget {
                 ),
               );
             }, iconId: 'tabCards'),
-            _buildModeButton(context, "Reading & Listening", () async {
+            _buildModeButton(context, "Reading & Listening", () {
               Navigator.pop(context);
-              final ok = await requireTrialAccess(hostContext, isDarkMode, featureName: 'Reading & Listening');
-              if (!ok || !hostContext.mounted) return;
               Navigator.push(
                 hostContext,
                 MaterialPageRoute(
@@ -275,17 +272,13 @@ class _StudyModeMenu extends StatelessWidget {
                 ),
               );
             }, iconId: 'tabReading'),
-            _buildModeButton(context, "Games and more", () async {
+            _buildModeButton(context, "Games and more", () {
               Navigator.pop(context);
-              final ok = await requireTrialAccess(hostContext, isDarkMode, featureName: 'Games');
-              if (!ok || !hostContext.mounted) return;
               showGamesMenu(hostContext, deck.name, deck.cards, isDarkMode);
             }, iconId: 'sword'),
             if (deck.lessonSetId != null)
-              _buildModeButton(context, "Study progress", () async {
+              _buildModeButton(context, "Study progress", () {
                 Navigator.pop(context);
-                final ok = await requireTrialAccess(hostContext, isDarkMode, featureName: 'Lessons');
-                if (!ok || !hostContext.mounted) return;
                 Navigator.push(
                   hostContext,
                   MaterialPageRoute(

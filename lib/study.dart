@@ -13,7 +13,6 @@ import 'lesson_data.dart';
 import 'lesson_viewer_screen.dart';
 import 'similar_kanji_screen.dart';
 import 'quick_sync_button.dart';
-import 'trial_gate.dart';
 import 'app_theme.dart';
 import 'app_fonts.dart';
 import 'app_colors.dart';
@@ -188,10 +187,6 @@ class _StudyScreenState extends State<StudyScreen> {
   // cheap rather than "featured". Light mode instead gets only a hint of
   // tint, leaning on the solid purple border (kept in both modes) to carry
   // the "special" look instead of the fill.
-  // Every premade deck/set is freely importable regardless of the free
-  // trial - see trial_service.dart's doc comment for what's actually
-  // gated once the trial runs out (new cards, Games, Lessons, Reading,
-  // Immersion, Listening, the Dictionary).
   Widget _specialDeckCard({
     required IconData icon,
     required String title,
@@ -1154,13 +1149,6 @@ class _StudyScreenState extends State<StudyScreen> {
           ),
           onTap: unlocked
               ? () async {
-                  // Viewing a lesson (new or already completed) is gated by
-                  // the free trial once it's run out - the admin preview
-                  // toggle bypasses this too, same as the day-gating above.
-                  if (!_adminUnlockAllLessons) {
-                    final ok = await requireTrialAccess(context, widget.isDarkMode, featureName: 'Lessons');
-                    if (!ok || !mounted) return;
-                  }
                   final done = await Navigator.push<bool>(
                     context,
                     MaterialPageRoute(

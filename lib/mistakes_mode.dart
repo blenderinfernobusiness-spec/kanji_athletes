@@ -3,7 +3,6 @@ import 'study_data.dart';
 import 'isolated_flashcard_study.dart';
 import 'listening_player.dart';
 import 'games_mode.dart';
-import 'trial_gate.dart';
 import 'app_colors.dart';
 import 'app_theme.dart';
 
@@ -93,13 +92,10 @@ class _MistakesModeMenu extends StatelessWidget {
                 ),
               );
             }, iconId: 'tabCards'),
-            _buildModeButton(context, "Reading & Listening", () async {
-              final navigator = Navigator.of(context);
-              navigator.pop();
-              final hostContext = navigator.context;
-              final ok = await requireTrialAccess(hostContext, isDarkMode, featureName: 'Reading & Listening');
-              if (!ok || !hostContext.mounted) return;
-              navigator.push(
+            _buildModeButton(context, "Reading & Listening", () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
                 MaterialPageRoute(
                   builder: (context) => ListeningPlayerScreen(
                     title: title,
@@ -109,13 +105,9 @@ class _MistakesModeMenu extends StatelessWidget {
                 ),
               );
             }, iconId: 'tabReading'),
-            _buildModeButton(context, "Games and more", () async {
-              final navigator = Navigator.of(context);
-              navigator.pop();
-              final hostContext = navigator.context;
-              final ok = await requireTrialAccess(hostContext, isDarkMode, featureName: 'Games');
-              if (!ok || !hostContext.mounted) return;
-              showGamesMenu(hostContext, title, cards, isDarkMode);
+            _buildModeButton(context, "Games and more", () {
+              Navigator.pop(context);
+              showGamesMenu(context, title, cards, isDarkMode);
             }, iconId: 'sword'),
           ],
         ),

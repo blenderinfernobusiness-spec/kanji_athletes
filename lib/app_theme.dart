@@ -29,8 +29,7 @@ const List<MapEntry<String, String>> kThemeChoices = [
 // (not a Provider/InheritedWidget, to match this app's existing pattern of
 // threading isDarkMode through explicit constructor params rather than a
 // theming framework) that any screen can listen to directly via
-// AnimatedBuilder, same idea as TrialService but for the visual skin rather
-// than the free-trial paywall.
+// AnimatedBuilder.
 class AppTheme extends ChangeNotifier {
   AppTheme._();
   static final AppTheme instance = AppTheme._();

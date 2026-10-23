@@ -25,8 +25,6 @@ import 'match_game.dart';
 import 'balloon_game.dart';
 import 'jlpt_setup_screen.dart';
 import 'game_scope_dialog.dart';
-import 'trial_service.dart';
-import 'trial_gate.dart';
 import 'app_colors.dart';
 import 'app_theme.dart';
 
@@ -1246,10 +1244,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
   // Backing the summary screen's "More ways to study" section - every card
   // in this deck (not just the ones graded this session), same scope
   // showStudyModeMenu/showGamesMenu already use from the deck list itself.
-  // Gated by the free trial, same as every other way into Listening/Games.
   Future<void> _tryListening() async {
-    final ok = await requireTrialAccess(context, widget.isDarkMode, featureName: 'Reading & Listening');
-    if (!ok || !mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -1260,8 +1255,6 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
   }
 
   Future<void> _tryGame(Widget Function(List<StudyCard> questions) buildScreen) async {
-    final ok = await requireTrialAccess(context, widget.isDarkMode, featureName: 'Games');
-    if (!ok || !mounted) return;
     final questions = await showGameScopeDialog(context, cards: widget.deck.cards, isDarkMode: widget.isDarkMode);
     if (questions == null || questions.isEmpty) return;
     if (!mounted) return;
@@ -1379,8 +1372,7 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
   // fast within one sitting.
   Widget _buildContinuePrompt(bool isDarkMode) {
     // Revision-only never offers more new cards - that's the whole point.
-    // Same once the free trial's run out: no new content, at all, full stop.
-    if (widget.revisionOnly || !TrialService.hasTrialAccessSync) return const SizedBox.shrink();
+    if (widget.revisionOnly) return const SizedBox.shrink();
     if (widget.deck.challengeStartDate != null) return const SizedBox.shrink();
 
     final more = _unqueuedNewCards();
