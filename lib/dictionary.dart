@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'quick_sync_button.dart';
 import 'app_colors.dart';
 import 'app_theme.dart';
+import 'kana_romaji.dart';
 
 class DictionaryScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -117,9 +118,15 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
           if (type == 'Vocabulary') {
             return item.japanese.toLowerCase().contains(query) ||
                    item.reading.toLowerCase().contains(query) ||
-                   item.translation.toLowerCase().contains(query);
+                   item.translation.toLowerCase().contains(query) ||
+                   kanaToRomaji(item.reading).toLowerCase().contains(query);
+          } else if (type == 'Kanji') {
+            final onKunRomaji = kanaToRomaji('${item.onYomi} ${item.kunYomi}').toLowerCase();
+            return item.japanese.toLowerCase().contains(query) ||
+                   item.translation.toLowerCase().contains(query) ||
+                   onKunRomaji.contains(query);
           } else {
-            // Hiragana, Katakana, or Kanji
+            // Hiragana or Katakana - translation already holds the romaji.
             return item.japanese.toLowerCase().contains(query) ||
                    item.translation.toLowerCase().contains(query);
           }

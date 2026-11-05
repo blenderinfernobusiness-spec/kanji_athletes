@@ -12,6 +12,12 @@ import 'ruby_text.dart';
 import 'verb_conjugation.dart';
 import 'app_colors.dart';
 import 'app_theme.dart';
+import 'pitch_accent_data.dart';
+import 'pitch_accent_diagram.dart';
+import 'tatoeba_service.dart';
+import 'word_example_sentences.dart';
+import 'example_sentence_card.dart';
+import 'audio_service.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final Item item;
@@ -120,19 +126,54 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
   late Item _currentItem;
   late int _currentIndex;
 
+  // The hand-picked offline set for the first 50 Essential Vocab words
+  // (word_example_sentences.dart) if there is one, else whatever's been
+  // fetched live so far via the "Load sentence from Tatoeba" button below.
+  List<TatoebaSentence> _sentences = [];
+  bool _loadingSentence = false;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _currentItem = widget.item;
     _currentIndex = widget.currentIndex ?? 0;
-    
+    _sentences = kWordExampleSentences[_currentItem.japanese] ?? [];
+
     // Only load stroke order for non-Vocab items
     if (_currentItem.itemType != 'Vocab') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadStrokeOrderData();
       });
     }
+  }
+
+  // Fetches one more live Tatoeba sentence for this word (any word in the
+  // dictionary, not just the hardcoded 100+) and appends it, skipping any id
+  // already shown so repeated taps actually surface something new.
+  // [preference] picks which of the remaining candidates to add: the
+  // shortest or longest one, or just the first ('any') - so a user who
+  // wants a quick one-liner or a meatier sentence to read can ask for it
+  // directly instead of re-rolling the plain button hoping for one.
+  Future<void> _loadSentenceFromTatoeba({String preference = 'any'}) async {
+    setState(() => _loadingSentence = true);
+    final fetched = await getTatoebaSentencesFor(_currentItem.japanese);
+    final shownIds = _sentences.map((s) => s.id).toSet();
+    final candidates = fetched.where((s) => !shownIds.contains(s.id)).toList();
+    if (!mounted) return;
+    setState(() {
+      _loadingSentence = false;
+      if (candidates.isEmpty) return;
+      final TatoebaSentence pick;
+      if (preference == 'short') {
+        pick = candidates.reduce((a, b) => a.text.length <= b.text.length ? a : b);
+      } else if (preference == 'long') {
+        pick = candidates.reduce((a, b) => a.text.length >= b.text.length ? a : b);
+      } else {
+        pick = candidates.first;
+      }
+      _sentences = [..._sentences, pick];
+    });
   }
 
   @override
@@ -1010,6 +1051,66 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
     });
   }
 
+  void _showPitchAccentInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBg(widget.isDarkMode),
+        shape: pixelShape() ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'What Is Pitch Accent?',
+          style: TextStyle(
+            color: widget.isDarkMode ? Colors.white : Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Japanese doesn't stress syllables the way English does - instead, each mora (beat) of a word is said with either a relatively high or low pitch, and that pattern is part of the word itself, just like its spelling.",
+                style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'The chart shows one dot per mora - high up for a high-pitched mora, low down for a low-pitched one - joined by a line so the rise and fall are easy to see at a glance.',
+                style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'The number next to a word (from a standard accent dictionary) marks where the pitch drops, called the accent nucleus:',
+                style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '0 (heiban, flat): starts low, then rises and stays high - even into a word or particle right after it.\n\n'
+                '1 (atamadaka, head-high): high on the very first mora only, then drops and stays low.\n\n'
+                '2, 3, ... (nakadaka/odaka): stays low, rises, stays high up through that numbered mora, then drops.',
+                style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Getting it wrong rarely blocks understanding, but matching it is a big part of sounding natural rather than like a foreign accent - and some words are only told apart by their pitch (e.g. 橋 'bridge' vs 箸 'chopsticks', both はし).",
+                style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Close',
+              style: TextStyle(color: AppColors.textMuted(widget.isDarkMode)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showPracticeWritingDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -1293,6 +1394,37 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                       ),
                       textAlign: TextAlign.center,
                     ),
+                    if (pitchAccentFor(_currentItem.japanese, _currentItem.reading) != null) ...[
+                      const SizedBox(height: 14),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Pitch Accent',
+                            style: TextStyle(
+                              color: AppColors.textMuted(widget.isDarkMode),
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          GestureDetector(
+                            onTap: _showPitchAccentInfoDialog,
+                            child: Icon(
+                              Icons.info_outline,
+                              size: 16,
+                              color: AppColors.textMuted(widget.isDarkMode),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      PitchAccentDiagram(
+                        reading: _currentItem.reading,
+                        accents: pitchAccentFor(_currentItem.japanese, _currentItem.reading)!,
+                        isDarkMode: widget.isDarkMode,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1311,6 +1443,76 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
                 ),
               ],
             ],
+            const SizedBox(height: 20),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Example Sentences',
+                    style: TextStyle(
+                      color: AppColors.textMuted(widget.isDarkMode),
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  if (_sentences.isNotEmpty)
+                    ExampleSentencesSection(
+                      sentences: _sentences,
+                      isDarkMode: widget.isDarkMode,
+                      onSpeak: (text) => AudioService().speak(text, 'Japanese'),
+                    ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: _loadingSentence ? null : () => _loadSentenceFromTatoeba(),
+                      icon: _loadingSentence
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent),
+                            )
+                          : Icon(Icons.auto_stories, size: 18, color: AppColors.accent),
+                      label: Text(
+                        'Load sentence from Tatoeba',
+                        style: TextStyle(color: AppColors.accent),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton.icon(
+                          onPressed: _loadingSentence ? null : () => _loadSentenceFromTatoeba(preference: 'short'),
+                          icon: Icon(Icons.short_text, size: 18, color: AppColors.accent),
+                          label: Text(
+                            'Load short sentence',
+                            style: TextStyle(color: AppColors.accent, fontSize: 13),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: TextButton.icon(
+                          onPressed: _loadingSentence ? null : () => _loadSentenceFromTatoeba(preference: 'long'),
+                          icon: Icon(Icons.subject, size: 18, color: AppColors.accent),
+                          label: Text(
+                            'Load long sentence',
+                            style: TextStyle(color: AppColors.accent, fontSize: 13),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
             // Show onyomi, kunyomi, nanori for Kanji items only
             if (!isVocab && _currentItem.itemType == 'Kanji') ...[
               const SizedBox(height: 20),

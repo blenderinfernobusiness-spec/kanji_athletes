@@ -27,6 +27,10 @@ import 'jlpt_setup_screen.dart';
 import 'game_scope_dialog.dart';
 import 'app_colors.dart';
 import 'app_theme.dart';
+import 'pitch_accent_data.dart';
+import 'pitch_accent_diagram.dart';
+import 'word_example_sentences.dart';
+import 'example_sentence_card.dart';
 
 // XP awarded per correct answer, matching the arcade modes' per-item reward.
 const int _xpPerCorrectAnswer = 10;
@@ -1483,6 +1487,14 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 24, color: isDarkMode ? Colors.white70 : Colors.black87),
         ),
+        if (pitchAccentFor(card.japanese, card.hiragana) != null) ...[
+          const SizedBox(height: 6),
+          PitchAccentDiagram(
+            reading: card.hiragana,
+            accents: pitchAccentFor(card.japanese, card.hiragana)!,
+            isDarkMode: isDarkMode,
+          ),
+        ],
         if (_settings.enableRomaji && card.romaji.isNotEmpty)
           Text(
             card.romaji,
@@ -1505,6 +1517,14 @@ class _SpacedRepetitionStandardScreenState extends State<SpacedRepetitionStandar
           frontIsEnglish ? _japaneseText(card) : card.english,
           frontIsEnglish ? 'Japanese' : 'English',
         ),
+        if (kWordExampleSentences[card.japanese] != null) ...[
+          const SizedBox(height: 12),
+          ExampleSentencesSection(
+            sentences: kWordExampleSentences[card.japanese]!,
+            isDarkMode: isDarkMode,
+            onSpeak: (text) => AudioService().speak(text, 'Japanese', rate: _settings.japaneseSpeed, voiceName: _settings.japaneseVoiceName),
+          ),
+        ],
         _memoryTechniqueSection(card, isDarkMode),
       ],
     );

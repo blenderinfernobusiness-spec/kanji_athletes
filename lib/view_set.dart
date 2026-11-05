@@ -8,6 +8,7 @@ import 'item_detail.dart';
 import 'set_preferences.dart';
 import 'app_colors.dart';
 import 'app_theme.dart';
+import 'kana_romaji.dart';
 
 class ViewSetScreen extends StatefulWidget {
   final ItemSet itemSet;
@@ -1076,11 +1077,15 @@ class _ViewSetScreenState extends State<ViewSetScreen> {
       if (query.isEmpty) {
         _filteredItems = widget.itemSet.items;
       } else {
+        final lowerQuery = query.toLowerCase();
         _filteredItems = widget.itemSet.items.where((item) {
-          final wordMatch = item.japanese.toLowerCase().contains(query.toLowerCase());
-          final readingMatch = item.reading.toLowerCase().contains(query.toLowerCase());
-          final translationMatch = item.translation.toLowerCase().contains(query.toLowerCase());
-          return wordMatch || readingMatch || translationMatch;
+          final wordMatch = item.japanese.toLowerCase().contains(lowerQuery);
+          final readingMatch = item.reading.toLowerCase().contains(lowerQuery);
+          final translationMatch = item.translation.toLowerCase().contains(lowerQuery);
+          final romajiMatch = kanaToRomaji('${item.reading} ${item.onYomi} ${item.kunYomi}')
+              .toLowerCase()
+              .contains(lowerQuery);
+          return wordMatch || readingMatch || translationMatch || romajiMatch;
         }).toList();
       }
     });

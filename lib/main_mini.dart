@@ -14,6 +14,10 @@ import 'study_data.dart';
 import 'writing_practice_canvas.dart';
 import 'app_colors.dart';
 import 'app_theme.dart';
+import 'pitch_accent_data.dart';
+import 'pitch_accent_diagram.dart';
+import 'word_example_sentences.dart';
+import 'example_sentence_card.dart';
 
 Color get _accent => AppColors.accent;
 const Color _bg = Color(0xFF1C1C1C);
@@ -563,16 +567,33 @@ class _MiniFlashcardsScreenState extends State<MiniFlashcardsScreen> {
                     padding: EdgeInsets.symmetric(vertical: 14),
                     child: Divider(color: Colors.white24),
                   ),
-                  if (reading != null)
+                  if (reading != null) ...[
                     Padding(
                       padding: const EdgeInsets.only(bottom: 6),
                       child: Text(reading, style: const TextStyle(color: Colors.white70, fontSize: 14)),
                     ),
+                    if (pitchAccentFor(card.japanese, reading) != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: PitchAccentDiagram(
+                          reading: reading,
+                          accents: pitchAccentFor(card.japanese, reading)!,
+                          isDarkMode: true,
+                        ),
+                      ),
+                  ],
                   Text(
                     answer,
                     style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600),
                     textAlign: TextAlign.center,
                   ),
+                  if (kWordExampleSentences[card.japanese] != null) ...[
+                    const SizedBox(height: 12),
+                    ExampleSentencesSection(
+                      sentences: kWordExampleSentences[card.japanese]!,
+                      isDarkMode: true,
+                    ),
+                  ],
                 ] else
                   const Padding(
                     padding: EdgeInsets.only(top: 14),

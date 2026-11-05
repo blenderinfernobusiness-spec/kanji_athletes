@@ -9,6 +9,8 @@ import 'translation_service.dart';
 import 'card_edit_dialog.dart' show showStrokeOrderDialog;
 import 'app_colors.dart';
 import 'app_theme.dart';
+import 'pitch_accent_data.dart';
+import 'pitch_accent_diagram.dart';
 
 // LingQ-style lookup bubble content: word, reading, meaning, an audio
 // button, an add-to-deck action (for dictionary words not already in the
@@ -189,6 +191,14 @@ class WordPopupCard extends StatelessWidget {
               if (entry.reading.isNotEmpty && !entry.reading.contains(',')) ...[
                 const SizedBox(height: 4),
                 Text(entry.reading.replaceAll('.', ''), style: TextStyle(fontSize: 13, color: AppColors.textMuted(isDarkMode))),
+                if (pitchAccentFor(entry.japanese, entry.reading) != null) ...[
+                  const SizedBox(height: 6),
+                  PitchAccentDiagram(
+                    reading: entry.reading,
+                    accents: pitchAccentFor(entry.japanese, entry.reading)!,
+                    isDarkMode: isDarkMode,
+                  ),
+                ],
               ],
               // The conjugation (Past negative, Te form, ...) takes priority
               // over the plain word type, since it says more: which form of

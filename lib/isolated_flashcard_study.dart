@@ -6,6 +6,10 @@ import 'card_edit_dialog.dart';
 import 'writing_practice_canvas.dart';
 import 'app_colors.dart';
 import 'app_theme.dart';
+import 'pitch_accent_data.dart';
+import 'pitch_accent_diagram.dart';
+import 'word_example_sentences.dart';
+import 'example_sentence_card.dart';
 
 // XP awarded per correct answer, matching the arcade modes and the regular
 // spaced repetition screen's per-item reward.
@@ -266,6 +270,14 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 24, color: isDarkMode ? Colors.white70 : Colors.black87),
         ),
+        if (pitchAccentFor(card.japanese, card.hiragana) != null) ...[
+          const SizedBox(height: 6),
+          PitchAccentDiagram(
+            reading: card.hiragana,
+            accents: pitchAccentFor(card.japanese, card.hiragana)!,
+            isDarkMode: isDarkMode,
+          ),
+        ],
         if (card.romaji.isNotEmpty)
           Text(
             card.romaji,
@@ -288,6 +300,14 @@ class _IsolatedFlashcardStudyScreenState extends State<IsolatedFlashcardStudyScr
           frontIsEnglish ? _japaneseText(card) : card.english,
           frontIsEnglish ? 'Japanese' : 'English',
         ),
+        if (kWordExampleSentences[card.japanese] != null) ...[
+          const SizedBox(height: 12),
+          ExampleSentencesSection(
+            sentences: kWordExampleSentences[card.japanese]!,
+            isDarkMode: isDarkMode,
+            onSpeak: (text) => AudioService().speak(text, 'Japanese'),
+          ),
+        ],
         _memoryTechniqueSection(card, isDarkMode),
       ],
     );
